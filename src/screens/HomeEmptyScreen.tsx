@@ -82,6 +82,16 @@ export default function HomeEmptyScreen() {
           variant="primary"
           icon={<Icon.plus size={18} color="#fff" strokeWidth={2.4} />}
           onPress={() => nav.navigate('ActivitySelect')}
+          style={{
+            borderRadius: 14,
+            paddingVertical: 14,
+            paddingHorizontal: 22,
+            shadowColor: c.accent,
+            shadowOpacity: 0.6,
+            shadowRadius: 16,
+            shadowOffset: { width: 0, height: 6 },
+            elevation: 6,
+          }}
         />
 
         <Pressable onPress={() => {}} hitSlop={8}>

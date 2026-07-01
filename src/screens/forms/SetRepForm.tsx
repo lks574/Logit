@@ -4,9 +4,9 @@ import { Screen } from '../../components/primitives';
 import { FormHeader } from '../../components/FormHeader';
 import { DisclosureButton } from '../../components/Field';
 import { Chip } from '../../components/controls';
-import { Glyph, Icon, Path } from '../../components/Glyph';
+import { CompanionChip, RatingInput } from '../../components/Rating';
+import { Glyph, Icon, Path, Rect } from '../../components/Glyph';
 import { useTheme } from '../../theme/ThemeContext';
-import { withAlpha } from '../../theme/tokens';
 
 // SetRepForm (HTML 3.2, lines 503–556) — 세트·횟수형 (strength template).
 // 운동 부위 chips · per-exercise set table · ＋세트/종목 추가 · 볼륨/시간 summary
@@ -20,6 +20,7 @@ export default function SetRepForm({ activity }: { activity: string }) {
   const { c } = useTheme();
   const [part, setPart] = React.useState('가슴');
   const [open, setOpen] = React.useState(false);
+  const [rating, setRating] = React.useState(4);
   const [rows, setRows] = React.useState<SetRow[]>([
     { set: 'W', reps: '15', weight: '40', warmup: true },
     { set: '1', reps: '10', weight: '70', warmup: false },
@@ -223,26 +224,192 @@ export default function SetRepForm({ activity }: { activity: string }) {
           open={open}
           onPress={() => setOpen((o) => !o)}
         />
+        {/* Expanded detail fields (common skeleton 2.2, strength template) */}
         {open ? (
-          <View
-            style={{
-              backgroundColor: c.surfaceAlt,
-              borderRadius: 10,
-              padding: 12,
-              borderWidth: 1,
-              borderColor: withAlpha(c.strength, 22),
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <Glyph size={16} color={c.text3}>
-                <Path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
-                <Path d="M12 10m-2.6 0a2.6 2.6 0 1 0 5.2 0a2.6 2.6 0 1 0 -5.2 0" />
-              </Glyph>
-              <Text style={{ fontSize: 13, color: c.text2 }}>장소 · 동행 · 사진 · 메모 · 평점 · 기분 · 비용</Text>
+          <View style={{ gap: 15 }}>
+            {/* 장소 */}
+            <View>
+              <Text style={styleLabel(c)}>장소</Text>
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
+                  backgroundColor: c.surfaceAlt,
+                  borderRadius: 10,
+                  paddingVertical: 11,
+                  paddingHorizontal: 12,
+                }}
+              >
+                <Glyph size={16} color={c.text3} strokeWidth={2}>
+                  <Path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+                  <Path d="M12 10 m -2.6 0 a 2.6 2.6 0 1 0 5.2 0 a 2.6 2.6 0 1 0 -5.2 0" />
+                </Glyph>
+                <Text style={{ fontSize: 14, color: c.text }}>한강공원</Text>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 6, marginTop: 7 }}>
+                {['최근 · 올림픽공원', '양재천'].map((t) => (
+                  <View
+                    key={t}
+                    style={{
+                      backgroundColor: c.surface,
+                      borderWidth: 1,
+                      borderColor: c.border,
+                      borderRadius: 7,
+                      paddingVertical: 5,
+                      paddingHorizontal: 9,
+                    }}
+                  >
+                    <Text style={{ fontSize: 12, color: c.text2 }}>{t}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            {/* 동행 */}
+            <View>
+              <Text style={styleLabel(c)}>동행</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    backgroundColor: c.strength,
+                    borderRadius: 999,
+                    paddingVertical: 7,
+                    paddingLeft: 8,
+                    paddingRight: 11,
+                  }}
+                >
+                  <View
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: 9,
+                      backgroundColor: 'rgba(255,255,255,.25)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>민</Text>
+                  </View>
+                  <Text style={{ fontSize: 13, color: '#fff' }}>민지</Text>
+                  <Glyph size={12} color="#fff" strokeWidth={2.6}>
+                    <Path d="M6 6l12 12M18 6 6 18" />
+                  </Glyph>
+                </View>
+                <View
+                  style={{
+                    backgroundColor: c.surface,
+                    borderWidth: 1,
+                    borderColor: c.border,
+                    borderRadius: 999,
+                    paddingVertical: 7,
+                    paddingHorizontal: 12,
+                  }}
+                >
+                  <Text style={{ fontSize: 13, color: c.text2 }}>+ 지훈</Text>
+                </View>
+                <CompanionChip name="추가" dashed />
+              </View>
+            </View>
+
+            {/* 사진 */}
+            <View>
+              <Text style={styleLabel(c)}>사진</Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#b7c4ca' }} />
+                <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#d6b9a6' }} />
+                <View
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 11,
+                    backgroundColor: c.surfaceAlt,
+                    borderWidth: 1,
+                    borderStyle: 'dashed',
+                    borderColor: c.border,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Glyph size={20} color={c.text3} strokeWidth={2}>
+                    <Rect x="3" y="5" width="18" height="15" rx="3" />
+                    <Path d="M3 16l5-4 4 3 3-2 6 4" />
+                    <Path d="M9 10 m -1.4 0 a 1.4 1.4 0 1 0 2.8 0 a 1.4 1.4 0 1 0 -2.8 0" />
+                  </Glyph>
+                </View>
+              </View>
+            </View>
+
+            {/* 평점 */}
+            <View>
+              <Text style={styleLabel(c)}>평점</Text>
+              <RatingInput value={rating} onChange={setRating} size={20} />
+            </View>
+
+            {/* 기분 */}
+            <View>
+              <Text style={styleLabel(c)}>기분</Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {[
+                  { d: 'M8.5 15.5c1-1.4 6-1.4 7 0M9 9.5h.01M15 9.5h.01', on: false },
+                  { d: 'M8.5 14h7M9 9.5h.01M15 9.5h.01', on: false },
+                  { d: 'M8.5 13.5c1 1.4 6 1.4 7 0M9 9.5h.01M15 9.5h.01', on: true },
+                  { d: 'M8 13c1.2 2 6.8 2 8 0M9 9.5h.01M15 9.5h.01', on: false },
+                ].map((m, i) => (
+                  <View
+                    key={i}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 11,
+                      backgroundColor: m.on ? c.strengthSoft : c.surface,
+                      borderWidth: m.on ? 1.5 : 1,
+                      borderColor: m.on ? c.strength : c.border,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Glyph size={20} color={m.on ? c.strength : c.text3} strokeWidth={2}>
+                      <Path d="M12 12 m -9 0 a 9 9 0 1 0 18 0 a 9 9 0 1 0 -18 0" />
+                      <Path d={m.d} />
+                    </Glyph>
+                  </View>
+                ))}
+              </View>
+            </View>
+
+            {/* 메모 */}
+            <View>
+              <Text style={styleLabel(c)}>메모</Text>
+              <View
+                style={{
+                  backgroundColor: c.surfaceAlt,
+                  borderRadius: 10,
+                  paddingVertical: 11,
+                  paddingHorizontal: 12,
+                  minHeight: 46,
+                }}
+              >
+                <Text style={{ fontSize: 13, color: c.text, lineHeight: 20 }}>
+                  노을이 좋았다. 마지막 1km 페이스 올림.
+                </Text>
+              </View>
             </View>
           </View>
         ) : null}
       </View>
     </Screen>
   );
+}
+
+function styleLabel(c: ReturnType<typeof useTheme>['c']) {
+  return {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: c.text,
+    marginBottom: 7,
+  };
 }

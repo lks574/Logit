@@ -1,11 +1,10 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Screen } from '../components/primitives';
-import { Field } from '../components/Field';
 import { Icon, Glyph, Path, Circle } from '../components/Glyph';
 import { useTheme } from '../theme/ThemeContext';
-import { templateColor, withAlpha, radius, TemplateType, Palette } from '../theme/tokens';
+import { templateColor, TemplateType, Palette } from '../theme/tokens';
 
 type TemplateDef = {
   id: TemplateType;
@@ -83,11 +82,31 @@ export default function AddActivityScreen() {
 
       <View style={{ paddingHorizontal: 16, paddingTop: 2, gap: 16, paddingBottom: 24 }}>
         {/* 활동 이름 */}
-        <Field label="활동 이름" required value={name} onChangeText={setName} placeholder="클라이밍" large />
-
-        {/* 기록 템플릿 선택 */}
         <View style={{ gap: 8 }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>기록 템플릿 선택</Text>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>활동 이름</Text>
+          <View
+            style={{
+              backgroundColor: c.surface,
+              borderWidth: 1.5,
+              borderColor: c.accent,
+              borderRadius: 13,
+              paddingVertical: 13,
+              paddingHorizontal: 14,
+            }}
+          >
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              placeholder="클라이밍"
+              placeholderTextColor={c.text}
+              style={{ fontSize: 19, fontWeight: '700', color: c.text, padding: 0 }}
+            />
+          </View>
+        </View>
+
+        {/* 기록 템플릿 */}
+        <View style={{ gap: 8 }}>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>기록 템플릿</Text>
           {TEMPLATES.map((t) => {
             const keys = templateColor[t.id];
             const tColor = c[keys.color];

@@ -384,21 +384,6 @@ export default function EnduranceForm({ activity }: { activity: string }) {
                 </Text>
               </View>
             </View>
-
-            {/* 비용 */}
-            <View>
-              <Text style={styleLabel(c)}>비용</Text>
-              <View
-                style={{
-                  backgroundColor: c.surfaceAlt,
-                  borderRadius: 10,
-                  paddingVertical: 11,
-                  paddingHorizontal: 12,
-                }}
-              >
-                <Text style={{ fontSize: 14, color: c.text3 }}>0원</Text>
-              </View>
-            </View>
           </View>
         ) : (
           // Footer note — only in collapsed/quick state (2.1)

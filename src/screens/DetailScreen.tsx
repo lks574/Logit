@@ -26,6 +26,7 @@ type Variant = {
   photoLeft: string; // approximation of the HTML linear-gradient (bottom-right stop)
   photoRight: string;
   photoHeight: number;
+  contentGap: number; // vertical gap between content sections (HTML: 런닝 14, others 13)
   score?: {
     ourLabel: string;
     ourTeam: string;
@@ -51,6 +52,7 @@ const VARIANTS: Record<string, (c: Palette) => Variant> = {
     photoLeft: '#8fa3ad',
     photoRight: '#caa787',
     photoHeight: 104,
+    contentGap: 14,
     statCells: [
       { value: '5.2', label: '거리 km', valueColor: c.cardio },
       { value: '27:12', label: '시간' },
@@ -72,6 +74,7 @@ const VARIANTS: Record<string, (c: Palette) => Variant> = {
     photoLeft: '#6d89ab',
     photoRight: '#93a6bc',
     photoHeight: 96,
+    contentGap: 13,
     score: {
       ourLabel: '우리팀',
       ourTeam: 'FC 월요일',
@@ -101,6 +104,7 @@ const VARIANTS: Record<string, (c: Palette) => Variant> = {
     photoLeft: '#6d89ab',
     photoRight: '#93a6bc',
     photoHeight: 96,
+    contentGap: 13,
     score: {
       ourLabel: '우리팀',
       ourTeam: '번개 BC',
@@ -131,6 +135,7 @@ const VARIANTS: Record<string, (c: Palette) => Variant> = {
     photoLeft: '#8a6ba8',
     photoRight: '#a98ac6',
     photoHeight: 100,
+    contentGap: 13,
     statCells: [
       { value: '1층 F12', label: '좌석', valueColor: c.perf },
       { value: '170분', label: '러닝타임' },
@@ -153,6 +158,7 @@ const VARIANTS: Record<string, (c: Palette) => Variant> = {
     photoLeft: '#8a6ba8',
     photoRight: '#a98ac6',
     photoHeight: 100,
+    contentGap: 13,
     statCells: [
       { value: '2층 B7', label: '좌석', valueColor: c.perf },
       { value: '130분', label: '러닝타임' },
@@ -201,7 +207,7 @@ export default function DetailScreen() {
         </Row>
       </Row>
 
-      <View style={{ paddingHorizontal: 16, gap: 13 }}>
+      <View style={{ paddingHorizontal: 16, gap: v.contentGap }}>
         {/* Activity header */}
         <Row gap={12} center>
           <View

@@ -98,7 +98,7 @@ export default function SpectateForm({ activity }: { activity: string }) {
           </View>
         </View>
 
-        {/* 셋리스트 · 넘버 (콘서트 전환) */}
+        {/* 셋리스트 · 넘버 (콘서트 전환) — last element in HTML (margin-top:auto) */}
         <DisclosureButton
           title="셋리스트 · 넘버"
           subtitle="콘서트는 셋리스트로 전환"
@@ -109,14 +109,6 @@ export default function SpectateForm({ activity }: { activity: string }) {
               <Circle cx="18" cy="16" r="3" />
             </Glyph>
           }
-        />
-
-        {/* 공통 세부 입력 disclosure (collapsed, badge 선택) */}
-        <DisclosureButton
-          title="세부 입력"
-          badge="선택"
-          subtitle="장소 · 동행 · 사진 · 메모 · 평점 · 기분 · 비용"
-          icon={<Icon.plus size={17} color={c.text2} strokeWidth={2.2} />}
         />
       </View>
     </Screen>
