@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import * as ImagePicker from 'expo-image-picker';
+import { choosePhoto } from '../../lib/photos';
 import React from 'react';
 import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { CompanionChip, RatingInput } from '../../components/Rating';
@@ -41,8 +41,8 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
   const ActIcon = Icon.running;
 
   const pickPhoto = async () => {
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
-    if (!res.canceled && res.assets?.[0]) setPhotos((p) => [...p, res.assets[0].uri]);
+    const uri = await choosePhoto();
+    if (uri) setPhotos((p) => [...p, uri]);
   };
 
   const addCompanion = () => {

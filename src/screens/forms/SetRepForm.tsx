@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import * as ImagePicker from 'expo-image-picker';
+import { choosePhoto } from '../../lib/photos';
 import React from 'react';
 import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../components/primitives';
@@ -58,8 +58,8 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, [key]: val } : row)));
 
   const pickPhoto = async () => {
-    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
-    if (!res.canceled && res.assets?.[0]) setPhotos((p) => [...p, res.assets[0].uri]);
+    const uri = await choosePhoto();
+    if (uri) setPhotos((p) => [...p, uri]);
   };
 
   const handleSave = () => {
