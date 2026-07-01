@@ -1,21 +1,60 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Screen, T, Divider } from '../components/primitives';
-import { Glyph, Path, Circle, Icon } from '../components/Glyph';
-import { Segmented } from '../components/controls';
-import { SettingsRow } from '../components/Field';
-import { useStore } from '../store/StoreContext';
-import { useTheme } from '../theme/ThemeContext';
-import { radius } from '../theme/tokens';
+import { Screen, T, Divider } from '../../components/primitives';
+import { Glyph, Path, Circle, Icon } from '../../components/Glyph';
+import { Segmented } from '../../components/controls';
+import { SettingsRow } from '../../components/Field';
+import { ActionSheet } from '../../components/ActionSheet';
+import { useStore } from '../../store/StoreContext';
+import { exportData, importData } from '../../lib/dataTransfer';
+import type { StoreState } from '../../store/types';
+import { useTheme } from '../../theme/ThemeContext';
+import { radius } from '../../theme/tokens';
+
+type SheetState =
+  | { kind: 'none' }
+  | { kind: 'export' }
+  | { kind: 'confirmImport'; incoming: StoreState; summary: string }
+  | { kind: 'message'; title: string; message?: string };
 
 // 4.8 설정 — profile card, grouped surface cards with rows + dividers.
 export default function SettingsScreen() {
   const { c, mode, setMode } = useTheme();
   const nav = useNavigation<any>();
-  const { profile } = useStore();
+  const { profile, records, plans, customActivities, replaceAll } = useStore();
   const initial = (profile.name.trim()[0] ?? '?').toUpperCase();
   const [lang, setLang] = React.useState<'ko' | 'en'>('ko');
+  const [sheet, setSheet] = React.useState<SheetState>({ kind: 'none' });
+
+  const errMessage = (e: unknown) =>
+    e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다.';
+
+  const runExport = async (format: 'json' | 'csv') => {
+    setSheet({ kind: 'none' });
+    try {
+      const msg = await exportData({ records, plans, customActivities, profile }, format);
+      setSheet({ kind: 'message', title: '내보내기', message: msg });
+    } catch (e) {
+      setSheet({ kind: 'message', title: '내보내기 실패', message: errMessage(e) });
+    }
+  };
+
+  const runImport = async () => {
+    try {
+      const incoming = await importData();
+      if (!incoming) return; // 사용자 취소
+      const summary = `기록 ${incoming.records.length}개 · 약속 ${incoming.plans.length}개를 가져옵니다. 현재 데이터는 모두 대체됩니다.`;
+      setSheet({ kind: 'confirmImport', incoming, summary });
+    } catch (e) {
+      setSheet({ kind: 'message', title: '가져오기 실패', message: errMessage(e) });
+    }
+  };
+
+  const confirmImport = (incoming: StoreState) => {
+    replaceAll(incoming);
+    setSheet({ kind: 'message', title: '가져오기 완료', message: '데이터를 복원했습니다.' });
+  };
 
   // Theme selector: Light / Dark / 시스템 — fully wired via ThemeContext mode.
   // 시스템 defers to the OS color scheme; light/dark override it.
@@ -128,7 +167,18 @@ export default function SettingsScreen() {
               }
               label="데이터 내보내기"
               value="CSV · JSON"
-              right={<View style={{ width: 0 }} />}
+              onPress={() => setSheet({ kind: 'export' })}
+            />
+            <Divider />
+            <SettingsRow
+              icon={
+                <Glyph size={18} color={c.text2} strokeWidth={1.8}>
+                  <Path d="M12 3v13M7 8l5-5 5 5M5 21h14" />
+                </Glyph>
+              }
+              label="데이터 가져오기"
+              value="JSON"
+              onPress={runImport}
             />
           </Card>
         </View>
@@ -207,6 +257,40 @@ export default function SettingsScreen() {
           </Card>
         </View>
       </View>
+
+      <ActionSheet
+        visible={sheet.kind === 'export'}
+        title="데이터 내보내기"
+        message="형식을 선택하세요. JSON은 전체 복원용, CSV는 기록 열람용입니다."
+        actions={[
+          { label: 'JSON (전체 백업)', onPress: () => runExport('json') },
+          { label: 'CSV (기록 표)', onPress: () => runExport('csv') },
+        ]}
+        onCancel={() => setSheet({ kind: 'none' })}
+      />
+      <ActionSheet
+        visible={sheet.kind === 'confirmImport'}
+        title="데이터 가져오기"
+        message={sheet.kind === 'confirmImport' ? sheet.summary : undefined}
+        actions={[
+          {
+            label: '전체 교체',
+            destructive: true,
+            onPress: () => {
+              if (sheet.kind === 'confirmImport') confirmImport(sheet.incoming);
+            },
+          },
+        ]}
+        onCancel={() => setSheet({ kind: 'none' })}
+      />
+      <ActionSheet
+        visible={sheet.kind === 'message'}
+        title={sheet.kind === 'message' ? sheet.title : ''}
+        message={sheet.kind === 'message' ? sheet.message : undefined}
+        actions={[]}
+        cancelLabel="확인"
+        onCancel={() => setSheet({ kind: 'none' })}
+      />
     </Screen>
   );
 }

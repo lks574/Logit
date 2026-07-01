@@ -1,16 +1,16 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Screen } from '../components/primitives';
-import { Icon } from '../components/Glyph';
-import { ActivityCard, StatCard } from '../components/cards';
-import { SyncStatusBadge } from '../components/badges';
-import { useTheme } from '../theme/ThemeContext';
-import { withAlpha } from '../theme/tokens';
-import { activities, colorsFor } from '../data/activities';
-import { useStore, useSyncState } from '../store/StoreContext';
-import { dday, upcomingPlans, weekStats } from '../store/selectors';
-import { StoredPlan } from '../store/types';
+import { Screen } from '../../components/primitives';
+import { Icon } from '../../components/Glyph';
+import { ActivityCard, StatCard } from '../../components/cards';
+import { SyncStatusBadge } from '../../components/badges';
+import { useTheme } from '../../theme/ThemeContext';
+import { withAlpha } from '../../theme/tokens';
+import { activities, colorsFor } from '../../data/activities';
+import { useStore, useSyncState } from '../../store/StoreContext';
+import { dday, upcomingPlans, weekStats } from '../../store/selectors';
+import { StoredPlan } from '../../store/types';
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
 

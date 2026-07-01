@@ -1,6 +1,6 @@
 import { RouteProp, useRoute } from '@react-navigation/native';
 import React from 'react';
-import { RootStackParamList } from '../navigation/types';
+import { RootStackParamList } from '../../navigation/types';
 import EnduranceForm from './forms/EnduranceForm';
 import FreeForm from './forms/FreeForm';
 import MatchForm from './forms/MatchForm';

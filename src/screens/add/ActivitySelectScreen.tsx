@@ -1,13 +1,13 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Screen, T, Row } from '../components/primitives';
-import { Icon } from '../components/Glyph';
-import { useTheme } from '../theme/ThemeContext';
-import { withAlpha } from '../theme/tokens';
-import { activities, colorsFor } from '../data/activities';
-import { TemplateType } from '../theme/tokens';
-import { useStore } from '../store/StoreContext';
+import { Screen, T, Row } from '../../components/primitives';
+import { Icon } from '../../components/Glyph';
+import { useTheme } from '../../theme/ThemeContext';
+import { withAlpha } from '../../theme/tokens';
+import { activities, colorsFor } from '../../data/activities';
+import { TemplateType } from '../../theme/tokens';
+import { useStore } from '../../store/StoreContext';
 
 // Frequently-used pill tiles ("자주 쓰는").
 const FAVORITES = ['런닝', '헬스', '배드민턴'];

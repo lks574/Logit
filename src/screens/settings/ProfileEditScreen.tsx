@@ -1,10 +1,10 @@
 import React from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { Screen } from '../components/primitives';
-import { Icon } from '../components/Glyph';
-import { useStore } from '../store/StoreContext';
-import { useTheme } from '../theme/ThemeContext';
+import { Screen } from '../../components/primitives';
+import { Icon } from '../../components/Glyph';
+import { useStore } from '../../store/StoreContext';
+import { useTheme } from '../../theme/ThemeContext';
 
 // 회원 = 로컬 프로필 편집 (인증/백엔드 없음 — PROGRESS.md 결정).
 // 이름/이메일만 로컬 저장, 아바타 이니셜은 이름 첫 글자에서 파생.

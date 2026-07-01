@@ -1,17 +1,17 @@
 import React from 'react';
 import { Image, Text, View } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Row, Screen } from '../components/primitives';
-import { IconButton } from '../components/Button';
-import { StatCard } from '../components/cards';
-import { Stars } from '../components/Rating';
-import { Glyph, Icon, Path } from '../components/Glyph';
-import { activities, colorsFor } from '../data/activities';
-import { RootStackParamList } from '../navigation/types';
-import { useStore } from '../store/StoreContext';
-import { StoredRecord } from '../store/types';
-import { useTheme } from '../theme/ThemeContext';
-import { Palette } from '../theme/tokens';
+import { Row, Screen } from '../../components/primitives';
+import { IconButton } from '../../components/Button';
+import { StatCard } from '../../components/cards';
+import { Stars } from '../../components/Rating';
+import { Glyph, Icon, Path } from '../../components/Glyph';
+import { activities, colorsFor } from '../../data/activities';
+import { RootStackParamList } from '../../navigation/types';
+import { useStore } from '../../store/StoreContext';
+import { StoredRecord } from '../../store/types';
+import { useTheme } from '../../theme/ThemeContext';
+import { Palette } from '../../theme/tokens';
 
 type Cell = { value: string; label: string; valueColor?: string };
 type DetailRow = { label: string; value: string };

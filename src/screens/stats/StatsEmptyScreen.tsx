@@ -1,10 +1,10 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Screen } from '../components/primitives';
-import { Glyph, Path } from '../components/Glyph';
-import { Button } from '../components/Button';
-import { useTheme } from '../theme/ThemeContext';
+import { Screen } from '../../components/primitives';
+import { Glyph, Path } from '../../components/Glyph';
+import { Button } from '../../components/Button';
+import { useTheme } from '../../theme/ThemeContext';
 
 // 4.7 통계 — 빈 상태 (데이터 부족) (Logit.dc.html lines 1087–1128)
 export default function StatsEmptyScreen() {

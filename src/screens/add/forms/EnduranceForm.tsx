@@ -1,16 +1,16 @@
 import { useNavigation } from '@react-navigation/native';
-import { choosePhoto } from '../../lib/photos';
+import { choosePhoto } from '../../../lib/photos';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
-import { CompanionChip, RatingInput } from '../../components/Rating';
-import { DisclosureButton } from '../../components/Field';
-import { FormHeader } from '../../components/FormHeader';
-import { Glyph, Icon, Path, Rect } from '../../components/Glyph';
-import { Screen } from '../../components/primitives';
-import { activities, colorsFor } from '../../data/activities';
-import { useStore } from '../../store/StoreContext';
-import { useTheme } from '../../theme/ThemeContext';
-import { withAlpha } from '../../theme/tokens';
+import { CompanionChip, RatingInput } from '../../../components/Rating';
+import { DisclosureButton } from '../../../components/Field';
+import { FormHeader } from '../../../components/FormHeader';
+import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
+import { Screen } from '../../../components/primitives';
+import { activities, colorsFor } from '../../../data/activities';
+import { useStore } from '../../../store/StoreContext';
+import { useTheme } from '../../../theme/ThemeContext';
+import { withAlpha } from '../../../theme/tokens';
 
 // §03 3.1 거리·시간형 — EnduranceForm (cardio). Embeds §02 common skeleton.
 // HTML source of truth: Logit.dc.html 2.1 (296–358), 2.2 (359–437), 3.1 (444–502).

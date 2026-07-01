@@ -1,16 +1,16 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Screen } from '../components/primitives';
-import { IconButton } from '../components/Button';
-import { Icon } from '../components/Glyph';
-import { DdayBadge, Tag } from '../components/badges';
-import { useTheme } from '../theme/ThemeContext';
-import { withAlpha } from '../theme/tokens';
-import { useStore } from '../store/StoreContext';
-import { dday, upcomingPlans } from '../store/selectors';
-import { activities, colorsFor, iconFor } from '../data/activities';
-import { StoredPlan } from '../store/types';
+import { Screen } from '../../components/primitives';
+import { IconButton } from '../../components/Button';
+import { Icon } from '../../components/Glyph';
+import { DdayBadge, Tag } from '../../components/badges';
+import { useTheme } from '../../theme/ThemeContext';
+import { withAlpha } from '../../theme/tokens';
+import { useStore } from '../../store/StoreContext';
+import { dday, upcomingPlans } from '../../store/selectors';
+import { activities, colorsFor, iconFor } from '../../data/activities';
+import { StoredPlan } from '../../store/types';
 
 type Seg = 'past' | 'upcoming';
 
