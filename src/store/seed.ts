@@ -120,4 +120,5 @@ export const seed: StoreState = {
     { id: 'p-running-0705', activity: '런닝', template: 'endurance', dateISO: '2026-07-05', timeLabel: '오전 7:00', place: '한강공원', memo: '10km 목표', reminder: false },
   ],
   customActivities: [],
+  profile: { name: '현우', email: 'hyunwoo@flitto.com' },
 };

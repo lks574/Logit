@@ -19,6 +19,7 @@ import AddActivityScreen from '../screens/AddActivityScreen';
 import PlansScreen from '../screens/PlansScreen';
 import HomeEmptyScreen from '../screens/HomeEmptyScreen';
 import StatsEmptyScreen from '../screens/StatsEmptyScreen';
+import ProfileEditScreen from '../screens/ProfileEditScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -63,6 +64,7 @@ export function RootNavigator() {
           <Stack.Screen name="RecordForm" component={RecordFormScreen} />
           <Stack.Screen name="AddPlan" component={AddPlanScreen} />
           <Stack.Screen name="AddActivity" component={AddActivityScreen} />
+          <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
         </Stack.Group>
         <Stack.Screen name="Detail" component={DetailScreen} />
         <Stack.Screen name="Plans" component={PlansScreen} />

@@ -11,6 +11,7 @@ export type RootStackParamList = {
   Plans: undefined;
   HomeEmpty: undefined;
   StatsEmpty: undefined;
+  ProfileEdit: undefined;
 };
 
 export type TabParamList = {

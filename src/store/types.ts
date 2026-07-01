@@ -37,8 +37,15 @@ export type CustomActivity = {
   template: TemplateType;
 };
 
+// Local-only user profile (no auth/backend — see PROGRESS.md 회원 결정).
+export type Profile = {
+  name: string;
+  email: string;
+};
+
 export type StoreState = {
   records: StoredRecord[];
   plans: StoredPlan[];
   customActivities: CustomActivity[];
+  profile: Profile;
 };

@@ -1,15 +1,20 @@
 import React from 'react';
-import { View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Screen, T, Divider } from '../components/primitives';
 import { Glyph, Path, Circle, Icon } from '../components/Glyph';
 import { Segmented } from '../components/controls';
 import { SettingsRow } from '../components/Field';
+import { useStore } from '../store/StoreContext';
 import { useTheme } from '../theme/ThemeContext';
 import { radius } from '../theme/tokens';
 
 // 4.8 설정 — profile card, grouped surface cards with rows + dividers.
 export default function SettingsScreen() {
   const { c, mode, setMode } = useTheme();
+  const nav = useNavigation<any>();
+  const { profile } = useStore();
+  const initial = (profile.name.trim()[0] ?? '?').toUpperCase();
   const [lang, setLang] = React.useState<'ko' | 'en'>('ko');
 
   // Theme selector: Light / Dark / 시스템 — fully wired via ThemeContext mode.
@@ -63,8 +68,9 @@ export default function SettingsScreen() {
       </View>
 
       <View style={{ paddingHorizontal: 16, gap: 16 }}>
-        {/* Profile card */}
-        <View
+        {/* Profile card → 로컬 프로필 편집 */}
+        <Pressable
+          onPress={() => nav.navigate('ProfileEdit')}
           style={{
             flexDirection: 'row',
             alignItems: 'center',
@@ -86,14 +92,14 @@ export default function SettingsScreen() {
               justifyContent: 'center',
             }}
           >
-            <T style={{ fontSize: 17, fontWeight: '700', color: '#fff' }}>현</T>
+            <T style={{ fontSize: 17, fontWeight: '700', color: '#fff' }}>{initial}</T>
           </View>
           <View style={{ flex: 1 }}>
-            <T style={{ fontSize: 15, fontWeight: '600', color: c.text }}>현우</T>
-            <T style={{ fontSize: 12, color: c.text2, marginTop: 1 }}>hyunwoo@flitto.com</T>
+            <T style={{ fontSize: 15, fontWeight: '600', color: c.text }}>{profile.name}</T>
+            <T style={{ fontSize: 12, color: c.text2, marginTop: 1 }}>{profile.email}</T>
           </View>
           <Icon.chevronRight size={18} color={c.text3} strokeWidth={2} />
-        </View>
+        </Pressable>
 
         {/* 백업 · 동기화 */}
         <View>

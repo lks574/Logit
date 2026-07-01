@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { seed, TODAY } from './seed';
-import { CustomActivity, StoredPlan, StoredRecord, StoreState } from './types';
+import { CustomActivity, Profile, StoredPlan, StoredRecord, StoreState } from './types';
 
 // Offline-first store: single source of truth in memory, persisted to
 // AsyncStorage (last-write-wins). New records land as `pending` then flip to
@@ -22,6 +22,8 @@ type StoreValue = {
   records: StoredRecord[];
   plans: StoredPlan[];
   customActivities: CustomActivity[];
+  profile: Profile;
+  updateProfile: (patch: Partial<Profile>) => void;
   addRecord: (r: Omit<StoredRecord, 'id' | 'sync'>) => StoredRecord;
   addPlan: (p: Omit<StoredPlan, 'id'>) => StoredPlan;
   addActivity: (a: CustomActivity) => void;
@@ -47,7 +49,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     let alive = true;
     AsyncStorage.getItem(KEY)
       .then((raw) => {
-        if (alive && raw) setState(JSON.parse(raw));
+        // Merge over seed so blobs written before a field existed (e.g. profile)
+        // pick up its default instead of becoming undefined.
+        if (alive && raw) setState({ ...seed, ...JSON.parse(raw) });
       })
       .catch(() => {})
       .finally(() => alive && setReady(true));
@@ -80,6 +84,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       records: state.records,
       plans: state.plans,
       customActivities: state.customActivities,
+      profile: state.profile,
+      updateProfile: (patch) => {
+        setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
+      },
       addRecord: (r) => {
         const rec: StoredRecord = { ...r, id: uid('r'), sync: 'pending' };
         setState((s) => ({ ...s, records: [rec, ...s.records] }));
