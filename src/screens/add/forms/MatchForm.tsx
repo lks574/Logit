@@ -71,6 +71,9 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
   // 종목 전환 시 현재 결과가 새 옵션에 없으면(예: 팀→개인 전환 시 '무') '승'으로 리셋.
   const selectSport = (key: string) => {
     setSportKey(key);
+    // 종목 전환 시 입력값 초기화 — 공유 키(게임스코어·에이스 등)가 다른 종목으로
+    // 이월돼 형식이 어긋나는 것을 막는다.
+    setFieldValues({});
     const next = SPORTS.find((s) => s.key === key);
     if (next && !next.team && result === 'draw') setResult('win');
   };

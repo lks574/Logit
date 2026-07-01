@@ -144,9 +144,40 @@ function pickFileWeb(): Promise<string | null> {
       reader.onerror = () => resolve(null);
       reader.readAsText(f);
     };
-    // 브라우저 file input은 취소 이벤트가 없다 → 취소 시 resolve되지 않음(상태 변경 없음, 허용).
+    // 취소 시 change가 안 fire되므로 표준 cancel 이벤트로 promise를 해제한다(미해제 방지).
+    input.oncancel = () => resolve(null);
     input.click();
   });
+}
+
+const TEMPLATES = ['endurance', 'setrep', 'match', 'spectate', 'free'];
+const SYNC = ['synced', 'pending'];
+
+const isStr = (v: unknown): v is string => typeof v === 'string';
+const badFormat = () => new Error('백업 파일의 형식이 올바르지 않습니다.');
+
+// 전체 교체(replaceAll)로 영구 저장하므로, 배열 여부만이 아니라 각 항목의 필수 필드도
+// 검증한다(types.ts 기준). 하나라도 어긋나면 거부 — 손상 파일이 앱 상태를 덮어쓰지 않게.
+function validRecord(r: any): boolean {
+  return (
+    !!r &&
+    isStr(r.id) &&
+    isStr(r.activity) &&
+    isStr(r.dateISO) &&
+    isStr(r.timeLabel) &&
+    TEMPLATES.includes(r.template) &&
+    SYNC.includes(r.sync)
+  );
+}
+function validPlan(p: any): boolean {
+  return (
+    !!p &&
+    isStr(p.id) &&
+    isStr(p.activity) &&
+    isStr(p.dateISO) &&
+    isStr(p.timeLabel) &&
+    TEMPLATES.includes(p.template)
+  );
 }
 
 function normalize(parsed: any): StoreState {
@@ -158,7 +189,10 @@ function normalize(parsed: any): StoreState {
   }
   const d = parsed.data;
   if (!d || !Array.isArray(d.records) || !Array.isArray(d.plans)) {
-    throw new Error('백업 파일의 형식이 올바르지 않습니다.');
+    throw badFormat();
+  }
+  if (!d.records.every(validRecord) || !d.plans.every(validPlan)) {
+    throw badFormat();
   }
   return {
     records: d.records,
