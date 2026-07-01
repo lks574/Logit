@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { Screen } from '../components/primitives';
-import { Glyph, Path } from '../components/Glyph';
-import { useTheme } from '../theme/ThemeContext';
-import { useStore } from '../store/StoreContext';
-import { StatsFilter, statsSummary } from '../store/selectors';
+import { Screen } from '../../components/primitives';
+import { Glyph, Path } from '../../components/Glyph';
+import { useTheme } from '../../theme/ThemeContext';
+import { useStore } from '../../store/StoreContext';
+import { StatsFilter, statsSummary } from '../../store/selectors';
 
 // mix two #RRGGBB colors: `pct`% of a into b (color-mix in srgb).
 function mix(a: string, b: string, pct: number): string {

@@ -1,11 +1,11 @@
 import React from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Screen } from '../components/primitives';
-import { Icon, Glyph, Path, Circle } from '../components/Glyph';
-import { useTheme } from '../theme/ThemeContext';
-import { useStore } from '../store/StoreContext';
-import { templateColor, TemplateType, Palette } from '../theme/tokens';
+import { Screen } from '../../components/primitives';
+import { Icon, Glyph, Path, Circle } from '../../components/Glyph';
+import { useTheme } from '../../theme/ThemeContext';
+import { useStore } from '../../store/StoreContext';
+import { templateColor, TemplateType, Palette } from '../../theme/tokens';
 
 type TemplateDef = {
   id: TemplateType;

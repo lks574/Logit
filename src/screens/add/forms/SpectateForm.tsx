@@ -1,15 +1,15 @@
 import { useNavigation } from '@react-navigation/native';
-import { choosePhoto } from '../../lib/photos';
+import { choosePhoto } from '../../../lib/photos';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
-import { Screen } from '../../components/primitives';
-import { FormHeader } from '../../components/FormHeader';
-import { DisclosureButton } from '../../components/Field';
-import { RatingInput, CompanionChip } from '../../components/Rating';
-import { Stepper, Chip } from '../../components/controls';
-import { Glyph, Path, Rect, Circle, Icon } from '../../components/Glyph';
-import { useStore } from '../../store/StoreContext';
-import { useTheme } from '../../theme/ThemeContext';
+import { Screen } from '../../../components/primitives';
+import { FormHeader } from '../../../components/FormHeader';
+import { DisclosureButton } from '../../../components/Field';
+import { RatingInput, CompanionChip } from '../../../components/Rating';
+import { Stepper, Chip } from '../../../components/controls';
+import { Glyph, Path, Rect, Circle, Icon } from '../../../components/Glyph';
+import { useStore } from '../../../store/StoreContext';
+import { useTheme } from '../../../theme/ThemeContext';
 
 // 3.4 SpectateForm — 관람·공연형 (perf color). Copy: Logit.dc.html lines 618–678.
 

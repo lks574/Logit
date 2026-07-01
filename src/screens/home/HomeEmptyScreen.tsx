@@ -1,10 +1,10 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Screen } from '../components/primitives';
-import { Glyph, Icon, Path } from '../components/Glyph';
-import { Button } from '../components/Button';
-import { useTheme } from '../theme/ThemeContext';
+import { Screen } from '../../components/primitives';
+import { Glyph, Icon, Path } from '../../components/Glyph';
+import { Button } from '../../components/Button';
+import { useTheme } from '../../theme/ThemeContext';
 
 export default function HomeEmptyScreen() {
   const { c } = useTheme();

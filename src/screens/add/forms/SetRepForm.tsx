@@ -1,15 +1,15 @@
 import { useNavigation } from '@react-navigation/native';
-import { choosePhoto } from '../../lib/photos';
+import { choosePhoto } from '../../../lib/photos';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
-import { Screen } from '../../components/primitives';
-import { FormHeader } from '../../components/FormHeader';
-import { DisclosureButton } from '../../components/Field';
-import { Chip } from '../../components/controls';
-import { CompanionChip, RatingInput } from '../../components/Rating';
-import { Glyph, Icon, Path, Rect } from '../../components/Glyph';
-import { useStore } from '../../store/StoreContext';
-import { useTheme } from '../../theme/ThemeContext';
+import { Screen } from '../../../components/primitives';
+import { FormHeader } from '../../../components/FormHeader';
+import { DisclosureButton } from '../../../components/Field';
+import { Chip } from '../../../components/controls';
+import { CompanionChip, RatingInput } from '../../../components/Rating';
+import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
+import { useStore } from '../../../store/StoreContext';
+import { useTheme } from '../../../theme/ThemeContext';
 
 // SetRepForm (HTML 3.2, lines 503–556) — 세트·횟수형 (strength template).
 // 운동 부위 chips · per-exercise set table · ＋세트/종목 추가 · 볼륨/시간 summary

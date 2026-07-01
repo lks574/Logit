@@ -1,16 +1,16 @@
 import React from 'react';
 import { Pressable, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Screen, T, Divider } from '../components/primitives';
-import { Glyph, Path, Circle, Icon } from '../components/Glyph';
-import { Segmented } from '../components/controls';
-import { SettingsRow } from '../components/Field';
-import { ActionSheet } from '../components/ActionSheet';
-import { useStore } from '../store/StoreContext';
-import { exportData, importData } from '../lib/dataTransfer';
-import type { StoreState } from '../store/types';
-import { useTheme } from '../theme/ThemeContext';
-import { radius } from '../theme/tokens';
+import { Screen, T, Divider } from '../../components/primitives';
+import { Glyph, Path, Circle, Icon } from '../../components/Glyph';
+import { Segmented } from '../../components/controls';
+import { SettingsRow } from '../../components/Field';
+import { ActionSheet } from '../../components/ActionSheet';
+import { useStore } from '../../store/StoreContext';
+import { exportData, importData } from '../../lib/dataTransfer';
+import type { StoreState } from '../../store/types';
+import { useTheme } from '../../theme/ThemeContext';
+import { radius } from '../../theme/tokens';
 
 type SheetState =
   | { kind: 'none' }

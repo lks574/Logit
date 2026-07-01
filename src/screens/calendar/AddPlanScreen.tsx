@@ -1,15 +1,15 @@
 import React from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { Screen } from '../components/primitives';
-import { Toggle, Segmented } from '../components/controls';
-import { Icon, Glyph, Path, Circle, Rect } from '../components/Glyph';
-import { MiniMonthPicker } from '../components/MiniMonthPicker';
-import { useTheme } from '../theme/ThemeContext';
-import { useStore } from '../store/StoreContext';
-import { activities, colorsFor, iconFor } from '../data/activities';
-import { RootStackParamList } from '../navigation/types';
-import { TemplateType, withAlpha } from '../theme/tokens';
+import { Screen } from '../../components/primitives';
+import { Toggle, Segmented } from '../../components/controls';
+import { Icon, Glyph, Path, Circle, Rect } from '../../components/Glyph';
+import { MiniMonthPicker } from '../../components/MiniMonthPicker';
+import { useTheme } from '../../theme/ThemeContext';
+import { useStore } from '../../store/StoreContext';
+import { activities, colorsFor, iconFor } from '../../data/activities';
+import { RootStackParamList } from '../../navigation/types';
+import { TemplateType, withAlpha } from '../../theme/tokens';
 
 const FAVORITES = ['헬스', '런닝', '축구']; // quick chips; "…" reveals all
 

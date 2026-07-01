@@ -1,15 +1,15 @@
 import { useNavigation } from '@react-navigation/native';
-import { choosePhoto } from '../../lib/photos';
+import { choosePhoto } from '../../../lib/photos';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
-import { Screen } from '../../components/primitives';
-import { FormHeader } from '../../components/FormHeader';
-import { DisclosureButton, Field } from '../../components/Field';
-import { Segmented } from '../../components/controls';
-import { RatingInput, CompanionChip } from '../../components/Rating';
-import { Glyph, Icon, Path, Rect } from '../../components/Glyph';
-import { useStore } from '../../store/StoreContext';
-import { useTheme } from '../../theme/ThemeContext';
+import { Screen } from '../../../components/primitives';
+import { FormHeader } from '../../../components/FormHeader';
+import { DisclosureButton, Field } from '../../../components/Field';
+import { Segmented } from '../../../components/controls';
+import { RatingInput, CompanionChip } from '../../../components/Rating';
+import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
+import { useStore } from '../../../store/StoreContext';
+import { useTheme } from '../../../theme/ThemeContext';
 
 // FreeForm — 자유 기록형 catch-all (free template, accent color #3D5A80).
 // Derived from the common skeleton (§02, HTML lines 296–437):

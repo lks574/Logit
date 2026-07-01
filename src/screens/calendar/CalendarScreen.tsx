@@ -1,15 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Screen } from '../components/primitives';
-import { ActivityCard, PlanCard } from '../components/cards';
-import { Tag } from '../components/badges';
-import { Icon } from '../components/Glyph';
-import { useTheme } from '../theme/ThemeContext';
-import { withAlpha } from '../theme/tokens';
-import { useStore } from '../store/StoreContext';
-import { recordsOn, plansOn } from '../store/selectors';
-import { activities, colorsFor } from '../data/activities';
+import { Screen } from '../../components/primitives';
+import { ActivityCard, PlanCard } from '../../components/cards';
+import { Tag } from '../../components/badges';
+import { Icon } from '../../components/Glyph';
+import { useTheme } from '../../theme/ThemeContext';
+import { withAlpha } from '../../theme/tokens';
+import { useStore } from '../../store/StoreContext';
+import { recordsOn, plansOn } from '../../store/selectors';
+import { activities, colorsFor } from '../../data/activities';
 
 // 5.1 월간 캘린더 — 했던 것(채운 점) · 약속한 것(빈 링). Logit.dc.html 1196–1331.
 // June 2026: 1일 = 월요일, 30일. Grid starts Sunday(일). Markers/agenda are now

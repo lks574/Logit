@@ -1,9 +1,9 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Screen } from '../components/primitives';
-import { Icon, Glyph, Path, Circle, Rect } from '../components/Glyph';
-import { useTheme } from '../theme/ThemeContext';
+import { Screen } from '../../components/primitives';
+import { Icon, Glyph, Path, Circle, Rect } from '../../components/Glyph';
+import { useTheme } from '../../theme/ThemeContext';
 
 // FAB(추가) → 무엇을 추가할지 선택. 기록(한 일) / 약속(예정). 전역 진입점.
 export default function AddChooserScreen() {

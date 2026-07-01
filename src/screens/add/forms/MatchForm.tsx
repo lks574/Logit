@@ -1,16 +1,16 @@
 import { useNavigation } from '@react-navigation/native';
-import { choosePhoto } from '../../lib/photos';
+import { choosePhoto } from '../../../lib/photos';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
-import { Screen } from '../../components/primitives';
-import { FormHeader } from '../../components/FormHeader';
-import { DisclosureButton } from '../../components/Field';
-import { Segmented, Chip } from '../../components/controls';
-import { RatingInput } from '../../components/Rating';
-import { Glyph, Path, Rect, Icon } from '../../components/Glyph';
-import { SPORTS, ACTIVITY_TO_SPORT, sportFor } from '../../data/sports';
-import { useStore } from '../../store/StoreContext';
-import { useTheme } from '../../theme/ThemeContext';
+import { Screen } from '../../../components/primitives';
+import { FormHeader } from '../../../components/FormHeader';
+import { DisclosureButton } from '../../../components/Field';
+import { Segmented, Chip } from '../../../components/controls';
+import { RatingInput } from '../../../components/Rating';
+import { Glyph, Path, Rect, Icon } from '../../../components/Glyph';
+import { SPORTS, ACTIVITY_TO_SPORT, sportFor } from '../../../data/sports';
+import { useStore } from '../../../store/StoreContext';
+import { useTheme } from '../../../theme/ThemeContext';
 
 // 3.3 MatchForm — 대전·경기형 (team color). Sport-agnostic: the 종목 chip drives
 // the swappable "종목별 핵심 기록" fields (schema in src/data/sports.ts), the score
