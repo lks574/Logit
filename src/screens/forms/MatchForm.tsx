@@ -7,46 +7,14 @@ import { FormHeader } from '../../components/FormHeader';
 import { DisclosureButton } from '../../components/Field';
 import { Segmented, Chip } from '../../components/controls';
 import { RatingInput } from '../../components/Rating';
-import { Glyph, Path, Rect, Icon, IconName } from '../../components/Glyph';
+import { Glyph, Path, Rect, Icon } from '../../components/Glyph';
+import { SPORTS, ACTIVITY_TO_SPORT, sportFor } from '../../data/sports';
 import { useStore } from '../../store/StoreContext';
 import { useTheme } from '../../theme/ThemeContext';
 
 // 3.3 MatchForm — 대전·경기형 (team color). Sport-agnostic: the 종목 chip drives
-// the swappable "종목별 핵심 기록" slots, the score card, and the 결과 segment.
-// 개인전(승/패) vs 팀전(승/무/패). Copy: Logit.dc.html lines 557–617.
-
-type Slot = { label: string; value: string };
-
-type Sport = {
-  key: string;
-  label: string;
-  icon: IconName;
-  team?: boolean; // team sport → 승/무/패, 우리/상대 라벨
-  meLabel: string;
-  oppLabel: string;
-  meName: string;
-  oppName: string;
-  score: [string, string];
-  gameScore?: string; // 라켓 종목만; 팀 종목은 스코어 카드로 충분해 생략
-  slots: [Slot, Slot]; // 종목별 핵심 기록 — swappable template slots
-};
-
-// Sport registry — each 종목 carries its own score card, game score, and
-// key-record slots. Selecting a chip (or entering via an activity) swaps them all.
-// No hardcoded soccer↔baseball toggle.
-const SPORTS: Sport[] = [
-  { key: 'badminton', label: '배드민턴', icon: 'badminton', meLabel: '나', oppLabel: '상대', meName: '민준', oppName: '지현', score: ['2', '1'], gameScore: '21-18 · 19-21 · 21-15', slots: [{ label: '최장 랠리', value: '32' }, { label: '에이스', value: '5' }] },
-  { key: 'tennis', label: '테니스', icon: 'tennis', meLabel: '나', oppLabel: '상대', meName: '민준', oppName: '지현', score: ['2', '0'], gameScore: '6-4 · 6-3', slots: [{ label: '에이스', value: '7' }, { label: '더블폴트', value: '3' }] },
-  { key: 'pingpong', label: '탁구', icon: 'pingpong', meLabel: '나', oppLabel: '상대', meName: '민준', oppName: '지현', score: ['3', '1'], gameScore: '11-8 · 9-11 · 11-6 · 11-7', slots: [{ label: '최장 랠리', value: '18' }, { label: '서브 득점', value: '9' }] },
-  { key: 'soccer', label: '축구', icon: 'soccer', team: true, meLabel: '우리', oppLabel: '상대', meName: 'FC 번개', oppName: '조기축구회', score: ['3', '1'], slots: [{ label: '골', value: '2' }, { label: '어시스트', value: '1' }] },
-  { key: 'baseball', label: '야구', icon: 'baseball', team: true, meLabel: '우리', oppLabel: '상대', meName: '블루윙즈', oppName: '레드삭스', score: ['5', '3'], slots: [{ label: '안타', value: '3' }, { label: '타점', value: '2' }] },
-  { key: 'jiujitsu', label: '주짓수', icon: 'jiujitsu', meLabel: '나', oppLabel: '상대', meName: '민준', oppName: '상대 선수', score: ['1', '0'], gameScore: '어드밴티지 2-1', slots: [{ label: '서브미션', value: '1' }, { label: '스윕', value: '3' }] },
-];
-
-// 활동 이름 → 종목 key (entry sport). 미매칭 시 첫 종목.
-const ACTIVITY_TO_SPORT: Record<string, string> = {
-  축구: 'soccer', 야구: 'baseball', 배드민턴: 'badminton', 테니스: 'tennis', 탁구: 'pingpong', 주짓수: 'jiujitsu',
-};
+// the swappable "종목별 핵심 기록" fields (schema in src/data/sports.ts), the score
+// card, and the 결과 segment. 개인전(승/패) vs 팀전(승/무/패). Copy: Logit.dc.html 557–617.
 
 export default function MatchForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
@@ -63,23 +31,27 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
   const [rating, setRating] = React.useState(editing ? record?.rating ?? 0 : 0);
   const [memo, setMemo] = React.useState(record?.memo ?? '');
-  const sport = SPORTS.find((s) => s.key === sportKey) ?? SPORTS[0];
+  const sport = sportFor(sportKey);
 
   // 스코어 카드 값 — CREATE는 공백(placeholder), EDIT는 record.fields.스코어("a:b") 파싱.
   const editScore = editing ? (record?.fields?.스코어 ?? '').split(':') : [];
   const [meScore, setMeScore] = React.useState(editScore[0]?.trim() ?? '');
   const [oppScore, setOppScore] = React.useState(editScore[1]?.trim() ?? '');
-  // 이름 — CREATE는 공백(placeholder), EDIT는 저장된 값(record.fields) 있으면 사용, 없으면 종목 기본값.
-  const [meName, setMeName] = React.useState(editing ? record?.fields?.나 ?? sport.meName : '');
-  const [oppName, setOppName] = React.useState(editing ? record?.fields?.상대 ?? sport.oppName : '');
-  // 종목별 핵심 기록 슬롯 값 — CREATE는 공백, EDIT는 슬롯 라벨과 일치하는 record.fields 값.
-  const [slotValues, setSlotValues] = React.useState<Record<string, string>>(() =>
+  // 이름 — CREATE는 공백(placeholder), EDIT는 저장된 값(record.fields) 사용.
+  const [meName, setMeName] = React.useState(record?.fields?.나 ?? '');
+  const [oppName, setOppName] = React.useState(record?.fields?.상대 ?? '');
+  // 종목별 핵심 기록 필드 값 — CREATE는 공백, EDIT는 필드 key와 일치하는 record.fields 값.
+  const [fieldValues, setFieldValues] = React.useState<Record<string, string>>(() =>
     editing
-      ? Object.fromEntries(sport.slots.map((s) => [s.label, record?.fields?.[s.label] ?? '']))
+      ? Object.fromEntries(sport.fields.map((f) => [f.key, record?.fields?.[f.key] ?? '']))
       : {},
   );
-  const setSlotValue = (label: string, value: string) =>
-    setSlotValues((prev) => ({ ...prev, [label]: value }));
+  const setFieldValue = (key: string, value: string) =>
+    setFieldValues((prev) => ({ ...prev, [key]: value }));
+
+  // 렌더 그룹: text 필드(게임스코어·포지션)는 전체 폭 행, number 필드는 2열 그리드 카드.
+  const textFields = sport.fields.filter((f) => f.type === 'text');
+  const numberFields = sport.fields.filter((f) => f.type === 'number');
 
   const resultOptions = sport.team
     ? [
@@ -119,8 +91,8 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
   };
 
   const handleSave = () => {
-    const hasSlot = sport.slots.some((s) => (slotValues[s.label] ?? '').trim() !== '');
-    if (meScore.trim() === '' && oppScore.trim() === '' && oppName.trim() === '' && !hasSlot) {
+    const hasField = sport.fields.some((f) => (fieldValues[f.key] ?? '').trim() !== '');
+    if (meScore.trim() === '' && oppScore.trim() === '' && oppName.trim() === '' && !hasField) {
       Alert.alert('필수 항목', '스코어나 상대, 기록을 입력해 주세요.');
       return;
     }
@@ -136,9 +108,9 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
     if (resultLabel) fields.결과 = resultLabel;
     if (meNameOut) fields.나 = meNameOut;
     if (oppNameOut) fields.상대 = oppNameOut;
-    for (const slot of sport.slots) {
-      const v = (slotValues[slot.label] ?? '').trim();
-      if (v) fields[slot.label] = v;
+    for (const f of sport.fields) {
+      const v = (fieldValues[f.key] ?? '').trim();
+      if (v) fields[f.key] = v;
     }
 
     // meta: 비어있지 않은 부분만 결합.
@@ -254,37 +226,49 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
         {/* 결과 Segmented — 개인전 승/패, 팀전 승/무/패 */}
         <Segmented options={resultOptions} value={result} onChange={setResult} color={c.success} />
 
-        {/* 게임 스코어 field — 라켓 종목만 (팀 종목은 스코어 카드로 충분) */}
-        {sport.gameScore ? (
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View style={{ flex: 1, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 13 }}>
-              <Text style={{ fontSize: 12, color: c.text2 }}>게임 스코어</Text>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: c.text, marginTop: 3 }}>{sport.gameScore}</Text>
-            </View>
-          </View>
-        ) : null}
-
-        {/* 종목별 핵심 기록 — swappable template slots driven by the selected 종목 */}
+        {/* 종목별 핵심 기록 — 선택된 종목의 필드 스키마(src/data/sports.ts)로 렌더 */}
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 7 }}>
             <Text style={{ fontSize: 11, fontWeight: '700', color: c.team, letterSpacing: 0.4 }}>종목별 핵심 기록</Text>
-            <Text style={{ fontSize: 10, color: c.text3 }}>· 템플릿 슬롯</Text>
+            <Text style={{ fontSize: 10, color: c.text3 }}>· 종목별 템플릿</Text>
           </View>
-          <View style={{ flexDirection: 'row', gap: 10 }}>
-            {sport.slots.map((slot, i) => (
-              <View key={i} style={{ flex: 1, backgroundColor: c.teamSoft, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14 }}>
-                <Text style={{ fontSize: 12, color: c.text2 }}>{slot.label}</Text>
-                <TextInput
-                  value={slotValues[slot.label] ?? ''}
-                  onChangeText={(t) => setSlotValue(slot.label, t)}
-                  placeholder="0"
-                  placeholderTextColor={c.text3}
-                  keyboardType="number-pad"
-                  style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 2, padding: 0 }}
-                />
-              </View>
-            ))}
-          </View>
+
+          {/* text 필드(게임스코어·포지션) — 전체 폭 입력행 */}
+          {textFields.length > 0 ? (
+            <View style={{ gap: 8, marginBottom: numberFields.length > 0 ? 10 : 0 }}>
+              {textFields.map((f) => (
+                <View key={f.key} style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 13 }}>
+                  <Text style={{ fontSize: 12, color: c.text2 }}>{f.label}</Text>
+                  <TextInput
+                    value={fieldValues[f.key] ?? ''}
+                    onChangeText={(t) => setFieldValue(f.key, t)}
+                    placeholder={f.placeholder}
+                    placeholderTextColor={c.text3}
+                    style={{ fontSize: 15, fontWeight: '600', color: c.text, marginTop: 3, padding: 0 }}
+                  />
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          {/* number 필드 — 2열 그리드 카드 */}
+          {numberFields.length > 0 ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+              {numberFields.map((f) => (
+                <View key={f.key} style={{ flexGrow: 1, flexBasis: '45%', backgroundColor: c.teamSoft, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14 }}>
+                  <Text style={{ fontSize: 12, color: c.text2 }}>{f.label}</Text>
+                  <TextInput
+                    value={fieldValues[f.key] ?? ''}
+                    onChangeText={(t) => setFieldValue(f.key, t)}
+                    placeholder={f.placeholder ?? '0'}
+                    placeholderTextColor={c.text3}
+                    keyboardType="number-pad"
+                    style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 2, padding: 0 }}
+                  />
+                </View>
+              ))}
+            </View>
+          ) : null}
         </View>
 
         {/* 공통 세부 입력 disclosure (collapsed, badge 선택) */}
@@ -367,7 +351,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
             </Glyph>
           </View>
           <Text style={{ flex: 1, fontSize: 11, lineHeight: 16, color: c.text3 }}>
-            팀/개인 구분 없이 하나의 MatchForm. 축구는 우리팀·포지션, 배드민턴은 게임 스코어 — 슬롯만 교체.
+            팀/개인 구분 없이 하나의 MatchForm. 축구는 골·포지션, 배드민턴은 게임 스코어 — 종목 필드만 교체.
           </Text>
         </View>
       </View>

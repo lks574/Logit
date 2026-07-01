@@ -1,6 +1,6 @@
 # MatchForm 스포츠별 스키마 — 설계
 
-> 상태: 승인됨 (2026-07-02) · 관련: `src/screens/forms/MatchForm.tsx`, `src/data/activities.ts`, `src/store/types.ts`
+> 상태: **구현 완료** (2026-07-02) · 웹 프리뷰 검증 통과(종목 스왑·게임스코어 저장·생성/상세/편집 프리필). 관련: `src/screens/forms/MatchForm.tsx`, `src/data/sports.ts`, `src/store/types.ts`
 > PROGRESS.md "선택 데이터 정합(잔여)"의 다음 후보.
 
 ## 목적
