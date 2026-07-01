@@ -103,7 +103,7 @@ export default function HomeScreen() {
           최근 기록
         </Text>
 
-        {records.map((r) => {
+        {records.slice(0, 6).map((r) => {
           const rc = colorsFor(r.template, c);
           const iconName = activities[r.activity]?.icon;
           const IconComp = iconName ? Icon[iconName] : Icon.yoga;

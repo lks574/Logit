@@ -76,6 +76,42 @@ export const seed: StoreState = {
       fields: { 거리: '6.0km', 시간: '31:05', 페이스: '5′11″', 고도: '12m', 칼로리: '360kcal' },
       sync: 'synced',
     },
+    // 과거 유산소 기록 — 월별 차트/평균 페이스/최장 거리가 실데이터로 채워지도록.
+    {
+      id: 'r-running-0520', activity: '런닝', template: 'endurance', dateISO: '2026-05-20', timeLabel: '5월 20일',
+      meta: '올림픽공원 · 12.4km · 1:01:35', rating: 5, photos: [], memo: '최장 거리 경신',
+      fields: { 거리: '12.4km', 시간: '61:35', 페이스: '4′58″', 고도: '95m', 칼로리: '820kcal' }, sync: 'synced',
+    },
+    {
+      id: 'r-running-0508', activity: '런닝', template: 'endurance', dateISO: '2026-05-08', timeLabel: '5월 8일',
+      meta: '한강공원 · 11.0km · 58′40″', rating: 4, photos: [], memo: '',
+      fields: { 거리: '11.0km', 시간: '58:40', 페이스: '5′20″', 고도: '30m', 칼로리: '700kcal' }, sync: 'synced',
+    },
+    {
+      id: 'r-cycling-0412', activity: '자전거', template: 'endurance', dateISO: '2026-04-12', timeLabel: '4월 12일',
+      meta: '남산 · 9.0km · 40′30″', rating: 4, photos: [], memo: '',
+      fields: { 거리: '9.0km', 시간: '40:30', 페이스: '5′05″', 고도: '210m', 칼로리: '480kcal' }, sync: 'synced',
+    },
+    {
+      id: 'r-running-0322', activity: '런닝', template: 'endurance', dateISO: '2026-03-22', timeLabel: '3월 22일',
+      meta: '탄천 · 15.0km · 1:22:30', rating: 5, photos: [], memo: '하프 준비',
+      fields: { 거리: '15.0km', 시간: '82:30', 페이스: '5′30″', 고도: '40m', 칼로리: '990kcal' }, sync: 'synced',
+    },
+    {
+      id: 'r-running-0310', activity: '런닝', template: 'endurance', dateISO: '2026-03-10', timeLabel: '3월 10일',
+      meta: '한강공원 · 10.0km · 56′40″', rating: 4, photos: [], memo: '',
+      fields: { 거리: '10.0km', 시간: '56:40', 페이스: '5′40″', 고도: '20m', 칼로리: '640kcal' }, sync: 'synced',
+    },
+    {
+      id: 'r-running-0215', activity: '런닝', template: 'endurance', dateISO: '2026-02-15', timeLabel: '2월 15일',
+      meta: '올림픽공원 · 8.0km · 46′00″', rating: 3, photos: [], memo: '',
+      fields: { 거리: '8.0km', 시간: '46:00', 페이스: '5′45″', 고도: '25m', 칼로리: '520kcal' }, sync: 'synced',
+    },
+    {
+      id: 'r-play-0503', activity: '연극', template: 'spectate', dateISO: '2026-05-03', timeLabel: '5월 3일',
+      meta: '〈고도를 기다리며〉 · 명동예술극장', rating: 4, photos: [], memo: '',
+      fields: { 작품: '고도를 기다리며', 공연장: '명동예술극장', 회차: '1차' }, sync: 'synced',
+    },
   ],
   plans: [
     { id: 'p-health-0630', activity: '헬스', template: 'setrep', dateISO: '2026-06-30', timeLabel: '오후 8:00', place: '홈짐', reminder: true },
