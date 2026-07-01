@@ -9,16 +9,11 @@ import { radius } from '../theme/tokens';
 
 // 4.8 설정 — profile card, grouped surface cards with rows + dividers.
 export default function SettingsScreen() {
-  const { c, scheme, toggle } = useTheme();
+  const { c, mode, setMode } = useTheme();
   const [lang, setLang] = React.useState<'ko' | 'en'>('ko');
 
-  // Theme selector: Light / Dark / 시스템. Wired to useTheme().
-  // scheme === 'dark' -> 'dark', otherwise 'light' (시스템 is local-only UX).
-  const themeMode: 'light' | 'dark' | 'system' = scheme === 'dark' ? 'dark' : 'light';
-  const onThemeChange = (v: 'light' | 'dark' | 'system') => {
-    const wantDark = v === 'dark';
-    if (wantDark !== (scheme === 'dark')) toggle();
-  };
+  // Theme selector: Light / Dark / 시스템 — fully wired via ThemeContext mode.
+  // 시스템 defers to the OS color scheme; light/dark override it.
 
   const Card = ({ children }: { children: React.ReactNode }) => (
     <View
@@ -160,8 +155,8 @@ export default function SettingsScreen() {
                     { key: 'dark', label: 'Dark' },
                     { key: 'system', label: '시스템' },
                   ]}
-                  value={themeMode}
-                  onChange={onThemeChange}
+                  value={mode}
+                  onChange={setMode}
                 />
               }
             />

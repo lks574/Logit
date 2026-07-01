@@ -3,22 +3,31 @@ import { useColorScheme } from 'react-native';
 import { dark, light, Palette } from './tokens';
 
 type Scheme = 'light' | 'dark';
-type ThemeValue = { c: Palette; scheme: Scheme; toggle: () => void };
+export type ThemeMode = 'light' | 'dark' | 'system';
+type ThemeValue = {
+  c: Palette;
+  scheme: Scheme;
+  mode: ThemeMode;
+  setMode: (m: ThemeMode) => void;
+  toggle: () => void;
+};
 
 const ThemeCtx = createContext<ThemeValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const system = useColorScheme();
-  const [override, setOverride] = useState<Scheme | null>(null);
-  const scheme: Scheme = override ?? (system === 'dark' ? 'dark' : 'light');
+  const [mode, setMode] = useState<ThemeMode>('system');
+  const scheme: Scheme = mode === 'system' ? (system === 'dark' ? 'dark' : 'light') : mode;
 
   const value = useMemo<ThemeValue>(
     () => ({
       c: scheme === 'dark' ? dark : light,
       scheme,
-      toggle: () => setOverride(scheme === 'dark' ? 'light' : 'dark'),
+      mode,
+      setMode,
+      toggle: () => setMode(scheme === 'dark' ? 'light' : 'dark'),
     }),
-    [scheme]
+    [scheme, mode]
   );
 
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;
