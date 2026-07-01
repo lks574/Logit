@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { choosePhoto } from '../../lib/photos';
 import React from 'react';
-import { Image, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../components/primitives';
 import { FormHeader } from '../../components/FormHeader';
 import { DisclosureButton } from '../../components/Field';
@@ -63,6 +63,11 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
   };
 
   const handleSave = () => {
+    const hasSet = rows.some((r) => r.reps.trim() !== '' || r.weight.trim() !== '');
+    if (part.trim() === '' && 총볼륨.trim() === '' && !hasSet) {
+      Alert.alert('필수 항목', '운동 부위나 세트 정보를 입력해 주세요.');
+      return;
+    }
     const fields: Record<string, string> = {};
     if (part) fields.부위 = part;
     if (총볼륨) fields.총볼륨 = 총볼륨;

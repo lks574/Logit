@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { choosePhoto } from '../../lib/photos';
 import React from 'react';
-import { Image, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../components/primitives';
 import { FormHeader } from '../../components/FormHeader';
 import { DisclosureButton } from '../../components/Field';
@@ -119,6 +119,11 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
   };
 
   const handleSave = () => {
+    const hasSlot = sport.slots.some((s) => (slotValues[s.label] ?? '').trim() !== '');
+    if (meScore.trim() === '' && oppScore.trim() === '' && oppName.trim() === '' && !hasSlot) {
+      Alert.alert('필수 항목', '스코어나 상대, 기록을 입력해 주세요.');
+      return;
+    }
     const resultLabel = resultOptions.find((o) => o.key === result)?.label ?? '승';
     const hasScore = meScore.trim() !== '' || oppScore.trim() !== '';
     const score = hasScore ? `${meScore.trim() || '0'}:${oppScore.trim() || '0'}` : '';

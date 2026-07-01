@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { choosePhoto } from '../../lib/photos';
 import React from 'react';
-import { Image, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../components/primitives';
 import { FormHeader } from '../../components/FormHeader';
 import { DisclosureButton } from '../../components/Field';
@@ -56,6 +56,10 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
   };
 
   const handleSave = () => {
+    if (title.trim() === '') {
+      Alert.alert('필수 항목', '작품명을 입력해 주세요.');
+      return;
+    }
     const fields: Record<string, string> = {
       ...(title ? { 작품: title } : {}),
       ...(venue ? { 공연장: venue } : {}),

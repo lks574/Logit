@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { choosePhoto } from '../../lib/photos';
 import React from 'react';
-import { Image, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../components/primitives';
 import { FormHeader } from '../../components/FormHeader';
 import { DisclosureButton, Field } from '../../components/Field';
@@ -59,6 +59,10 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
   };
 
   const handleSave = () => {
+    if (duration.trim() === '' && memo.trim() === '') {
+      Alert.alert('필수 항목', '시간이나 메모를 입력해 주세요.');
+      return;
+    }
     const durTrim = duration.trim();
     const 시간 = durTrim ? `${durTrim}분` : '';
     const 강도 = INTENSITY_LABEL[intensity];

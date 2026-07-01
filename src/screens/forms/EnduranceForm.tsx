@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import { choosePhoto } from '../../lib/photos';
 import React from 'react';
-import { Image, Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { CompanionChip, RatingInput } from '../../components/Rating';
 import { DisclosureButton } from '../../components/Field';
 import { FormHeader } from '../../components/FormHeader';
@@ -50,6 +50,10 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
   };
 
   const handleSave = () => {
+    if (거리.trim() === '' && 시간.trim() === '') {
+      Alert.alert('필수 항목', '거리 또는 시간을 입력해 주세요.');
+      return;
+    }
     // Build fields with only non-empty values so blank inputs are omitted.
     const fieldEntries: [string, string][] = [
       ['거리', 거리],
