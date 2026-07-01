@@ -31,12 +31,12 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
-  // PREFILL controlled state from the record when editing.
-  const [duration, setDuration] = React.useState(record?.fields?.['시간']?.replace(/[^0-9]/g, '') || '45');
+  // PREFILL controlled state from the record when editing; start BLANK on create.
+  const [duration, setDuration] = React.useState(record?.fields?.['시간']?.replace(/[^0-9]/g, '') ?? '');
   const [intensity, setIntensity] = React.useState<Intensity>(
     (record?.fields?.['강도'] && LABEL_INTENSITY[record.fields['강도']]) || 'mid',
   );
-  const [rating, setRating] = React.useState(record?.rating ?? 4);
+  const [rating, setRating] = React.useState(record?.rating ?? 0);
   const [memo, setMemo] = React.useState(record?.memo ?? '');
   const [place, setPlace] = React.useState(record?.fields?.['장소'] ?? '');
   const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
@@ -59,19 +59,25 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
   };
 
   const handleSave = () => {
-    const 시간 = `${duration || '0'}분`;
+    const durTrim = duration.trim();
+    const 시간 = durTrim ? `${durTrim}분` : '';
     const 강도 = INTENSITY_LABEL[intensity];
+    const meta = [시간, `강도 ${강도}`].filter(Boolean).join(' · ');
     const payload = {
       activity,
       template: 'free' as const,
       dateISO: editing ? record!.dateISO : today,
       timeLabel: editing ? record!.timeLabel : '방금',
-      meta: `${시간} · 강도 ${강도}`,
+      meta,
       rating,
       memo,
       companions,
       photos,
-      fields: { 시간, 강도, ...(place ? { 장소: place } : {}) },
+      fields: {
+        ...(시간 ? { 시간 } : {}),
+        강도,
+        ...(place ? { 장소: place } : {}),
+      },
     };
     if (editing) {
       updateRecord(recordId!, payload);
@@ -140,9 +146,9 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
               value={duration}
               onChangeText={(t) => setDuration(t.replace(/[^0-9]/g, ''))}
               keyboardType="number-pad"
-              placeholder="0"
+              placeholder="예: 45"
               placeholderTextColor={c.text3}
-              style={{ fontSize: 18, fontWeight: '700', color: c.text, padding: 0, minWidth: 28 }}
+              style={{ fontSize: 18, fontWeight: '700', color: c.text, padding: 0, minWidth: 56 }}
             />
             <Text style={{ fontSize: 13, color: c.text2 }}>분</Text>
           </View>
@@ -182,7 +188,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
         {open ? (
           <>
             {/* 장소 */}
-            <Field label="장소" value={place} onChangeText={setPlace} placeholder="어디에서 했나요?" />
+            <Field label="장소" value={place} onChangeText={setPlace} placeholder="장소" />
 
             {/* 동행 */}
             <View>
@@ -254,7 +260,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
         ) : null}
 
         {/* 메모 */}
-        <Field label="메모" value={memo} onChangeText={setMemo} placeholder="자유롭게 기록해보세요" />
+        <Field label="메모" value={memo} onChangeText={setMemo} placeholder="메모" />
 
         {/* offline footer */}
         <View

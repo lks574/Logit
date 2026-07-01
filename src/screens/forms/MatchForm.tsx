@@ -61,9 +61,25 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
   );
   const [open, setOpen] = React.useState(editing); // 세부 입력 disclosure (open when editing)
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
-  const [rating, setRating] = React.useState(record?.rating ?? 4);
+  const [rating, setRating] = React.useState(editing ? record?.rating ?? 0 : 0);
   const [memo, setMemo] = React.useState(record?.memo ?? '');
   const sport = SPORTS.find((s) => s.key === sportKey) ?? SPORTS[0];
+
+  // 스코어 카드 값 — CREATE는 공백(placeholder), EDIT는 record.fields.스코어("a:b") 파싱.
+  const editScore = editing ? (record?.fields?.스코어 ?? '').split(':') : [];
+  const [meScore, setMeScore] = React.useState(editScore[0]?.trim() ?? '');
+  const [oppScore, setOppScore] = React.useState(editScore[1]?.trim() ?? '');
+  // 이름 — CREATE는 공백(placeholder), EDIT는 저장된 값(record.fields) 있으면 사용, 없으면 종목 기본값.
+  const [meName, setMeName] = React.useState(editing ? record?.fields?.나 ?? sport.meName : '');
+  const [oppName, setOppName] = React.useState(editing ? record?.fields?.상대 ?? sport.oppName : '');
+  // 종목별 핵심 기록 슬롯 값 — CREATE는 공백, EDIT는 슬롯 라벨과 일치하는 record.fields 값.
+  const [slotValues, setSlotValues] = React.useState<Record<string, string>>(() =>
+    editing
+      ? Object.fromEntries(sport.slots.map((s) => [s.label, record?.fields?.[s.label] ?? '']))
+      : {},
+  );
+  const setSlotValue = (label: string, value: string) =>
+    setSlotValues((prev) => ({ ...prev, [label]: value }));
 
   const resultOptions = sport.team
     ? [
@@ -104,22 +120,35 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
 
   const handleSave = () => {
     const resultLabel = resultOptions.find((o) => o.key === result)?.label ?? '승';
-    const score = `${sport.score[0]}:${sport.score[1]}`;
+    const hasScore = meScore.trim() !== '' || oppScore.trim() !== '';
+    const score = hasScore ? `${meScore.trim() || '0'}:${oppScore.trim() || '0'}` : '';
+    const meNameOut = meName.trim();
+    const oppNameOut = oppName.trim();
+
+    // 빈 값은 fields에서 제외.
+    const fields: Record<string, string> = {};
+    if (score) fields.스코어 = score;
+    if (resultLabel) fields.결과 = resultLabel;
+    if (meNameOut) fields.나 = meNameOut;
+    if (oppNameOut) fields.상대 = oppNameOut;
+    for (const slot of sport.slots) {
+      const v = (slotValues[slot.label] ?? '').trim();
+      if (v) fields[slot.label] = v;
+    }
+
+    // meta: 비어있지 않은 부분만 결합.
+    const meta = [oppNameOut, score, resultLabel].filter(Boolean).join(' · ');
+
     const payload = {
       activity,
       template: 'match' as const,
       dateISO: editing ? record!.dateISO : today,
       timeLabel: editing ? record!.timeLabel : '방금',
-      meta: `${sport.oppName} · ${score} · ${resultLabel}`,
+      meta,
       rating,
       memo,
       photos,
-      fields: {
-        스코어: score,
-        결과: resultLabel,
-        ...Object.fromEntries(sport.slots.map((s) => [s.label, s.value])),
-        ...(sport.gameScore ? { 게임스코어: sport.gameScore } : {}),
-      },
+      fields,
     };
     if (editing) {
       updateRecord(recordId!, payload);
@@ -178,16 +207,42 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
         >
           <View style={{ flex: 1, alignItems: 'center' }}>
             <Text style={{ fontSize: 11, color: c.text3, marginBottom: 5 }}>{sport.meLabel}</Text>
-            <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '700', color: c.team }}>{sport.meName}</Text>
+            <TextInput
+              value={meName}
+              onChangeText={setMeName}
+              placeholder={sport.meLabel}
+              placeholderTextColor={c.text3}
+              style={{ fontSize: 14, fontWeight: '700', color: c.team, textAlign: 'center', padding: 0, alignSelf: 'stretch' }}
+            />
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={{ fontSize: 26, fontWeight: '800', color: c.text }}>{sport.score[0]}</Text>
+            <TextInput
+              value={meScore}
+              onChangeText={setMeScore}
+              placeholder="0"
+              placeholderTextColor={c.text3}
+              keyboardType="number-pad"
+              style={{ fontSize: 26, fontWeight: '800', color: c.text, textAlign: 'center', padding: 0, minWidth: 28 }}
+            />
             <Text style={{ fontSize: 16, color: c.text3 }}>:</Text>
-            <Text style={{ fontSize: 26, fontWeight: '800', color: c.text3 }}>{sport.score[1]}</Text>
+            <TextInput
+              value={oppScore}
+              onChangeText={setOppScore}
+              placeholder="0"
+              placeholderTextColor={c.text3}
+              keyboardType="number-pad"
+              style={{ fontSize: 26, fontWeight: '800', color: c.text3, textAlign: 'center', padding: 0, minWidth: 28 }}
+            />
           </View>
           <View style={{ flex: 1, alignItems: 'center' }}>
             <Text style={{ fontSize: 11, color: c.text3, marginBottom: 5 }}>{sport.oppLabel}</Text>
-            <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '700', color: c.text }}>{sport.oppName}</Text>
+            <TextInput
+              value={oppName}
+              onChangeText={setOppName}
+              placeholder={sport.oppLabel}
+              placeholderTextColor={c.text3}
+              style={{ fontSize: 14, fontWeight: '700', color: c.text, textAlign: 'center', padding: 0, alignSelf: 'stretch' }}
+            />
           </View>
         </View>
 
@@ -214,7 +269,14 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
             {sport.slots.map((slot, i) => (
               <View key={i} style={{ flex: 1, backgroundColor: c.teamSoft, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14 }}>
                 <Text style={{ fontSize: 12, color: c.text2 }}>{slot.label}</Text>
-                <Text style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 2 }}>{slot.value}</Text>
+                <TextInput
+                  value={slotValues[slot.label] ?? ''}
+                  onChangeText={(t) => setSlotValue(slot.label, t)}
+                  placeholder="0"
+                  placeholderTextColor={c.text3}
+                  keyboardType="number-pad"
+                  style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 2, padding: 0 }}
+                />
               </View>
             ))}
           </View>

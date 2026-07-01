@@ -22,19 +22,19 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
   const record = recordId ? getRecord(recordId) : undefined;
 
   const [open, setOpen] = React.useState(editing); // 세부 입력 disclosure (open when editing)
-  const [rating, setRating] = React.useState(record?.rating ?? 4);
+  const [rating, setRating] = React.useState(record?.rating ?? 0);
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
-  const [memo, setMemo] = React.useState(record?.memo ?? '노을이 좋았다. 마지막 1km 페이스 올림.');
-  const [place, setPlace] = React.useState(record?.fields?.장소 ?? '한강공원');
-  const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? ['민지']);
+  const [memo, setMemo] = React.useState(record?.memo ?? '');
+  const [place, setPlace] = React.useState(record?.fields?.장소 ?? '');
+  const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
 
-  // Endurance core fields (prefilled from record.fields when editing)
-  const [거리, set거리] = React.useState(record?.fields?.거리 ?? '5.2km');
-  const [시간, set시간] = React.useState(record?.fields?.시간 ?? '27:12');
-  const [페이스, set페이스] = React.useState(record?.fields?.페이스 ?? '5′14″/km');
-  const [고도, set고도] = React.useState(record?.fields?.고도 ?? '42 m');
-  const [칼로리, set칼로리] = React.useState(record?.fields?.칼로리 ?? '328 kcal');
-  const [평균심박, set평균심박] = React.useState(record?.fields?.평균심박 ?? '152 bpm');
+  // Endurance core fields (prefilled from record.fields when editing, blank on create)
+  const [거리, set거리] = React.useState(record?.fields?.거리 ?? '');
+  const [시간, set시간] = React.useState(record?.fields?.시간 ?? '');
+  const [페이스, set페이스] = React.useState(record?.fields?.페이스 ?? '');
+  const [고도, set고도] = React.useState(record?.fields?.고도 ?? '');
+  const [칼로리, set칼로리] = React.useState(record?.fields?.칼로리 ?? '');
+  const [평균심박, set평균심박] = React.useState(record?.fields?.평균심박 ?? '');
 
   const template = activities[activity]?.template ?? 'endurance';
   const { color, soft } = colorsFor(template, c);
@@ -50,24 +50,33 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
   };
 
   const handleSave = () => {
+    // Build fields with only non-empty values so blank inputs are omitted.
+    const fieldEntries: [string, string][] = [
+      ['거리', 거리],
+      ['시간', 시간],
+      ['페이스', 페이스],
+      ['고도', 고도],
+      ['칼로리', 칼로리],
+      ['평균심박', 평균심박],
+      ['장소', place],
+    ];
+    const fields = Object.fromEntries(fieldEntries.filter(([, v]) => v !== ''));
+
+    // 거리 stored verbatim (with its unit, e.g. "5.2km") like 고도/칼로리 — avoids
+    // double-unit on edit round-trip. Join only non-empty parts.
+    const meta = [place, 거리, 시간].filter(Boolean).join(' · ');
+
     const payload = {
       activity,
       template: 'endurance' as const,
       dateISO: editing ? record!.dateISO : today,
       timeLabel: editing ? record!.timeLabel : '방금',
-      meta: `${place || '한강공원'} · ${거리} · ${시간}`,
+      meta,
       rating,
       memo,
       companions,
       photos,
-      fields: {
-        거리,
-        시간,
-        페이스,
-        고도,
-        칼로리,
-        평균심박,
-      },
+      fields,
     };
     if (editing) {
       updateRecord(recordId!, payload);
@@ -182,7 +191,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
               <TextInput
                 value={거리}
                 onChangeText={set거리}
-                placeholder="5.2km"
+                placeholder="예: 5.2km"
                 placeholderTextColor={c.text3}
                 style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 4, padding: 0 }}
               />
@@ -202,7 +211,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
               <TextInput
                 value={시간}
                 onChangeText={set시간}
-                placeholder="27:12"
+                placeholder="예: 27:12"
                 placeholderTextColor={c.text3}
                 style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 4, padding: 0 }}
               />
@@ -238,7 +247,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                 <TextInput
                   value={페이스}
                   onChangeText={set페이스}
-                  placeholder="5′14″/km"
+                  placeholder="자동"
                   placeholderTextColor={c.text3}
                   style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 80 }}
                 />
@@ -253,7 +262,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
               <TextInput
                 value={고도}
                 onChangeText={set고도}
-                placeholder="42 m"
+                placeholder="예: 42m"
                 placeholderTextColor={c.text3}
                 style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 80 }}
               />
@@ -264,7 +273,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
               <TextInput
                 value={칼로리}
                 onChangeText={set칼로리}
-                placeholder="328 kcal"
+                placeholder="예: 328kcal"
                 placeholderTextColor={c.text3}
                 style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 80 }}
               />
@@ -280,7 +289,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
               <TextInput
                 value={평균심박}
                 onChangeText={set평균심박}
-                placeholder="152 bpm"
+                placeholder="예: 152bpm"
                 placeholderTextColor={c.text3}
                 style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 80 }}
               />
@@ -322,7 +331,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                 <TextInput
                   value={place}
                   onChangeText={setPlace}
-                  placeholder="한강공원"
+                  placeholder="장소"
                   placeholderTextColor={c.text3}
                   style={{ flex: 1, fontSize: 14, color: c.text, padding: 0 }}
                 />
@@ -494,7 +503,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                   value={memo}
                   onChangeText={setMemo}
                   multiline
-                  placeholder="메모를 입력하세요"
+                  placeholder="메모"
                   placeholderTextColor={c.text3}
                   style={{ fontSize: 13, color: c.text, lineHeight: 20, padding: 0 }}
                 />

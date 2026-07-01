@@ -26,20 +26,24 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
-  const [part, setPart] = React.useState(record?.fields?.부위 ?? '가슴');
+  const [part, setPart] = React.useState(record?.fields?.부위 ?? '');
   const [open, setOpen] = React.useState(editing);
-  const [rating, setRating] = React.useState(record?.rating ?? 4);
+  const [rating, setRating] = React.useState(record?.rating ?? 0);
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
-  const [place, setPlace] = React.useState(record?.fields?.장소 ?? '한강공원');
-  const [memo, setMemo] = React.useState(record?.memo ?? '노을이 좋았다. 마지막 1km 페이스 올림.');
-  const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? ['민지']);
-  const [총볼륨, set총볼륨] = React.useState(record?.fields?.총볼륨 ?? '4,250kg');
-  const [운동시간, set운동시간] = React.useState(record?.fields?.운동시간 ?? '52분');
-  const [rows, setRows] = React.useState<SetRow[]>([
-    { set: 'W', reps: '15', weight: '40', warmup: true },
-    { set: '1', reps: '10', weight: '70', warmup: false },
-    { set: '2', reps: '8', weight: '75', warmup: false },
-  ]);
+  const [place, setPlace] = React.useState(record?.fields?.장소 ?? '');
+  const [memo, setMemo] = React.useState(record?.memo ?? '');
+  const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
+  const [총볼륨, set총볼륨] = React.useState(record?.fields?.총볼륨 ?? '');
+  const [운동시간, set운동시간] = React.useState(record?.fields?.운동시간 ?? '');
+  const [rows, setRows] = React.useState<SetRow[]>(
+    editing
+      ? [
+          { set: 'W', reps: '15', weight: '40', warmup: true },
+          { set: '1', reps: '10', weight: '70', warmup: false },
+          { set: '2', reps: '8', weight: '75', warmup: false },
+        ]
+      : [{ set: '1', reps: '', weight: '', warmup: false }],
+  );
 
   const addSet = () =>
     setRows((r) => [
@@ -50,27 +54,36 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
   const toggleWarmup = (i: number) =>
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, warmup: !row.warmup } : row)));
 
+  const setCell = (i: number, key: 'reps' | 'weight', val: string) =>
+    setRows((r) => r.map((row, idx) => (idx === i ? { ...row, [key]: val } : row)));
+
   const pickPhoto = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
     if (!res.canceled && res.assets?.[0]) setPhotos((p) => [...p, res.assets[0].uri]);
   };
 
   const handleSave = () => {
+    const fields: Record<string, string> = {};
+    if (part) fields.부위 = part;
+    if (총볼륨) fields.총볼륨 = 총볼륨;
+    if (운동시간) fields.운동시간 = 운동시간;
+    if (place) fields.장소 = place;
+
+    const meta = [part, 총볼륨 ? `총 볼륨 ${총볼륨}` : '']
+      .filter(Boolean)
+      .join(' · ');
+
     const payload = {
       activity,
       template: 'setrep' as const,
       dateISO: editing && record ? record.dateISO : today,
       timeLabel: editing && record ? record.timeLabel : '방금',
-      meta: `${part} · 총 볼륨 ${총볼륨}`,
+      meta,
       rating,
       memo,
       companions,
       photos,
-      fields: {
-        부위: part,
-        총볼륨: 총볼륨,
-        운동시간: 운동시간,
-      },
+      fields,
     };
     if (editing && recordId) {
       updateRecord(recordId, payload);
@@ -155,11 +168,25 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
               }}
             >
               <Text style={{ width: 30, fontSize: 13, color: c.text2 }}>{row.set}</Text>
-              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: c.text }}>{row.reps || '-'}</Text>
-              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: c.text }}>
-                {row.weight || '-'}
+              <TextInput
+                value={row.reps}
+                onChangeText={(v) => setCell(i, 'reps', v)}
+                placeholder="0"
+                placeholderTextColor={c.text3}
+                keyboardType="numeric"
+                style={{ flex: 1, fontSize: 14, fontWeight: '600', color: c.text, padding: 0 }}
+              />
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                <TextInput
+                  value={row.weight}
+                  onChangeText={(v) => setCell(i, 'weight', v)}
+                  placeholder="0"
+                  placeholderTextColor={c.text3}
+                  keyboardType="numeric"
+                  style={{ fontSize: 14, fontWeight: '600', color: c.text, padding: 0 }}
+                />
                 <Text style={{ fontSize: 11, fontWeight: '500', color: c.text3 }}>kg</Text>
-              </Text>
+              </View>
               <View style={{ width: 44, alignItems: 'flex-end' }}>
                 <Pressable
                   onPress={() => toggleWarmup(i)}
@@ -251,15 +278,27 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
               총 볼륨 <Text style={{ fontSize: 10, fontWeight: '600', color: c.strength }}>자동</Text>
             </Text>
             <Text style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 2 }}>
-              {총볼륨.replace(/kg$/, '')}
-              <Text style={{ fontSize: 12, color: c.text2 }}>kg</Text>
+              {총볼륨 ? (
+                <>
+                  {총볼륨.replace(/kg$/, '')}
+                  <Text style={{ fontSize: 12, color: c.text2 }}>kg</Text>
+                </>
+              ) : (
+                <Text style={{ fontSize: 15, fontWeight: '600', color: c.text3 }}>자동</Text>
+              )}
             </Text>
           </View>
           <View style={{ flex: 1, backgroundColor: c.surfaceAlt, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14 }}>
             <Text style={{ fontSize: 11, color: c.text2 }}>운동 시간</Text>
             <Text style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 2 }}>
-              {운동시간.replace(/분$/, '')}
-              <Text style={{ fontSize: 12, color: c.text2 }}>분</Text>
+              {운동시간 ? (
+                <>
+                  {운동시간.replace(/분$/, '')}
+                  <Text style={{ fontSize: 12, color: c.text2 }}>분</Text>
+                </>
+              ) : (
+                <Text style={{ fontSize: 15, fontWeight: '600', color: c.text3 }}>예: 52분</Text>
+              )}
             </Text>
           </View>
         </View>

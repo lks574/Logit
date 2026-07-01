@@ -56,24 +56,26 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
   };
 
   const handleSave = () => {
+    const fields: Record<string, string> = {
+      ...(title ? { 작품: title } : {}),
+      ...(venue ? { 공연장: venue } : {}),
+      ...(seat ? { 좌석: seat } : {}),
+      ...(round ? { 회차: `${round}차` } : {}),
+      ...(runtime ? { 러닝타임: runtime } : {}),
+      ...(ticket ? { 티켓: ticket } : {}),
+      ...(cast.length ? { 출연진: cast.join(' · ') } : {}),
+    };
     const payload = {
       activity,
       template: 'spectate' as const,
       dateISO: editing && record ? record.dateISO : today,
       timeLabel: editing && record ? record.timeLabel : '방금',
-      meta: `〈${title || '작품'}〉 · ${venue || ''}`.trim(),
+      meta: title ? `〈${title}〉${venue ? ' · ' + venue : ''}` : venue || '',
       rating,
       memo,
       companions,
       photos,
-      fields: {
-        작품: title,
-        공연장: venue,
-        회차: `${round}차`,
-        ...(runtime ? { 러닝타임: runtime } : {}),
-        ...(ticket ? { 티켓: ticket } : {}),
-        출연진: cast.join(' · '),
-      },
+      fields,
     };
     if (editing && recordId) {
       updateRecord(recordId, payload);
@@ -135,7 +137,7 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
             <TextInput
               value={title}
               onChangeText={setTitle}
-              placeholder="레미제라블"
+              placeholder="작품명"
               placeholderTextColor={c.text3}
               style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 3, padding: 0 }}
             />
@@ -144,8 +146,8 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
 
         {/* 공연장 / 좌석 */}
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          {inputCard('공연장', venue, setVenue, '블루스퀘어', 1.4)}
-          {inputCard('좌석', seat, setSeat, '1층 F12', 1)}
+          {inputCard('공연장', venue, setVenue, '공연장', 1.4)}
+          {inputCard('좌석', seat, setSeat, '좌석', 1)}
         </View>
 
         {/* 관람 회차 — Stepper (perf color) */}
@@ -174,8 +176,8 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
 
         {/* 러닝타임 / 티켓 가격 */}
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          {inputCard('러닝타임', runtime, setRuntime, '170분', 1)}
-          {inputCard('티켓 가격', ticket, setTicket, '₩150,000', 1)}
+          {inputCard('러닝타임', runtime, setRuntime, '예: 170분', 1)}
+          {inputCard('티켓 가격', ticket, setTicket, '예: 150,000원', 1)}
         </View>
 
         {/* 출연진 chips */}
@@ -256,7 +258,7 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
                 <TextInput
                   value={memo}
                   onChangeText={setMemo}
-                  placeholder="감상을 남겨보세요"
+                  placeholder="메모"
                   placeholderTextColor={c.text3}
                   multiline
                   style={{ fontSize: 14, color: c.text, padding: 0, minHeight: 44, textAlignVertical: 'top' }}
