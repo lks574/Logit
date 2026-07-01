@@ -1,11 +1,14 @@
+import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { Screen } from '../../components/primitives';
 import { FormHeader } from '../../components/FormHeader';
 import { DisclosureButton } from '../../components/Field';
 import { Chip } from '../../components/controls';
 import { CompanionChip, RatingInput } from '../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../components/Glyph';
+import { useStore } from '../../store/StoreContext';
 import { useTheme } from '../../theme/ThemeContext';
 
 // SetRepForm (HTML 3.2, lines 503–556) — 세트·횟수형 (strength template).
@@ -18,9 +21,12 @@ const PARTS = ['가슴', '삼두', '등', '어깨', '하체'];
 
 export default function SetRepForm({ activity }: { activity: string }) {
   const { c } = useTheme();
+  const nav = useNavigation<any>();
+  const { addRecord, today } = useStore();
   const [part, setPart] = React.useState('가슴');
   const [open, setOpen] = React.useState(false);
   const [rating, setRating] = React.useState(4);
+  const [photos, setPhotos] = React.useState<string[]>([]);
   const [rows, setRows] = React.useState<SetRow[]>([
     { set: 'W', reps: '15', weight: '40', warmup: true },
     { set: '1', reps: '10', weight: '70', warmup: false },
@@ -36,6 +42,32 @@ export default function SetRepForm({ activity }: { activity: string }) {
   const toggleWarmup = (i: number) =>
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, warmup: !row.warmup } : row)));
 
+  const pickPhoto = async () => {
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
+    if (!res.canceled && res.assets?.[0]) setPhotos((p) => [...p, res.assets[0].uri]);
+  };
+
+  const handleSave = () => {
+    const 볼륨 = '4,250kg';
+    addRecord({
+      activity,
+      template: 'setrep',
+      dateISO: today,
+      timeLabel: '방금',
+      rating,
+      memo: '노을이 좋았다. 마지막 1km 페이스 올림.',
+      photos,
+      companions: ['민지'],
+      meta: `${part} · 총 볼륨 ${볼륨}`,
+      fields: {
+        부위: part,
+        총볼륨: 볼륨,
+        운동시간: '52분',
+      },
+    });
+    nav.navigate('MainTabs');
+  };
+
   return (
     <Screen edges={['top', 'bottom']}>
       <FormHeader
@@ -43,6 +75,7 @@ export default function SetRepForm({ activity }: { activity: string }) {
         icon={<Icon.dumbbell size={13} color={c.strength} strokeWidth={2.2} />}
         color={c.strength}
         soft={c.strengthSoft}
+        onSave={handleSave}
       />
 
       <View style={{ padding: 16, gap: 14 }}>
@@ -318,10 +351,19 @@ export default function SetRepForm({ activity }: { activity: string }) {
             {/* 사진 */}
             <View>
               <Text style={styleLabel(c)}>사진</Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#b7c4ca' }} />
-                <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#d6b9a6' }} />
-                <View
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {photos.length === 0 ? (
+                  <>
+                    <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#b7c4ca' }} />
+                    <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#d6b9a6' }} />
+                  </>
+                ) : (
+                  photos.map((uri) => (
+                    <Image key={uri} source={{ uri }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+                  ))
+                )}
+                <Pressable
+                  onPress={pickPhoto}
                   style={{
                     width: 60,
                     height: 60,
@@ -339,7 +381,7 @@ export default function SetRepForm({ activity }: { activity: string }) {
                     <Path d="M3 16l5-4 4 3 3-2 6 4" />
                     <Path d="M9 10 m -1.4 0 a 1.4 1.4 0 1 0 2.8 0 a 1.4 1.4 0 1 0 -2.8 0" />
                   </Glyph>
-                </View>
+                </Pressable>
               </View>
             </View>
 

@@ -1,11 +1,14 @@
+import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { Screen } from '../../components/primitives';
 import { FormHeader } from '../../components/FormHeader';
 import { DisclosureButton, Field } from '../../components/Field';
 import { Segmented } from '../../components/controls';
 import { RatingInput } from '../../components/Rating';
-import { Glyph, Icon, Path } from '../../components/Glyph';
+import { Glyph, Icon, Path, Rect } from '../../components/Glyph';
+import { useStore } from '../../store/StoreContext';
 import { useTheme } from '../../theme/ThemeContext';
 
 // FreeForm — 자유 기록형 catch-all (free template, accent color #3D5A80).
@@ -15,12 +18,39 @@ import { useTheme } from '../../theme/ThemeContext';
 
 type Intensity = 'low' | 'mid' | 'high';
 
+const INTENSITY_LABEL: Record<Intensity, string> = { low: '낮음', mid: '보통', high: '높음' };
+
 export default function FreeForm({ activity }: { activity: string }) {
   const { c } = useTheme();
+  const nav = useNavigation<any>();
+  const { addRecord, today } = useStore();
   const [open, setOpen] = React.useState(false);
   const [intensity, setIntensity] = React.useState<Intensity>('mid');
   const [rating, setRating] = React.useState(4);
   const [memo, setMemo] = React.useState('');
+  const [photos, setPhotos] = React.useState<string[]>([]);
+
+  const pickPhoto = async () => {
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
+    if (!res.canceled && res.assets?.[0]) setPhotos((p) => [...p, res.assets[0].uri]);
+  };
+
+  const handleSave = () => {
+    const 시간 = '45분';
+    const 강도 = INTENSITY_LABEL[intensity];
+    addRecord({
+      activity,
+      template: 'free',
+      dateISO: today,
+      timeLabel: '방금',
+      rating,
+      memo,
+      photos,
+      meta: `${시간} · 강도 ${강도}`,
+      fields: { 시간, 강도 },
+    });
+    nav.navigate('MainTabs');
+  };
 
   return (
     <Screen edges={['top', 'bottom']}>
@@ -29,6 +59,7 @@ export default function FreeForm({ activity }: { activity: string }) {
         icon={<Icon.yoga size={13} color={c.accent} strokeWidth={2.2} />}
         color={c.accent}
         soft={c.accentSoft}
+        onSave={handleSave}
       />
 
       <View style={{ padding: 16, gap: 14 }}>
@@ -110,6 +141,38 @@ export default function FreeForm({ activity }: { activity: string }) {
           open={open}
           onPress={() => setOpen((o) => !o)}
         />
+
+        {/* Expanded — 사진 */}
+        {open ? (
+          <View>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>사진</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {photos.map((uri) => (
+                <Image key={uri} source={{ uri }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+              ))}
+              <Pressable
+                onPress={pickPhoto}
+                style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: 11,
+                  backgroundColor: c.surfaceAlt,
+                  borderWidth: 1,
+                  borderStyle: 'dashed',
+                  borderColor: c.border,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Glyph size={20} color={c.text3} strokeWidth={2}>
+                  <Rect x="3" y="5" width="18" height="15" rx="3" />
+                  <Path d="M3 16l5-4 4 3 3-2 6 4" />
+                  <Path d="M9 10 m -1.4 0 a 1.4 1.4 0 1 0 2.8 0 a 1.4 1.4 0 1 0 -2.8 0" />
+                </Glyph>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
 
         {/* 메모 */}
         <Field label="메모" value={memo} onChangeText={setMemo} placeholder="자유롭게 기록해보세요" />

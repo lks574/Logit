@@ -2,18 +2,33 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Screen } from '../components/primitives';
-import { Glyph, Icon, Path } from '../components/Glyph';
+import { Icon } from '../components/Glyph';
 import { ActivityCard, StatCard } from '../components/cards';
 import { SyncStatusBadge } from '../components/badges';
 import { useTheme } from '../theme/ThemeContext';
-import { radius, withAlpha } from '../theme/tokens';
-import { colorsFor } from '../data/activities';
+import { withAlpha } from '../theme/tokens';
+import { activities, colorsFor } from '../data/activities';
+import { useStore, useSyncState } from '../store/StoreContext';
+import { dday, upcomingPlans, weekStats } from '../store/selectors';
+import { StoredPlan } from '../store/types';
+
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+// "7/2 (수)" — month/day + weekday, matching the design.
+function monthDayLabel(dateISO: string): string {
+  const d = new Date(Date.parse(dateISO + 'T00:00:00Z'));
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()} (${WEEKDAYS[d.getUTCDay()]})`;
+}
 
 export default function HomeScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
+  const { today, records, plans } = useStore();
+  const sync = useSyncState();
+
   const cardio = colorsFor('endurance', c);
-  const perf = colorsFor('spectate', c);
+  const upcoming = upcomingPlans(plans, today).slice(0, 2);
+  const week = weekStats(records, today);
 
   return (
     <Screen edges={['top']} contentStyle={{ paddingBottom: 24 }}>
@@ -35,7 +50,7 @@ export default function HomeScreen() {
           </Text>
         </View>
         <View style={{ marginTop: 6 }}>
-          <SyncStatusBadge state="synced" />
+          <SyncStatusBadge state={sync} />
         </View>
       </View>
 
@@ -64,60 +79,9 @@ export default function HomeScreen() {
             padding: 5,
           }}
         >
-          {/* 헬스 row */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, padding: 9 }}>
-            <View style={planIconWrap(c)}>
-              <Glyph size={18} color={c.strength} strokeWidth={2}>
-                <Path d="M6.5 6.5l11 11M4 8l-2 2 4 4M16 4l4 4-2 2M8 16l-4-4M16 8l4 4" />
-              </Glyph>
-            </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>헬스</Text>
-                {/* empty-ring "약속 미완료" dot */}
-                <View
-                  accessibilityLabel="약속 미완료"
-                  style={{ width: 6, height: 6, borderRadius: 3, borderWidth: 1.5, borderColor: c.accent }}
-                />
-              </View>
-              <Text numberOfLines={1} style={{ fontSize: 11.5, color: c.text2, marginTop: 2 }}>
-                오늘 오후 8:00 · 홈짐
-              </Text>
-            </View>
-            <View style={{ backgroundColor: c.accent, borderRadius: 6, paddingVertical: 3, paddingHorizontal: 8 }}>
-              <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>D-DAY</Text>
-            </View>
-          </View>
-
-          <View style={{ height: 1, backgroundColor: withAlpha(c.accent, 15), marginHorizontal: 9 }} />
-
-          {/* 축구 row */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, padding: 9 }}>
-            <View style={planIconWrap(c)}>
-              <Glyph size={18} color={c.team} strokeWidth={2}>
-                <Path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z" />
-                <Path d="M12 7.5l4 3-1.5 4.5h-5L8 10.5z" />
-              </Glyph>
-            </View>
-            <View style={{ flex: 1, minWidth: 0 }}>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>축구</Text>
-              <Text numberOfLines={1} style={{ fontSize: 11.5, color: c.text2, marginTop: 2 }}>
-                7/2 (수) 오후 3:00 · 잠실 보조경기장
-              </Text>
-            </View>
-            <View
-              style={{
-                backgroundColor: c.surface,
-                borderWidth: 1,
-                borderColor: withAlpha(c.accent, 25),
-                borderRadius: 6,
-                paddingVertical: 3,
-                paddingHorizontal: 8,
-              }}
-            >
-              <Text style={{ fontSize: 10, fontWeight: '700', color: c.accent }}>D-2</Text>
-            </View>
-          </View>
+          {upcoming.map((p, i) => (
+            <PlanRow key={p.id} plan={p} today={today} c={c} first={i === 0} showDivider={i > 0} />
+          ))}
         </Pressable>
 
         {/* 이번 주 header */}
@@ -128,9 +92,9 @@ export default function HomeScreen() {
 
         <StatCard
           cells={[
-            { value: '5', label: '기록' },
-            { value: '18.4', unit: 'km', label: '달린 거리', valueColor: c.cardio },
-            { value: '🔥3', label: '연속 일' },
+            { value: String(week.count), label: '기록' },
+            { value: String(week.km), unit: 'km', label: '달린 거리', valueColor: c.cardio },
+            { value: `🔥${week.streak}`, label: '연속 일' },
           ]}
         />
 
@@ -139,30 +103,92 @@ export default function HomeScreen() {
           최근 기록
         </Text>
 
-        <ActivityCard
-          color={cardio.color}
-          soft={cardio.soft}
-          icon={<Icon.running size={19} color={cardio.color} />}
-          title="런닝"
-          time="오후 6:30"
-          meta="한강공원 · 5.2km · 27′12″"
-          ratingFilled={4}
-          memo="노을이 좋았다"
-          onPress={() => nav.navigate('Detail', { activity: '런닝' })}
-        />
-        <ActivityCard
-          color={perf.color}
-          soft={perf.soft}
-          icon={<Icon.performance size={19} color={perf.color} />}
-          title="뮤지컬"
-          time="어제"
-          meta="〈레미제라블〉 · 블루스퀘어"
-          ratingFilled={5}
-          memo="3차 관람"
-          onPress={() => nav.navigate('Detail', { activity: '뮤지컬' })}
-        />
+        {records.map((r) => {
+          const rc = colorsFor(r.template, c);
+          const iconName = activities[r.activity]?.icon;
+          const IconComp = iconName ? Icon[iconName] : Icon.yoga;
+          return (
+            <ActivityCard
+              key={r.id}
+              color={rc.color}
+              soft={rc.soft}
+              icon={<IconComp size={19} color={rc.color} />}
+              title={r.activity}
+              time={r.timeLabel}
+              meta={r.meta}
+              ratingFilled={r.rating}
+              memo={r.memo}
+              onPress={() => nav.navigate('Detail', { activity: r.activity, recordId: r.id })}
+            />
+          );
+        })}
       </View>
     </Screen>
+  );
+}
+
+function PlanRow({
+  plan,
+  today,
+  c,
+  first,
+  showDivider,
+}: {
+  plan: StoredPlan;
+  today: string;
+  c: ReturnType<typeof useTheme>['c'];
+  first: boolean;
+  showDivider: boolean;
+}) {
+  const act = activities[plan.activity];
+  const colors = colorsFor(act?.template ?? plan.template, c);
+  const IconComp = act ? Icon[act.icon] : Icon.yoga;
+  const d = dday(plan.dateISO, today);
+  const dateLabel = d === 0 ? '오늘' : monthDayLabel(plan.dateISO);
+  const meta = `${dateLabel} ${plan.timeLabel} · ${plan.place ?? ''}`.trim();
+
+  return (
+    <>
+      {showDivider && <View style={{ height: 1, backgroundColor: withAlpha(c.accent, 15), marginHorizontal: 9 }} />}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 11, padding: 9 }}>
+        <View style={planIconWrap(c)}>
+          <IconComp size={18} color={colors.color} strokeWidth={2} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{plan.activity}</Text>
+            {/* empty-ring "약속 미완료" dot on the first/today row */}
+            {first && (
+              <View
+                accessibilityLabel="약속 미완료"
+                style={{ width: 6, height: 6, borderRadius: 3, borderWidth: 1.5, borderColor: c.accent }}
+              />
+            )}
+          </View>
+          <Text numberOfLines={1} style={{ fontSize: 11.5, color: c.text2, marginTop: 2 }}>
+            {meta}
+          </Text>
+        </View>
+        {d === 0 ? (
+          <View style={{ backgroundColor: c.accent, borderRadius: 6, paddingVertical: 3, paddingHorizontal: 8 }}>
+            <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>D-DAY</Text>
+          </View>
+        ) : (
+          <View
+            style={{
+              backgroundColor: c.surface,
+              borderWidth: 1,
+              borderColor: withAlpha(c.team, 25),
+              borderRadius: 6,
+              paddingVertical: 3,
+              paddingHorizontal: 8,
+            }}
+          >
+            <Text style={{ fontSize: 10, fontWeight: '700', color: c.team }}>D-{d}</Text>
+          </View>
+        )}
+      </View>
+    </>
   );
 }
 

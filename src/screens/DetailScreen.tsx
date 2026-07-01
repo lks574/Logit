@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Row, Screen } from '../components/primitives';
 import { IconButton } from '../components/Button';
@@ -8,6 +8,8 @@ import { Stars } from '../components/Rating';
 import { Glyph, Icon, Path } from '../components/Glyph';
 import { activities, colorsFor } from '../data/activities';
 import { RootStackParamList } from '../navigation/types';
+import { useStore } from '../store/StoreContext';
+import { StoredRecord } from '../store/types';
 import { useTheme } from '../theme/ThemeContext';
 import { Palette } from '../theme/tokens';
 
@@ -172,17 +174,70 @@ const VARIANTS: Record<string, (c: Palette) => Variant> = {
   }),
 };
 
+// Korean date label from an ISO calendar day (e.g. "2026-06-30" → "6월 30일").
+function krDate(dateISO: string): string {
+  const m = /^\d{4}-(\d{2})-(\d{2})/.exec(dateISO);
+  if (!m) return dateISO;
+  return `${Number(m[1])}월 ${Number(m[2])}일`;
+}
+
+// Build a Variant-shaped view model from a real stored record so the existing
+// JSX (which renders a Variant) can display it unchanged.
+function variantFromRecord(r: StoredRecord, c: Palette): Variant {
+  // meta: "6월 30일 오후 6:30 · 한강공원" — place taken from record.meta's first segment.
+  const place = r.meta ? r.meta.split('·')[0].trim() : '';
+  const metaParts = [krDate(r.dateISO), r.timeLabel].filter(Boolean);
+  const meta = place ? `${metaParts.join(' ')} · ${place}` : metaParts.join(' ');
+
+  const companionName = r.companions && r.companions.length ? r.companions.join(', ') : '';
+  const companion: Companion = {
+    initial: companionName ? companionName.charAt(0) : '',
+    name: companionName,
+  };
+
+  const fields = r.fields ?? {};
+  const detail: DetailRow[] = Object.entries(fields).map(([label, value]) => ({ label, value }));
+
+  return {
+    activity: r.activity,
+    title: r.activity,
+    meta,
+    rating: r.rating ?? 0,
+    companion,
+    photoLeft: '#8fa3ad',
+    photoRight: '#caa787',
+    photoHeight: 104,
+    contentGap: 14,
+    statCells: [],
+    detail: detail.length ? detail : undefined,
+    memo: r.memo ?? '',
+  };
+}
+
 export default function DetailScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, 'Detail'>>();
-  const activityKey = route.params?.activity;
-  const resolve = (activityKey && VARIANTS[activityKey]) || VARIANTS['런닝'];
-  const v = resolve(c);
+  const { getRecord } = useStore();
 
-  const activity = activities[v.activity] ?? activities['런닝'];
-  const { color, soft } = colorsFor(activity.template, c);
-  const ActivityIcon = Icon[activity.icon];
+  const activityKey = route.params?.activity;
+  const recordId = route.params?.recordId;
+  const record = recordId ? getRecord(recordId) : undefined;
+
+  // Real record → render its data; otherwise keep the design showcase variants.
+  const v = record
+    ? variantFromRecord(record, c)
+    : ((activityKey && VARIANTS[activityKey]) || VARIANTS['런닝'])(c);
+
+  // Activity resolution: registry first, else fall back to the record's own
+  // template + a default icon (README §Activity resolution).
+  const registered = activities[v.activity];
+  const template = registered?.template ?? record?.template ?? 'endurance';
+  const { color, soft } = colorsFor(template, c);
+  const ActivityIcon = registered ? Icon[registered.icon] : Icon.yoga;
+
+  const photos = record?.photos;
+  const hasPhotos = !!(photos && photos.length);
 
   return (
     <Screen edges={['top']} contentStyle={{ paddingBottom: 28 }}>
@@ -197,7 +252,7 @@ export default function DetailScreen() {
           <IconButton
             size={34}
             bg={c.surface}
-            onPress={() => nav.navigate('RecordForm', { activity: v.activity, template: activity.template })}
+            onPress={() => nav.navigate('RecordForm', { activity: v.activity, template })}
           >
             <Icon.edit size={17} color={c.text2} strokeWidth={2} />
           </IconButton>
@@ -236,33 +291,35 @@ export default function DetailScreen() {
               <Text style={{ fontSize: 12, fontWeight: '600', color: c.perf }}>{v.watchTag}</Text>
             </View>
           ) : null}
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 5,
-              backgroundColor: c.surface,
-              borderWidth: 1,
-              borderColor: c.border,
-              borderRadius: 999,
-              paddingVertical: 4,
-              paddingHorizontal: 9,
-            }}
-          >
+          {v.companion.name ? (
             <View
               style={{
-                width: 16,
-                height: 16,
-                borderRadius: 8,
-                backgroundColor: color,
+                flexDirection: 'row',
                 alignItems: 'center',
-                justifyContent: 'center',
+                gap: 5,
+                backgroundColor: c.surface,
+                borderWidth: 1,
+                borderColor: c.border,
+                borderRadius: 999,
+                paddingVertical: 4,
+                paddingHorizontal: 9,
               }}
             >
-              <Text style={{ fontSize: 9, fontWeight: '700', color: '#fff' }}>{v.companion.initial}</Text>
+              <View
+                style={{
+                  width: 16,
+                  height: 16,
+                  borderRadius: 8,
+                  backgroundColor: color,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ fontSize: 9, fontWeight: '700', color: '#fff' }}>{v.companion.initial}</Text>
+              </View>
+              <Text style={{ fontSize: 12, color: c.text2 }}>{v.companion.name}</Text>
             </View>
-            <Text style={{ fontSize: 12, color: c.text2 }}>{v.companion.name}</Text>
-          </View>
+          ) : null}
         </Row>
 
         {/* Match: score card 우리 vs 상대 */}
@@ -300,13 +357,27 @@ export default function DetailScreen() {
         ) : null}
 
         {/* Metric block */}
-        <StatCard cells={v.statCells} />
+        {v.statCells.length ? <StatCard cells={v.statCells} /> : null}
 
-        {/* Two photo placeholders */}
-        <Row gap={8}>
-          <View style={{ flex: 1, height: v.photoHeight, borderRadius: 13, backgroundColor: v.photoLeft }} />
-          <View style={{ flex: 1, height: v.photoHeight, borderRadius: 13, backgroundColor: v.photoRight }} />
-        </Row>
+        {/* Photos — real images when the record has them, else gradient placeholders */}
+        {hasPhotos ? (
+          <Row gap={8}>
+            {photos!.slice(0, 2).map((uri, i) => (
+              <Image
+                key={`${uri}-${i}`}
+                source={{ uri }}
+                style={{ flex: 1, height: v.photoHeight, borderRadius: 13, backgroundColor: c.surfaceAlt }}
+                resizeMode="cover"
+              />
+            ))}
+            {photos!.length === 1 ? <View style={{ flex: 1 }} /> : null}
+          </Row>
+        ) : (
+          <Row gap={8}>
+            <View style={{ flex: 1, height: v.photoHeight, borderRadius: 13, backgroundColor: v.photoLeft }} />
+            <View style={{ flex: 1, height: v.photoHeight, borderRadius: 13, backgroundColor: v.photoRight }} />
+          </Row>
+        )}
 
         {/* 상세 수치 table (cardio / match) */}
         {v.detail ? (
@@ -351,10 +422,12 @@ export default function DetailScreen() {
         ) : null}
 
         {/* Memo block */}
-        <View style={{ backgroundColor: c.surfaceAlt, borderRadius: 13, paddingVertical: 13, paddingHorizontal: 14 }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, marginBottom: 5 }}>메모</Text>
-          <Text style={{ fontSize: 14, color: c.text, lineHeight: 22 }}>{v.memo}</Text>
-        </View>
+        {v.memo ? (
+          <View style={{ backgroundColor: c.surfaceAlt, borderRadius: 13, paddingVertical: 13, paddingHorizontal: 14 }}>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, marginBottom: 5 }}>메모</Text>
+            <Text style={{ fontSize: 14, color: c.text, lineHeight: 22 }}>{v.memo}</Text>
+          </View>
+        ) : null}
       </View>
     </Screen>
   );

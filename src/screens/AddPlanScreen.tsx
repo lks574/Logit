@@ -5,8 +5,17 @@ import { Screen } from '../components/primitives';
 import { Toggle } from '../components/controls';
 import { Icon, Glyph, Path, Circle, Rect } from '../components/Glyph';
 import { useTheme } from '../theme/ThemeContext';
+import { useStore } from '../store/StoreContext';
+import { TemplateType } from '../theme/tokens';
 
 type ActKey = 'strength' | 'cardio' | 'team';
+
+// Map each activity chip to its stored activity name + record template.
+const CHIP_META: Record<ActKey, { activity: string; template: TemplateType }> = {
+  strength: { activity: '헬스', template: 'setrep' },
+  cardio: { activity: '런닝', template: 'endurance' },
+  team: { activity: '축구', template: 'match' },
+};
 
 // Activity chip choices copied 1:1 from Logit.dc.html §5.3 (lines 1451–1456).
 const ACTIVITIES: {
@@ -56,9 +65,25 @@ const ACTIVITIES: {
 export default function AddPlanScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
+  const { addPlan } = useStore();
   const [selected, setSelected] = React.useState<ActKey>('strength');
   const [alarm, setAlarm] = React.useState(true);
   const [memo, setMemo] = React.useState('');
+
+  const onSave = () => {
+    const { activity, template } = CHIP_META[selected];
+    addPlan({
+      activity,
+      template,
+      // Form date field is the static sample "7월 2일 (수)" → 2026-07-02.
+      dateISO: '2026-07-02',
+      timeLabel: '오후 3:00',
+      place: '잠실 보조경기장',
+      memo: memo.trim() || undefined,
+      reminder: alarm,
+    });
+    nav.goBack();
+  };
 
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
     <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>{children}</Text>
@@ -93,7 +118,7 @@ export default function AddPlanScreen() {
         </Pressable>
         <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>약속 추가</Text>
         <Pressable
-          onPress={() => nav.goBack()}
+          onPress={onSave}
           hitSlop={8}
           style={{
             height: 30,
@@ -302,7 +327,7 @@ export default function AddPlanScreen() {
       {/* Primary 약속 저장 */}
       <View style={{ paddingHorizontal: 18, paddingTop: 12, paddingBottom: 16 }}>
         <Pressable
-          onPress={() => nav.goBack()}
+          onPress={onSave}
           style={({ pressed }) => ({
             flexDirection: 'row',
             alignItems: 'center',

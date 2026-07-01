@@ -6,74 +6,35 @@ import { ActivityCard, PlanCard } from '../components/cards';
 import { Tag } from '../components/badges';
 import { Icon } from '../components/Glyph';
 import { useTheme } from '../theme/ThemeContext';
-import { radius, withAlpha } from '../theme/tokens';
+import { withAlpha } from '../theme/tokens';
+import { useStore } from '../store/StoreContext';
+import { recordsOn, plansOn } from '../store/selectors';
+import { activities, colorsFor } from '../data/activities';
 
 // 5.1 월간 캘린더 — 했던 것(채운 점) · 약속한 것(빈 링). Logit.dc.html 1196–1331.
-// June 2026: 1일 = 월요일, 30일. Grid starts Sunday(일).
-
-type Marker = { type: 'done'; color: string } | { type: 'plan'; color: string };
-type Agenda = { records: RecordItem[]; plans: PlanItem[] };
-type RecordItem = { activity: string; template: string; title: string; time: string; meta: string; rating?: number };
-type PlanItem = { title: string; time: string; place: string; iconColor: string };
+// June 2026: 1일 = 월요일, 30일. Grid starts Sunday(일). Markers/agenda are now
+// derived live from the offline store (records/plans) instead of hardcoded maps.
 
 export default function CalendarScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const [selected, setSelected] = useState(30); // 오늘 = 6월 30일
-  const [, setChecked] = useState<Record<string, boolean>>({});
-  const nextMarkers = useNextMonthMarkers();
-
-  // Template → resolved color for markers (matches HTML var() usage).
-  const done = (color: string): Marker => ({ type: 'done', color });
-  const plan = (color: string): Marker => ({ type: 'plan', color });
-
-  // Marked days (HTML 1239–1280). Day → markers[].
-  const markers: Record<number, Marker[]> = useMemo(
-    () => ({
-      2: [done(c.strength)],
-      5: [done(c.cardio)],
-      8: [done(c.team)],
-      12: [done(c.strength)],
-      15: [done(c.cardio)],
-      18: [done(c.perf)],
-      22: [done(c.cardio)],
-      24: [done(c.strength)],
-      26: [done(c.cardio)],
-      29: [done(c.perf)],
-      30: [done(c.cardio), plan(c.accent)],
-    }),
-    [c],
-  );
-
-  // Agenda per day. Only 30일 has content in the HTML.
-  const agendas: Record<number, Agenda> = useMemo(
-    () => ({
-      30: {
-        records: [
-          {
-            activity: '런닝',
-            template: 'endurance',
-            title: '런닝',
-            time: '오후 6:30',
-            meta: '한강공원 · 5.2km',
-            rating: 4,
-          },
-        ],
-        plans: [{ title: '헬스', time: '오후 8:00', place: '홈짐', iconColor: c.strength }],
-      },
-    }),
-    [c],
-  );
+  const { today, records, plans, completePlan } = useStore();
+  const [selected, setSelected] = useState<string>(today); // 오늘 = 6월 30일 (dateISO)
 
   // Build 6-row grid. June 2026: 1일 Mon → 1 leading blank (Sunday col empty),
-  // trailing days spill into July (1–5).
+  // trailing days spill into July (1–5). Each cell carries its dateISO so
+  // markers/agenda resolve from the store.
   const JUNE_DAYS = 30;
   const FIRST_WEEKDAY = 1; // 0=Sun … 1=Mon
-  const cells: { day: number; inMonth: boolean }[] = [];
-  for (let i = 0; i < FIRST_WEEKDAY; i++) cells.push({ day: 0, inMonth: false });
-  for (let d = 1; d <= JUNE_DAYS; d++) cells.push({ day: d, inMonth: true });
+  const cells: { day: number; inMonth: boolean; dateISO: string }[] = [];
+  for (let i = 0; i < FIRST_WEEKDAY; i++) cells.push({ day: 0, inMonth: false, dateISO: '' });
+  for (let d = 1; d <= JUNE_DAYS; d++)
+    cells.push({ day: d, inMonth: true, dateISO: `2026-06-${String(d).padStart(2, '0')}` });
   let next = 1;
-  while (cells.length % 7 !== 0) cells.push({ day: next++, inMonth: false });
+  while (cells.length % 7 !== 0) {
+    const d = next++;
+    cells.push({ day: d, inMonth: false, dateISO: `2026-07-${String(d).padStart(2, '0')}` });
+  }
 
   const weekdays = [
     { label: '일', color: c.error },
@@ -85,9 +46,20 @@ export default function CalendarScreen() {
     { label: '토', color: c.team },
   ];
 
-  const agenda = agendas[selected];
-  const recordCount = agenda?.records.length ?? 0;
-  const planCount = agenda?.plans.length ?? 0;
+  // Resolve an activity name → { color, soft, IconCmp } (registry, else record/plan template).
+  const resolve = (name: string, template: string) => {
+    const reg = activities[name];
+    const tmpl = (reg?.template ?? template) as any;
+    const { color, soft } = colorsFor(tmpl, c);
+    const IconCmp = Icon[reg?.icon ?? 'yoga'];
+    return { color, soft, IconCmp };
+  };
+
+  // Selected-day agenda (live from store).
+  const dayRecords = recordsOn(records, selected);
+  const dayPlans = plansOn(plans, selected).filter((p) => !p.done);
+  const recordCount = dayRecords.length;
+  const planCount = dayPlans.length;
 
   return (
     <Screen edges={['top']} scroll contentStyle={{ paddingBottom: 24 }}>
@@ -112,7 +84,7 @@ export default function CalendarScreen() {
           </RoundBtn>
           <Pressable
             hitSlop={6}
-            onPress={() => setSelected(30)}
+            onPress={() => setSelected(today)}
             style={{
               height: 30,
               paddingHorizontal: 12,
@@ -152,8 +124,13 @@ export default function CalendarScreen() {
             const col = i % 7;
             const isSun = col === 0;
             const isSat = col === 6;
-            const isSelected = cell.inMonth && cell.day === selected;
-            const dayMarkers = cell.inMonth ? markers[cell.day] ?? [] : nextMarkers[cell.day] ?? [];
+            const isSelected = cell.inMonth && cell.dateISO === selected;
+
+            // Live markers: FILLED dot(s) per record (template color), EMPTY ring
+            // if any undone plan exists that day. A day can show both.
+            const dayRecs = recordsOn(records, cell.dateISO);
+            const dayHasPlan = plansOn(plans, cell.dateISO).some((p) => !p.done);
+            const dotColors = dayRecs.map((r) => resolve(r.activity, r.template).color);
 
             let numColor = c.text;
             if (!cell.inMonth) numColor = isSat ? withAlpha(c.team, 55) : c.text3;
@@ -163,7 +140,7 @@ export default function CalendarScreen() {
             return (
               <Pressable
                 key={`${cell.inMonth ? 'i' : 'o'}${cell.day}-${i}`}
-                onPress={() => cell.inMonth && setSelected(cell.day)}
+                onPress={() => cell.inMonth && setSelected(cell.dateISO)}
                 style={{
                   width: `${100 / 7}%`,
                   height: 44,
@@ -193,25 +170,23 @@ export default function CalendarScreen() {
                   </Text>
                 )}
                 <View style={{ flexDirection: 'row', gap: 2, height: 6, alignItems: 'center' }}>
-                  {dayMarkers.map((m, mi) =>
-                    m.type === 'done' ? (
-                      <View
-                        key={mi}
-                        style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: m.color }}
-                      />
-                    ) : (
-                      <View
-                        key={mi}
-                        style={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: 3,
-                          borderWidth: 1.5,
-                          borderColor: m.color,
-                        }}
-                      />
-                    ),
-                  )}
+                  {dotColors.map((color, mi) => (
+                    <View
+                      key={`d${mi}`}
+                      style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: color }}
+                    />
+                  ))}
+                  {dayHasPlan ? (
+                    <View
+                      style={{
+                        width: 6,
+                        height: 6,
+                        borderRadius: 3,
+                        borderWidth: 1.5,
+                        borderColor: c.accent,
+                      }}
+                    />
+                  ) : null}
                 </View>
               </Pressable>
             );
@@ -233,36 +208,41 @@ export default function CalendarScreen() {
         {/* selected-day agenda */}
         <View style={{ gap: 9, paddingTop: 3 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <Text style={{ fontSize: 13, fontWeight: '700', color: c.text }}>{agendaTitle(selected)}</Text>
+            <Text style={{ fontSize: 13, fontWeight: '700', color: c.text }}>{agendaTitle(selected, today)}</Text>
             <Text style={{ fontSize: 11, color: c.text3 }}>
               기록 {recordCount} · 약속 {planCount}
             </Text>
           </View>
 
-          {agenda ? (
+          {recordCount + planCount > 0 ? (
             <>
-              {agenda.records.map((r, i) => (
-                <ActivityCard
-                  key={`r${i}`}
-                  color={c.cardio}
-                  soft={c.cardioSoft}
-                  icon={<Icon.running size={18} color={c.cardio} />}
-                  title={r.title}
-                  time={r.time}
-                  meta={`${r.meta} · ★★★★`}
-                  onPress={() => nav.navigate('Detail', { activity: r.activity })}
-                />
-              ))}
-              {agenda.plans.map((p, i) => {
-                const key = `${selected}-${i}`;
+              {dayRecords.map((r) => {
+                const { color, soft, IconCmp } = resolve(r.activity, r.template);
+                return (
+                  <ActivityCard
+                    key={r.id}
+                    color={color}
+                    soft={soft}
+                    icon={<IconCmp size={18} color={color} />}
+                    title={r.activity}
+                    time={r.timeLabel}
+                    meta={r.meta}
+                    ratingFilled={r.rating}
+                    onPress={() => nav.navigate('Detail', { activity: r.activity, recordId: r.id })}
+                  />
+                );
+              })}
+              {dayPlans.map((p) => {
+                const { color, IconCmp } = resolve(p.activity, p.template);
+                const meta = [p.timeLabel, p.place].filter(Boolean).join(' · ');
                 return (
                   <PlanCard
-                    key={`p${i}`}
-                    icon={<Icon.dumbbell size={18} color={p.iconColor} />}
-                    title={p.title}
-                    meta={`${p.time} · ${p.place}`}
+                    key={p.id}
+                    icon={<IconCmp size={18} color={color} />}
+                    title={p.activity}
+                    meta={meta}
                     tag={<Tag label="예정" color={c.accent} outline />}
-                    onCheck={() => setChecked((s) => ({ ...s, [key]: !s[key] }))}
+                    onCheck={() => completePlan(p.id)}
                     onPress={() => nav.navigate('AddPlan')}
                   />
                 );
@@ -276,19 +256,6 @@ export default function CalendarScreen() {
         </View>
       </View>
     </Screen>
-  );
-}
-
-// Days spilling into July that carry markers (HTML 1277–1280).
-function useNextMonthMarkers() {
-  const { c } = useTheme();
-  return useMemo<Record<number, Marker[]>>(
-    () => ({
-      2: [{ type: 'plan', color: c.team }],
-      3: [{ type: 'plan', color: c.perf }],
-      5: [{ type: 'plan', color: c.cardio }],
-    }),
-    [c],
   );
 }
 
@@ -311,8 +278,13 @@ function RoundBtn({ children }: { children: React.ReactNode }) {
   );
 }
 
-function agendaTitle(day: number) {
-  if (day === 30) return '오늘 · 6월 30일 (월)';
-  const weekday = ['일', '월', '화', '수', '목', '금', '토'][(day - 1 + 1) % 7]; // 1일=월(1)
-  return `6월 ${day}일 (${weekday})`;
+// "오늘 · 6월 30일 (월)" for today, else "6월 D일 (요일)". dateISO in June 2026.
+function agendaTitle(dateISO: string, today: string) {
+  const day = parseInt(dateISO.slice(8, 10), 10);
+  const month = parseInt(dateISO.slice(5, 7), 10);
+  const weekday = ['일', '월', '화', '수', '목', '금', '토'][
+    new Date(dateISO + 'T00:00:00Z').getUTCDay()
+  ];
+  const label = `${month}월 ${day}일 (${weekday})`;
+  return dateISO === today ? `오늘 · ${label}` : label;
 }

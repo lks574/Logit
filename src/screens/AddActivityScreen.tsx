@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Screen } from '../components/primitives';
 import { Icon, Glyph, Path, Circle } from '../components/Glyph';
 import { useTheme } from '../theme/ThemeContext';
+import { useStore } from '../store/StoreContext';
 import { templateColor, TemplateType, Palette } from '../theme/tokens';
 
 type TemplateDef = {
@@ -28,13 +29,19 @@ const COLOR_KEYS: (keyof Palette)[] = ['strength', 'cardio', 'team', 'perf', 'ac
 export default function AddActivityScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
+  const { addActivity } = useStore();
 
   const [name, setName] = React.useState('');
   const [selected, setSelected] = React.useState<TemplateType>('setrep');
   const [colorKey, setColorKey] = React.useState<keyof Palette>('strength');
 
   const onCancel = () => nav.goBack();
-  const onSave = () => nav.navigate('MainTabs');
+  const onSave = () => {
+    const trimmed = name.trim();
+    if (!trimmed) return; // skip when name empty
+    addActivity({ name: trimmed, template: selected });
+    nav.navigate('MainTabs');
+  };
 
   return (
     <Screen edges={['top', 'bottom']}>

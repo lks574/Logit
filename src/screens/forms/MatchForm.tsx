@@ -1,10 +1,13 @@
+import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
-import { Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { Screen } from '../../components/primitives';
 import { FormHeader } from '../../components/FormHeader';
 import { DisclosureButton } from '../../components/Field';
 import { Segmented, Chip } from '../../components/controls';
-import { Glyph, Path, Icon, IconName } from '../../components/Glyph';
+import { Glyph, Path, Rect, Icon, IconName } from '../../components/Glyph';
+import { useStore } from '../../store/StoreContext';
 import { useTheme } from '../../theme/ThemeContext';
 
 // 3.3 MatchForm — 대전·경기형 (team color). Sport-agnostic: the 종목 chip drives
@@ -46,7 +49,11 @@ const ACTIVITY_TO_SPORT: Record<string, string> = {
 
 export default function MatchForm({ activity }: { activity: string }) {
   const { c } = useTheme();
+  const nav = useNavigation<any>();
+  const { addRecord, today } = useStore();
   const [sportKey, setSportKey] = React.useState(ACTIVITY_TO_SPORT[activity] ?? SPORTS[0].key);
+  const [open, setOpen] = React.useState(false);
+  const [photos, setPhotos] = React.useState<string[]>([]);
   const sport = SPORTS.find((s) => s.key === sportKey) ?? SPORTS[0];
 
   const resultOptions = sport.team
@@ -78,6 +85,31 @@ export default function MatchForm({ activity }: { activity: string }) {
     <Text style={{ fontSize: 11, fontWeight: '700', color: c.text3, letterSpacing: 0.4, marginBottom: 7 }}>{text}</Text>
   );
 
+  const pickPhoto = async () => {
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
+    if (!res.canceled && res.assets?.[0]) setPhotos((p) => [...p, res.assets[0].uri]);
+  };
+
+  const handleSave = () => {
+    const resultLabel = resultOptions.find((o) => o.key === result)?.label ?? '승';
+    const score = `${sport.score[0]}:${sport.score[1]}`;
+    addRecord({
+      activity,
+      template: 'match',
+      dateISO: today,
+      timeLabel: '방금',
+      photos,
+      meta: `${sport.oppName} · ${score} · ${resultLabel}`,
+      fields: {
+        스코어: score,
+        결과: resultLabel,
+        ...Object.fromEntries(sport.slots.map((s) => [s.label, s.value])),
+        ...(sport.gameScore ? { 게임스코어: sport.gameScore } : {}),
+      },
+    });
+    nav.navigate('MainTabs');
+  };
+
   return (
     <Screen edges={['top', 'bottom']}>
       <FormHeader
@@ -85,6 +117,7 @@ export default function MatchForm({ activity }: { activity: string }) {
         icon={iconFor(sportKey)}
         color={c.team}
         soft={c.teamSoft}
+        onSave={handleSave}
       />
 
       <View style={{ padding: 16, gap: 13 }}>
@@ -172,7 +205,41 @@ export default function MatchForm({ activity }: { activity: string }) {
           badge="선택"
           subtitle="장소 · 동행 · 사진 · 메모 · 평점 · 기분 · 비용"
           icon={<Icon.plus size={17} color={c.text2} strokeWidth={2.2} />}
+          open={open}
+          onPress={() => setOpen((o) => !o)}
         />
+
+        {/* Expanded — 사진 */}
+        {open ? (
+          <View>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>사진</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {photos.map((uri) => (
+                <Image key={uri} source={{ uri }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+              ))}
+              <Pressable
+                onPress={pickPhoto}
+                style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: 11,
+                  backgroundColor: c.surfaceAlt,
+                  borderWidth: 1,
+                  borderStyle: 'dashed',
+                  borderColor: c.border,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Glyph size={20} color={c.text3} strokeWidth={2}>
+                  <Rect x="3" y="5" width="18" height="15" rx="3" />
+                  <Path d="M3 16l5-4 4 3 3-2 6 4" />
+                  <Path d="M9 10 m -1.4 0 a 1.4 1.4 0 1 0 2.8 0 a 1.4 1.4 0 1 0 -2.8 0" />
+                </Glyph>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
 
         {/* footer hint */}
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 6, marginTop: 4 }}>

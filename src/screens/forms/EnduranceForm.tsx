@@ -1,12 +1,14 @@
 import { useNavigation } from '@react-navigation/native';
+import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
 import { CompanionChip, RatingInput } from '../../components/Rating';
 import { DisclosureButton } from '../../components/Field';
 import { FormHeader } from '../../components/FormHeader';
 import { Glyph, Icon, Path, Rect } from '../../components/Glyph';
 import { Screen } from '../../components/primitives';
 import { activities, colorsFor } from '../../data/activities';
+import { useStore } from '../../store/StoreContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { withAlpha } from '../../theme/tokens';
 
@@ -15,12 +17,44 @@ import { withAlpha } from '../../theme/tokens';
 export default function EnduranceForm({ activity }: { activity: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
+  const { addRecord, today } = useStore();
   const [open, setOpen] = React.useState(false); // 세부 입력 disclosure (collapsed default)
   const [rating, setRating] = React.useState(4);
+  const [photos, setPhotos] = React.useState<string[]>([]);
 
   const template = activities[activity]?.template ?? 'endurance';
   const { color, soft } = colorsFor(template, c);
   const ActIcon = Icon.running;
+
+  const pickPhoto = async () => {
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
+    if (!res.canceled && res.assets?.[0]) setPhotos((p) => [...p, res.assets[0].uri]);
+  };
+
+  const handleSave = () => {
+    const 거리 = '5.2km';
+    const 시간 = '27:12';
+    addRecord({
+      activity,
+      template: 'endurance',
+      dateISO: today,
+      timeLabel: '방금',
+      rating,
+      memo: '노을이 좋았다. 마지막 1km 페이스 올림.',
+      photos,
+      companions: ['민지'],
+      meta: `한강공원 · ${거리} · ${시간}`,
+      fields: {
+        거리,
+        시간,
+        페이스: '5′14″/km',
+        고도: '42 m',
+        칼로리: '328 kcal',
+        평균심박: '152 bpm',
+      },
+    });
+    nav.navigate('MainTabs');
+  };
 
   return (
     <Screen edges={['top', 'bottom']}>
@@ -30,6 +64,7 @@ export default function EnduranceForm({ activity }: { activity: string }) {
         color={color}
         soft={soft}
         onCancel={() => nav.goBack()}
+        onSave={handleSave}
       />
 
       <View style={{ padding: 16, paddingTop: 14, gap: 14 }}>
@@ -304,10 +339,19 @@ export default function EnduranceForm({ activity }: { activity: string }) {
             {/* 사진 */}
             <View>
               <Text style={styleLabel(c)}>사진</Text>
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#b7c4ca' }} />
-                <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#d6b9a6' }} />
-                <View
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {photos.length === 0 ? (
+                  <>
+                    <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#b7c4ca' }} />
+                    <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#d6b9a6' }} />
+                  </>
+                ) : (
+                  photos.map((uri) => (
+                    <Image key={uri} source={{ uri }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+                  ))
+                )}
+                <Pressable
+                  onPress={pickPhoto}
                   style={{
                     width: 60,
                     height: 60,
@@ -325,7 +369,7 @@ export default function EnduranceForm({ activity }: { activity: string }) {
                     <Path d="M3 16l5-4 4 3 3-2 6 4" />
                     <Path d="M9 10 m -1.4 0 a 1.4 1.4 0 1 0 2.8 0 a 1.4 1.4 0 1 0 -2.8 0" />
                   </Glyph>
-                </View>
+                </Pressable>
               </View>
             </View>
 

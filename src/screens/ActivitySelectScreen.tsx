@@ -7,6 +7,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { withAlpha } from '../theme/tokens';
 import { activities, colorsFor } from '../data/activities';
 import { TemplateType } from '../theme/tokens';
+import { useStore } from '../store/StoreContext';
 
 // Frequently-used pill tiles ("자주 쓰는").
 const FAVORITES = ['런닝', '헬스', '배드민턴'];
@@ -18,6 +19,7 @@ const FREE_GROUP = ['요가', '독서'];
 export default function ActivitySelectScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
+  const { customActivities } = useStore();
 
   const goRecord = (name: string, template: TemplateType) =>
     nav.navigate('RecordForm', { activity: name, template });
@@ -98,6 +100,45 @@ export default function ActivitySelectScreen() {
           style={{ fontSize: 11.5, fontWeight: selected ? '700' : '600' }}
           numberOfLines={1}
         >
+          {name}
+        </T>
+      </Pressable>
+    );
+  };
+
+  // Grid tile for a user-added custom activity: resolve color from its template
+  // and fall back to a default icon when the name isn't in the builtin registry.
+  const CustomTile = ({ name, template }: { name: string; template: TemplateType }) => {
+    const { color, soft } = colorsFor(template, c);
+    const Ico = activities[name] ? Icon[activities[name].icon] : Icon.yoga;
+    return (
+      <Pressable
+        onPress={() => goRecord(name, template)}
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          gap: 6,
+          backgroundColor: c.surface,
+          borderWidth: 1,
+          borderColor: c.border,
+          borderRadius: 12,
+          paddingVertical: 11,
+          paddingHorizontal: 4,
+        }}
+      >
+        <View
+          style={{
+            width: 32,
+            height: 32,
+            borderRadius: 9,
+            backgroundColor: soft,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <Ico size={17} color={color} />
+        </View>
+        <T style={{ fontSize: 11.5, fontWeight: '600' }} numberOfLines={1}>
           {name}
         </T>
       </Pressable>
@@ -239,6 +280,25 @@ export default function ActivitySelectScreen() {
             </View>
           </View>
         </View>
+
+        {/* 내 활동 — user-added custom activities from the store */}
+        {customActivities.length > 0 ? (
+          <View style={{ gap: 6 }}>
+            <Row center gap={6}>
+              <SectionDot color={c.text2} />
+              <T style={{ fontSize: 12, fontWeight: '600' }} c={c.text2}>
+                내 활동
+              </T>
+            </Row>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {customActivities.map((a) => (
+                <View key={a.name} style={{ width: '31%', flexGrow: 1 }}>
+                  <CustomTile name={a.name} template={a.template} />
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
       </View>
     </Screen>
   );
