@@ -29,6 +29,7 @@ type StoreValue = {
   completePlanAsRecord: (id: string) => StoredRecord | null;
   updateRecord: (id: string, patch: Partial<Omit<StoredRecord, 'id'>>) => void;
   updatePlan: (id: string, patch: Partial<Omit<StoredPlan, 'id'>>) => void;
+  deletePlan: (id: string) => void;
   getRecord: (id: string) => StoredRecord | undefined;
   getPlan: (id: string) => StoredPlan | undefined;
 };
@@ -135,6 +136,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           ...s,
           plans: s.plans.map((p) => (p.id === id ? { ...p, ...patch } : p)),
         }));
+      },
+      deletePlan: (id) => {
+        setState((s) => ({ ...s, plans: s.plans.filter((p) => p.id !== id) }));
       },
       getRecord: (id) => state.records.find((r) => r.id === id),
       getPlan: (id) => state.plans.find((p) => p.id === id),

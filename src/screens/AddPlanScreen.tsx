@@ -7,7 +7,7 @@ import { Icon, Glyph, Path, Circle, Rect } from '../components/Glyph';
 import { useTheme } from '../theme/ThemeContext';
 import { useStore } from '../store/StoreContext';
 import { RootStackParamList } from '../navigation/types';
-import { TemplateType } from '../theme/tokens';
+import { TemplateType, withAlpha } from '../theme/tokens';
 
 type ActKey = 'strength' | 'cardio' | 'team';
 
@@ -76,7 +76,7 @@ export default function AddPlanScreen() {
   const nav = useNavigation<any>();
   const { params } = useRoute<RouteProp<RootStackParamList, 'AddPlan'>>();
   const planId = params?.planId;
-  const { addPlan, updatePlan, getPlan } = useStore();
+  const { addPlan, updatePlan, deletePlan, getPlan } = useStore();
   const editing = !!planId;
   const plan = planId ? getPlan(planId) : undefined;
 
@@ -103,6 +103,11 @@ export default function AddPlanScreen() {
     };
     if (editing && planId) updatePlan(planId, payload);
     else addPlan(payload);
+    nav.goBack();
+  };
+
+  const onDelete = () => {
+    if (planId) deletePlan(planId);
     nav.goBack();
   };
 
@@ -137,21 +142,41 @@ export default function AddPlanScreen() {
         >
           <Icon.chevronLeft size={16} color={c.text2} strokeWidth={2.4} />
         </Pressable>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>{editing ? '약속 수정' : '약속 추가'}</Text>
-        <Pressable
-          onPress={onSave}
-          hitSlop={8}
-          style={{
-            height: 30,
-            paddingHorizontal: 12,
-            borderRadius: 999,
-            backgroundColor: c.accentSoft,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>저장</Text>
-        </Pressable>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>{editing ? '약속' : '약속 추가'}</Text>
+        {editing ? (
+          // 편집 화면은 인라인 편집 → 우상단에 저장 · 삭제 아이콘.
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <Pressable
+              onPress={onSave}
+              hitSlop={8}
+              style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Icon.check size={16} color={c.accent} strokeWidth={2.4} />
+            </Pressable>
+            <Pressable
+              onPress={onDelete}
+              hitSlop={8}
+              style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: withAlpha(c.error, 12), alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Icon.trash size={16} color={c.error} strokeWidth={2} />
+            </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            onPress={onSave}
+            hitSlop={8}
+            style={{
+              height: 30,
+              paddingHorizontal: 12,
+              borderRadius: 999,
+              backgroundColor: c.accentSoft,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>저장</Text>
+          </Pressable>
+        )}
       </View>
 
       {/* Form body */}
@@ -351,28 +376,30 @@ export default function AddPlanScreen() {
         </View>
       </View>
 
-      {/* Primary 약속 저장 */}
-      <View style={{ paddingHorizontal: 18, paddingTop: 12, paddingBottom: 16 }}>
-        <Pressable
-          onPress={onSave}
-          style={({ pressed }) => ({
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-            backgroundColor: c.accent,
-            borderRadius: 14,
-            paddingVertical: 15,
-            opacity: pressed ? 0.9 : 1,
-          })}
-        >
-          <Glyph size={18} color="#fff" strokeWidth={2.4}>
-            <Rect x="3" y="4.5" width="18" height="16" rx="2.5" />
-            <Path d="M3 9.5h18M8 2.5v4M16 2.5v4M9 14l2 2 4-4" />
-          </Glyph>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>{editing ? '약속 수정' : '약속 저장'}</Text>
-        </Pressable>
-      </View>
+      {/* Primary 약속 저장 — 신규 추가에만 노출 (편집은 우상단 저장/삭제로 처리) */}
+      {!editing ? (
+        <View style={{ paddingHorizontal: 18, paddingTop: 12, paddingBottom: 16 }}>
+          <Pressable
+            onPress={onSave}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 8,
+              backgroundColor: c.accent,
+              borderRadius: 14,
+              paddingVertical: 15,
+              opacity: pressed ? 0.9 : 1,
+            })}
+          >
+            <Glyph size={18} color="#fff" strokeWidth={2.4}>
+              <Rect x="3" y="4.5" width="18" height="16" rx="2.5" />
+              <Path d="M3 9.5h18M8 2.5v4M16 2.5v4M9 14l2 2 4-4" />
+            </Glyph>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>약속 저장</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </Screen>
   );
 }
