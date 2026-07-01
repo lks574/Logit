@@ -218,7 +218,7 @@ export default function DetailScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, 'Detail'>>();
-  const { getRecord } = useStore();
+  const { getRecord, deleteRecord } = useStore();
 
   const activityKey = route.params?.activity;
   const recordId = route.params?.recordId;
@@ -256,7 +256,14 @@ export default function DetailScreen() {
           >
             <Icon.edit size={17} color={c.text2} strokeWidth={2} />
           </IconButton>
-          <IconButton size={34} bg={c.surface} onPress={() => nav.goBack()}>
+          <IconButton
+            size={34}
+            bg={c.surface}
+            onPress={() => {
+              if (recordId) deleteRecord(recordId);
+              nav.goBack();
+            }}
+          >
             <Icon.trash size={17} color={c.error} strokeWidth={2} />
           </IconButton>
         </Row>

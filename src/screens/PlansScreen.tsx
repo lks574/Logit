@@ -3,204 +3,124 @@ import { Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Screen } from '../components/primitives';
 import { IconButton } from '../components/Button';
-import { Icon, Glyph, Path, Circle } from '../components/Glyph';
-import { DdayBadge } from '../components/badges';
+import { Icon } from '../components/Glyph';
+import { DdayBadge, Tag } from '../components/badges';
 import { useTheme } from '../theme/ThemeContext';
 import { withAlpha } from '../theme/tokens';
+import { useStore } from '../store/StoreContext';
+import { dday, upcomingPlans } from '../store/selectors';
+import { activities, colorsFor, iconFor } from '../data/activities';
+import { StoredPlan } from '../store/types';
 
 type Seg = 'past' | 'upcoming';
 
-// Plan row content copied 1:1 from Logit.dc.html §5.2 (lines 1360–1401).
-type Plan = {
-  title: string;
-  extra?: string; // "· 3명 함께" / "〈아이유〉" / "· 10km 목표"
-  meta: string;
-  dday: number; // 0 = D-DAY
-  icon: React.ReactNode;
-  iconColor: string;
-  iconSoft: string;
-  activity: string;
-};
-
+// 5.2 다가오는 약속 — 스토어 기반. 지난/예정 토글 + 날짜 그룹 + 약속 추가.
 export default function PlansScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
+  const { today, plans } = useStore();
   const [seg, setSeg] = React.useState<Seg>('upcoming');
 
-  const iconSize = 19;
+  const up = upcomingPlans(plans, today); // undone, future, asc
+  const past = plans
+    .filter((p) => p.done || dday(p.dateISO, today) < 0)
+    .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
 
-  const today: Plan[] = [
-    {
-      title: '헬스',
-      meta: '오후 8:00 · 홈짐',
-      dday: 0,
-      activity: '헬스',
-      iconColor: c.strength,
-      iconSoft: c.strengthSoft,
-      icon: (
-        <Glyph size={iconSize} color={c.strength}>
-          <Path d="M6.5 6.5l11 11M4 8l-2 2 4 4M16 4l4 4-2 2M8 16l-4-4M16 8l4 4" />
-        </Glyph>
-      ),
-    },
-  ];
+  const todayPlans = up.filter((p) => dday(p.dateISO, today) === 0);
+  const weekPlans = up.filter((p) => { const d = dday(p.dateISO, today); return d >= 1 && d <= 7; });
+  const laterPlans = up.filter((p) => dday(p.dateISO, today) > 7);
 
-  const thisWeek: Plan[] = [
-    {
-      title: '축구',
-      extra: '· 3명 함께',
-      meta: '7/2 (수) 오후 3:00 · 잠실 보조경기장',
-      dday: 2,
-      activity: '축구',
-      iconColor: c.team,
-      iconSoft: c.teamSoft,
-      icon: (
-        <Glyph size={iconSize} color={c.team}>
-          <Circle cx="12" cy="12" r="9" />
-          <Path d="M12 7.5l4 3-1.5 4.5h-5L8 10.5z" />
-          <Path d="M12 3v4.5M4 9l4 1.5M20 9l-4 1.5M7 19l2.5-4M17 19l-2.5-4" />
-        </Glyph>
-      ),
-    },
-    {
-      title: '콘서트',
-      extra: '〈아이유〉',
-      meta: '7/3 (목) 오후 7:30 · 올림픽홀',
-      dday: 3,
-      activity: '콘서트',
-      iconColor: c.perf,
-      iconSoft: c.perfSoft,
-      icon: (
-        <Glyph size={iconSize} color={c.perf}>
-          <Path d="M9 2h6v12a3 3 0 0 1-6 0z" />
-          <Path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6" />
-        </Glyph>
-      ),
-    },
-    {
-      title: '런닝',
-      extra: '· 10km 목표',
-      meta: '7/5 (토) 오전 7:00 · 한강공원',
-      dday: 5,
-      activity: '런닝',
-      iconColor: c.cardio,
-      iconSoft: c.cardioSoft,
-      icon: (
-        <Glyph size={iconSize} color={c.cardio}>
-          <Circle cx="16" cy="4.5" r="2" />
-          <Path d="M10 9l3-1.5 3 2 2 1.5M13 7.5l-1 5 3 2.5 1 4M12 12.5l-3.5 1.5L6 19" />
-        </Glyph>
-      ),
-    },
-  ];
+  const wd = (iso: string) => ['일', '월', '화', '수', '목', '금', '토'][new Date(iso + 'T00:00:00Z').getUTCDay()];
+  const dateLabel = (iso: string) =>
+    dday(iso, today) === 0 ? '오늘' : `${+iso.slice(5, 7)}/${+iso.slice(8, 10)} (${wd(iso)})`;
 
-  const PlanRow = ({ p }: { p: Plan }) => (
-    <Pressable
-      onPress={() => nav.navigate('Detail', { activity: p.activity })}
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 11,
-        backgroundColor: c.surface,
-        borderWidth: 1,
-        borderColor: c.border,
-        borderRadius: 14,
-        paddingVertical: 11,
-        paddingHorizontal: 13,
-        opacity: pressed ? 0.9 : 1,
-      })}
-    >
-      <View
-        style={{
-          width: 38,
-          height: 38,
-          borderRadius: 10,
-          backgroundColor: p.iconSoft,
+  const resolve = (p: StoredPlan) => {
+    const reg = activities[p.activity];
+    const { color, soft } = colorsFor(reg?.template ?? p.template, c);
+    return { color, soft, IconCmp: iconFor(p.activity) };
+  };
+
+  const PlanRow = ({ p }: { p: StoredPlan }) => {
+    const { color, soft, IconCmp } = resolve(p);
+    const d = dday(p.dateISO, today);
+    const meta = [dateLabel(p.dateISO), p.timeLabel, p.place].filter(Boolean).join(' · ');
+    return (
+      <Pressable
+        onPress={() => nav.navigate('AddPlan', { planId: p.id })}
+        style={({ pressed }) => ({
+          flexDirection: 'row',
           alignItems: 'center',
-          justifyContent: 'center',
-        }}
+          gap: 11,
+          backgroundColor: c.surface,
+          borderWidth: 1,
+          borderColor: c.border,
+          borderRadius: 14,
+          paddingVertical: 11,
+          paddingHorizontal: 13,
+          opacity: pressed ? 0.9 : 1,
+        })}
       >
-        {p.icon}
-      </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{p.title}</Text>
-          {p.extra ? <Text style={{ fontSize: 10, color: c.text3 }}>{p.extra}</Text> : null}
+        <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
+          <IconCmp size={19} color={color} />
         </View>
-        <Text numberOfLines={1} style={{ fontSize: 11.5, color: c.text2, marginTop: 2 }}>
-          {p.meta}
-        </Text>
-      </View>
-      {p.dday === 0 ? (
-        <View style={{ alignItems: 'flex-end', gap: 6 }}>
-          <DdayBadge days={0} />
-          <View
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: 3,
-              borderWidth: 1.5,
-              borderColor: c.accent,
-            }}
-          />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{p.activity}</Text>
+            {p.memo ? <Text numberOfLines={1} style={{ fontSize: 10, color: c.text3, flexShrink: 1 }}>· {p.memo}</Text> : null}
+          </View>
+          <Text numberOfLines={1} style={{ fontSize: 11.5, color: c.text2, marginTop: 2 }}>{meta}</Text>
         </View>
-      ) : (
-        <DdayBadge days={p.dday} color={p.iconColor} />
-      )}
-    </Pressable>
-  );
+        {p.done ? (
+          <Tag label="완료" color={c.success} soft={withAlpha(c.success, 14)} />
+        ) : d < 0 ? (
+          <Tag label="지남" color={c.text3} soft={c.surfaceAlt} />
+        ) : (
+          <DdayBadge days={d} color={color} />
+        )}
+      </Pressable>
+    );
+  };
 
-  const GroupHeader = ({ label, date, color }: { label: string; date?: string; color: string }) => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <Text style={{ fontSize: 12, fontWeight: '700', color }}>{label}</Text>
-      {date ? <Text style={{ fontSize: 11, color: c.text3 }}>{date}</Text> : null}
-    </View>
-  );
+  const Group = ({ label, items, color }: { label: string; items: StoredPlan[]; color: string }) =>
+    items.length ? (
+      <View style={{ gap: 8 }}>
+        <Text style={{ fontSize: 12, fontWeight: '700', color }}>{label}</Text>
+        {items.map((p) => (
+          <PlanRow key={p.id} p={p} />
+        ))}
+      </View>
+    ) : null;
+
+  const upcomingCount = up.length;
+  const empty = seg === 'upcoming' ? upcomingCount === 0 : past.length === 0;
 
   return (
     <Screen edges={['top']} contentStyle={{ paddingBottom: 24 }}>
-      {/* Header: back affordance + title + 지난/예정 toggle */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingHorizontal: 18,
-          paddingTop: 8,
-          paddingBottom: 6,
-          gap: 10,
-        }}
-      >
+      {/* Header + 지난/예정 toggle */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 8, paddingBottom: 6, gap: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
           <IconButton size={30} onPress={() => nav.goBack()}>
             <Icon.chevronLeft size={18} color={c.text2} strokeWidth={2.4} />
           </IconButton>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ fontSize: 22, fontWeight: '700', letterSpacing: -0.44, color: c.text }}>
-              다가오는 약속
+            <Text style={{ fontSize: 22, fontWeight: '700', letterSpacing: -0.44, color: c.text }}>다가오는 약속</Text>
+            <Text style={{ fontSize: 12.5, color: c.text2, marginTop: 2 }}>
+              {seg === 'upcoming' ? `앞으로 예정된 ${upcomingCount}건` : `지난 ${past.length}건`}
             </Text>
-            <Text style={{ fontSize: 12.5, color: c.text2, marginTop: 2 }}>앞으로 예정된 4건</Text>
           </View>
         </View>
-        {/* 지난 / 예정 Segmented toggle (pill track) */}
         <View style={{ flexDirection: 'row', backgroundColor: c.surfaceAlt, borderRadius: 999, padding: 3 }}>
           {(['past', 'upcoming'] as Seg[]).map((k) => {
             const active = seg === k;
-            const label = k === 'past' ? '지난' : '예정';
             return (
               <Pressable
                 key={k}
                 onPress={() => setSeg(k)}
                 hitSlop={4}
-                style={{
-                  paddingVertical: 5,
-                  paddingHorizontal: 11,
-                  borderRadius: 999,
-                  backgroundColor: active ? c.accent : 'transparent',
-                }}
+                style={{ paddingVertical: 5, paddingHorizontal: 11, borderRadius: 999, backgroundColor: active ? c.accent : 'transparent' }}
               >
                 <Text style={{ fontSize: 11, fontWeight: '600', color: active ? '#fff' : c.text2 }}>
-                  {label}
+                  {k === 'past' ? '지난' : '예정'}
                 </Text>
               </Pressable>
             );
@@ -208,21 +128,22 @@ export default function PlansScreen() {
         </View>
       </View>
 
-      {/* Date-grouped plan lists */}
       <View style={{ paddingHorizontal: 18, paddingTop: 6, gap: 16 }}>
-        <View style={{ gap: 8 }}>
-          <GroupHeader label="오늘" date="6월 30일 (월)" color={c.accent} />
-          {today.map((p, i) => (
-            <PlanRow key={i} p={p} />
-          ))}
-        </View>
+        {seg === 'upcoming' ? (
+          <>
+            <Group label="오늘" items={todayPlans} color={c.accent} />
+            <Group label="이번 주" items={weekPlans} color={c.text2} />
+            <Group label="이후" items={laterPlans} color={c.text2} />
+          </>
+        ) : (
+          <Group label="지난 약속" items={past} color={c.text2} />
+        )}
 
-        <View style={{ gap: 8 }}>
-          <GroupHeader label="이번 주" color={c.text2} />
-          {thisWeek.map((p, i) => (
-            <PlanRow key={i} p={p} />
-          ))}
-        </View>
+        {empty ? (
+          <Text style={{ fontSize: 13, color: c.text3, textAlign: 'center', paddingVertical: 20 }}>
+            {seg === 'upcoming' ? '예정된 약속이 없어요.' : '지난 약속이 없어요.'}
+          </Text>
+        ) : null}
 
         {/* ＋약속 추가 */}
         <Pressable
