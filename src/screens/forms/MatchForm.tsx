@@ -1,11 +1,12 @@
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../components/primitives';
 import { FormHeader } from '../../components/FormHeader';
 import { DisclosureButton } from '../../components/Field';
 import { Segmented, Chip } from '../../components/controls';
+import { RatingInput } from '../../components/Rating';
 import { Glyph, Path, Rect, Icon, IconName } from '../../components/Glyph';
 import { useStore } from '../../store/StoreContext';
 import { useTheme } from '../../theme/ThemeContext';
@@ -47,13 +48,21 @@ const ACTIVITY_TO_SPORT: Record<string, string> = {
   축구: 'soccer', 야구: 'baseball', 배드민턴: 'badminton', 테니스: 'tennis', 탁구: 'pingpong', 주짓수: 'jiujitsu',
 };
 
-export default function MatchForm({ activity }: { activity: string }) {
+export default function MatchForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, today } = useStore();
-  const [sportKey, setSportKey] = React.useState(ACTIVITY_TO_SPORT[activity] ?? SPORTS[0].key);
-  const [open, setOpen] = React.useState(false);
-  const [photos, setPhotos] = React.useState<string[]>([]);
+  const { addRecord, updateRecord, getRecord, today } = useStore();
+  const editing = !!recordId;
+  const record = recordId ? getRecord(recordId) : undefined;
+
+  // 종목: 편집 시 record.activity → 종목 key, 아니면 진입 활동명 기준.
+  const [sportKey, setSportKey] = React.useState(
+    ACTIVITY_TO_SPORT[record?.activity ?? activity] ?? ACTIVITY_TO_SPORT[activity] ?? SPORTS[0].key,
+  );
+  const [open, setOpen] = React.useState(editing); // 세부 입력 disclosure (open when editing)
+  const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
+  const [rating, setRating] = React.useState(record?.rating ?? 4);
+  const [memo, setMemo] = React.useState(record?.memo ?? '');
   const sport = SPORTS.find((s) => s.key === sportKey) ?? SPORTS[0];
 
   const resultOptions = sport.team
@@ -66,7 +75,10 @@ export default function MatchForm({ activity }: { activity: string }) {
         { key: 'win', label: '승' },
         { key: 'loss', label: '패' },
       ];
-  const [result, setResult] = React.useState<string>('win');
+  // 결과: record.fields.결과 라벨(승/무/패) → segment key.
+  const resultFromLabel = (label?: string) =>
+    label === '무' ? 'draw' : label === '패' ? 'loss' : label === '승' ? 'win' : undefined;
+  const [result, setResult] = React.useState<string>(resultFromLabel(record?.fields?.결과) ?? 'win');
 
   // 종목 전환 시 현재 결과가 새 옵션에 없으면(예: 팀→개인 전환 시 '무') '승'으로 리셋.
   const selectSport = (key: string) => {
@@ -93,21 +105,29 @@ export default function MatchForm({ activity }: { activity: string }) {
   const handleSave = () => {
     const resultLabel = resultOptions.find((o) => o.key === result)?.label ?? '승';
     const score = `${sport.score[0]}:${sport.score[1]}`;
-    addRecord({
+    const payload = {
       activity,
-      template: 'match',
-      dateISO: today,
-      timeLabel: '방금',
-      photos,
+      template: 'match' as const,
+      dateISO: editing ? record!.dateISO : today,
+      timeLabel: editing ? record!.timeLabel : '방금',
       meta: `${sport.oppName} · ${score} · ${resultLabel}`,
+      rating,
+      memo,
+      photos,
       fields: {
         스코어: score,
         결과: resultLabel,
         ...Object.fromEntries(sport.slots.map((s) => [s.label, s.value])),
         ...(sport.gameScore ? { 게임스코어: sport.gameScore } : {}),
       },
-    });
-    nav.navigate('MainTabs');
+    };
+    if (editing) {
+      updateRecord(recordId!, payload);
+      nav.goBack();
+    } else {
+      addRecord(payload);
+      nav.navigate('MainTabs');
+    }
   };
 
   return (
@@ -117,6 +137,7 @@ export default function MatchForm({ activity }: { activity: string }) {
         icon={iconFor(sportKey)}
         color={c.team}
         soft={c.teamSoft}
+        onCancel={() => nav.goBack()}
         onSave={handleSave}
       />
 
@@ -237,6 +258,35 @@ export default function MatchForm({ activity }: { activity: string }) {
                   <Path d="M9 10 m -1.4 0 a 1.4 1.4 0 1 0 2.8 0 a 1.4 1.4 0 1 0 -2.8 0" />
                 </Glyph>
               </Pressable>
+            </View>
+
+            {/* 평점 */}
+            <View style={{ marginTop: 14 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>평점</Text>
+              <RatingInput value={rating} onChange={setRating} size={20} />
+            </View>
+
+            {/* 메모 */}
+            <View style={{ marginTop: 14 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>메모</Text>
+              <TextInput
+                value={memo}
+                onChangeText={setMemo}
+                placeholder="경기 소감을 남겨보세요"
+                placeholderTextColor={c.text3}
+                multiline
+                style={{
+                  backgroundColor: c.surfaceAlt,
+                  borderRadius: 10,
+                  paddingVertical: 11,
+                  paddingHorizontal: 12,
+                  minHeight: 46,
+                  fontSize: 13,
+                  color: c.text,
+                  lineHeight: 20,
+                  textAlignVertical: 'top',
+                }}
+              />
             </View>
           </View>
         ) : null}

@@ -255,7 +255,7 @@ export default function ActivitySelectScreen() {
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {MATCH_GROUP.map((name) => (
               <View key={name} style={{ width: '31%', flexGrow: 1 }}>
-                <Tile name={name} selected={name === '배드민턴'} />
+                <Tile name={name} />
               </View>
             ))}
           </View>

@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../components/primitives';
 import { FormHeader } from '../../components/FormHeader';
 import { DisclosureButton } from '../../components/Field';
@@ -13,20 +13,28 @@ import { useTheme } from '../../theme/ThemeContext';
 
 // SetRepForm (HTML 3.2, lines 503–556) — 세트·횟수형 (strength template).
 // 운동 부위 chips · per-exercise set table · ＋세트/종목 추가 · 볼륨/시간 summary
-// · 공통 세부 입력 disclosure.
+// · 공통 세부 입력 disclosure. Supports create + edit (recordId).
 
 type SetRow = { set: string; reps: string; weight: string; warmup: boolean };
 
 const PARTS = ['가슴', '삼두', '등', '어깨', '하체'];
 
-export default function SetRepForm({ activity }: { activity: string }) {
+export default function SetRepForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, today } = useStore();
-  const [part, setPart] = React.useState('가슴');
-  const [open, setOpen] = React.useState(false);
-  const [rating, setRating] = React.useState(4);
-  const [photos, setPhotos] = React.useState<string[]>([]);
+  const { addRecord, updateRecord, getRecord, today } = useStore();
+  const editing = !!recordId;
+  const record = recordId ? getRecord(recordId) : undefined;
+
+  const [part, setPart] = React.useState(record?.fields?.부위 ?? '가슴');
+  const [open, setOpen] = React.useState(editing);
+  const [rating, setRating] = React.useState(record?.rating ?? 4);
+  const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
+  const [place, setPlace] = React.useState(record?.fields?.장소 ?? '한강공원');
+  const [memo, setMemo] = React.useState(record?.memo ?? '노을이 좋았다. 마지막 1km 페이스 올림.');
+  const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? ['민지']);
+  const [총볼륨, set총볼륨] = React.useState(record?.fields?.총볼륨 ?? '4,250kg');
+  const [운동시간, set운동시간] = React.useState(record?.fields?.운동시간 ?? '52분');
   const [rows, setRows] = React.useState<SetRow[]>([
     { set: 'W', reps: '15', weight: '40', warmup: true },
     { set: '1', reps: '10', weight: '70', warmup: false },
@@ -48,24 +56,29 @@ export default function SetRepForm({ activity }: { activity: string }) {
   };
 
   const handleSave = () => {
-    const 볼륨 = '4,250kg';
-    addRecord({
+    const payload = {
       activity,
-      template: 'setrep',
-      dateISO: today,
-      timeLabel: '방금',
+      template: 'setrep' as const,
+      dateISO: editing && record ? record.dateISO : today,
+      timeLabel: editing && record ? record.timeLabel : '방금',
+      meta: `${part} · 총 볼륨 ${총볼륨}`,
       rating,
-      memo: '노을이 좋았다. 마지막 1km 페이스 올림.',
+      memo,
+      companions,
       photos,
-      companions: ['민지'],
-      meta: `${part} · 총 볼륨 ${볼륨}`,
       fields: {
         부위: part,
-        총볼륨: 볼륨,
-        운동시간: '52분',
+        총볼륨: 총볼륨,
+        운동시간: 운동시간,
       },
-    });
-    nav.navigate('MainTabs');
+    };
+    if (editing && recordId) {
+      updateRecord(recordId, payload);
+      nav.goBack();
+    } else {
+      addRecord(payload);
+      nav.navigate('MainTabs');
+    }
   };
 
   return (
@@ -75,6 +88,7 @@ export default function SetRepForm({ activity }: { activity: string }) {
         icon={<Icon.dumbbell size={13} color={c.strength} strokeWidth={2.2} />}
         color={c.strength}
         soft={c.strengthSoft}
+        onCancel={() => nav.goBack()}
         onSave={handleSave}
       />
 
@@ -237,13 +251,15 @@ export default function SetRepForm({ activity }: { activity: string }) {
               총 볼륨 <Text style={{ fontSize: 10, fontWeight: '600', color: c.strength }}>자동</Text>
             </Text>
             <Text style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 2 }}>
-              4,250<Text style={{ fontSize: 12, color: c.text2 }}>kg</Text>
+              {총볼륨.replace(/kg$/, '')}
+              <Text style={{ fontSize: 12, color: c.text2 }}>kg</Text>
             </Text>
           </View>
           <View style={{ flex: 1, backgroundColor: c.surfaceAlt, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14 }}>
             <Text style={{ fontSize: 11, color: c.text2 }}>운동 시간</Text>
             <Text style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 2 }}>
-              52<Text style={{ fontSize: 12, color: c.text2 }}>분</Text>
+              {운동시간.replace(/분$/, '')}
+              <Text style={{ fontSize: 12, color: c.text2 }}>분</Text>
             </Text>
           </View>
         </View>
@@ -278,12 +294,19 @@ export default function SetRepForm({ activity }: { activity: string }) {
                   <Path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
                   <Path d="M12 10 m -2.6 0 a 2.6 2.6 0 1 0 5.2 0 a 2.6 2.6 0 1 0 -5.2 0" />
                 </Glyph>
-                <Text style={{ fontSize: 14, color: c.text }}>한강공원</Text>
+                <TextInput
+                  value={place}
+                  onChangeText={setPlace}
+                  placeholder="장소"
+                  placeholderTextColor={c.text3}
+                  style={{ flex: 1, fontSize: 14, color: c.text, padding: 0 }}
+                />
               </View>
               <View style={{ flexDirection: 'row', gap: 6, marginTop: 7 }}>
                 {['최근 · 올림픽공원', '양재천'].map((t) => (
-                  <View
+                  <Pressable
                     key={t}
+                    onPress={() => setPlace(t.replace('최근 · ', ''))}
                     style={{
                       backgroundColor: c.surface,
                       borderWidth: 1,
@@ -294,7 +317,7 @@ export default function SetRepForm({ activity }: { activity: string }) {
                     }}
                   >
                     <Text style={{ fontSize: 12, color: c.text2 }}>{t}</Text>
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             </View>
@@ -303,48 +326,59 @@ export default function SetRepForm({ activity }: { activity: string }) {
             <View>
               <Text style={styleLabel(c)}>동행</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 6,
-                    backgroundColor: c.strength,
-                    borderRadius: 999,
-                    paddingVertical: 7,
-                    paddingLeft: 8,
-                    paddingRight: 11,
-                  }}
-                >
-                  <View
+                {companions.map((name) => (
+                  <Pressable
+                    key={name}
+                    onPress={() => setCompanions((list) => list.filter((n) => n !== name))}
                     style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: 9,
-                      backgroundColor: 'rgba(255,255,255,.25)',
+                      flexDirection: 'row',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      gap: 6,
+                      backgroundColor: c.strength,
+                      borderRadius: 999,
+                      paddingVertical: 7,
+                      paddingLeft: 8,
+                      paddingRight: 11,
                     }}
                   >
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>민</Text>
-                  </View>
-                  <Text style={{ fontSize: 13, color: '#fff' }}>민지</Text>
-                  <Glyph size={12} color="#fff" strokeWidth={2.6}>
-                    <Path d="M6 6l12 12M18 6 6 18" />
-                  </Glyph>
-                </View>
-                <View
-                  style={{
-                    backgroundColor: c.surface,
-                    borderWidth: 1,
-                    borderColor: c.border,
-                    borderRadius: 999,
-                    paddingVertical: 7,
-                    paddingHorizontal: 12,
-                  }}
-                >
-                  <Text style={{ fontSize: 13, color: c.text2 }}>+ 지훈</Text>
-                </View>
-                <CompanionChip name="추가" dashed />
+                    <View
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 9,
+                        backgroundColor: 'rgba(255,255,255,.25)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>{name.slice(0, 1)}</Text>
+                    </View>
+                    <Text style={{ fontSize: 13, color: '#fff' }}>{name}</Text>
+                    <Glyph size={12} color="#fff" strokeWidth={2.6}>
+                      <Path d="M6 6l12 12M18 6 6 18" />
+                    </Glyph>
+                  </Pressable>
+                ))}
+                {!companions.includes('지훈') ? (
+                  <Pressable
+                    onPress={() => setCompanions((list) => [...list, '지훈'])}
+                    style={{
+                      backgroundColor: c.surface,
+                      borderWidth: 1,
+                      borderColor: c.border,
+                      borderRadius: 999,
+                      paddingVertical: 7,
+                      paddingHorizontal: 12,
+                    }}
+                  >
+                    <Text style={{ fontSize: 13, color: c.text2 }}>+ 지훈</Text>
+                  </Pressable>
+                ) : null}
+                <CompanionChip
+                  name="추가"
+                  dashed
+                  onPress={() => setCompanions((list) => [...list, `동행 ${list.length + 1}`])}
+                />
               </View>
             </View>
 
@@ -435,9 +469,14 @@ export default function SetRepForm({ activity }: { activity: string }) {
                   minHeight: 46,
                 }}
               >
-                <Text style={{ fontSize: 13, color: c.text, lineHeight: 20 }}>
-                  노을이 좋았다. 마지막 1km 페이스 올림.
-                </Text>
+                <TextInput
+                  value={memo}
+                  onChangeText={setMemo}
+                  placeholder="메모"
+                  placeholderTextColor={c.text3}
+                  multiline
+                  style={{ fontSize: 13, color: c.text, lineHeight: 20, padding: 0, textAlignVertical: 'top' }}
+                />
               </View>
             </View>
           </View>

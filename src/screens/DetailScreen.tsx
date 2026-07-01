@@ -252,7 +252,7 @@ export default function DetailScreen() {
           <IconButton
             size={34}
             bg={c.surface}
-            onPress={() => nav.navigate('RecordForm', { activity: v.activity, template })}
+            onPress={() => nav.navigate('RecordForm', { activity: v.activity, template, recordId })}
           >
             <Icon.edit size={17} color={c.text2} strokeWidth={2} />
           </IconButton>

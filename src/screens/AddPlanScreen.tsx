@@ -1,11 +1,12 @@
 import React from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Screen } from '../components/primitives';
 import { Toggle } from '../components/controls';
 import { Icon, Glyph, Path, Circle, Rect } from '../components/Glyph';
 import { useTheme } from '../theme/ThemeContext';
 import { useStore } from '../store/StoreContext';
+import { RootStackParamList } from '../navigation/types';
 import { TemplateType } from '../theme/tokens';
 
 type ActKey = 'strength' | 'cardio' | 'team';
@@ -15,6 +16,14 @@ const CHIP_META: Record<ActKey, { activity: string; template: TemplateType }> = 
   strength: { activity: '헬스', template: 'setrep' },
   cardio: { activity: '런닝', template: 'endurance' },
   team: { activity: '축구', template: 'match' },
+};
+const chipForActivity = (name: string): ActKey | null =>
+  (Object.keys(CHIP_META) as ActKey[]).find((k) => CHIP_META[k].activity === name) ?? null;
+
+// "2026-07-02" → "7월 2일 (수)".
+const planDateLabel = (dateISO: string) => {
+  const wd = ['일', '월', '화', '수', '목', '금', '토'][new Date(dateISO + 'T00:00:00Z').getUTCDay()];
+  return `${+dateISO.slice(5, 7)}월 ${+dateISO.slice(8, 10)}일 (${wd})`;
 };
 
 // Activity chip choices copied 1:1 from Logit.dc.html §5.3 (lines 1451–1456).
@@ -65,23 +74,35 @@ const ACTIVITIES: {
 export default function AddPlanScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addPlan } = useStore();
-  const [selected, setSelected] = React.useState<ActKey>('strength');
-  const [alarm, setAlarm] = React.useState(true);
-  const [memo, setMemo] = React.useState('');
+  const { params } = useRoute<RouteProp<RootStackParamList, 'AddPlan'>>();
+  const planId = params?.planId;
+  const { addPlan, updatePlan, getPlan } = useStore();
+  const editing = !!planId;
+  const plan = planId ? getPlan(planId) : undefined;
+
+  // In edit mode, highlight the matching chip (null if the plan's activity
+  // isn't one of the 3 quick chips — then we keep the plan's own activity).
+  const [selected, setSelected] = React.useState<ActKey | null>(
+    editing ? (plan ? chipForActivity(plan.activity) : null) : 'strength'
+  );
+  const [alarm, setAlarm] = React.useState(plan?.reminder ?? true);
+  const [memo, setMemo] = React.useState(plan?.memo ?? '');
 
   const onSave = () => {
-    const { activity, template } = CHIP_META[selected];
-    addPlan({
-      activity,
-      template,
-      // Form date field is the static sample "7월 2일 (수)" → 2026-07-02.
-      dateISO: '2026-07-02',
-      timeLabel: '오후 3:00',
-      place: '잠실 보조경기장',
+    // Effective activity: a selected chip overrides; else keep the plan's own.
+    const meta = selected
+      ? CHIP_META[selected]
+      : { activity: plan?.activity ?? '헬스', template: plan?.template ?? ('setrep' as TemplateType) };
+    const payload = {
+      ...meta,
+      dateISO: plan?.dateISO ?? '2026-07-02',
+      timeLabel: plan?.timeLabel ?? '오후 3:00',
+      place: plan?.place ?? '잠실 보조경기장',
       memo: memo.trim() || undefined,
       reminder: alarm,
-    });
+    };
+    if (editing && planId) updatePlan(planId, payload);
+    else addPlan(payload);
     nav.goBack();
   };
 
@@ -116,7 +137,7 @@ export default function AddPlanScreen() {
         >
           <Icon.chevronLeft size={16} color={c.text2} strokeWidth={2.4} />
         </Pressable>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>약속 추가</Text>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>{editing ? '약속 수정' : '약속 추가'}</Text>
         <Pressable
           onPress={onSave}
           hitSlop={8}
@@ -221,7 +242,9 @@ export default function AddPlanScreen() {
                 <Rect x="3" y="4.5" width="18" height="16" rx="2.5" />
                 <Path d="M3 9.5h18M8 2.5v4M16 2.5v4" />
               </Glyph>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>7월 2일 (수)</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>
+                {editing && plan ? planDateLabel(plan.dateISO) : '7월 2일 (수)'}
+              </Text>
             </View>
             <View
               style={{
@@ -241,7 +264,9 @@ export default function AddPlanScreen() {
                 <Circle cx="12" cy="12" r="9" />
                 <Path d="M12 7v5l3.5 2" />
               </Glyph>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>오후 3:00</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>
+                {editing && plan ? plan.timeLabel : '오후 3:00'}
+              </Text>
             </View>
           </View>
         </View>
@@ -266,7 +291,9 @@ export default function AddPlanScreen() {
               <Path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z" />
               <Circle cx="12" cy="10" r="2.5" />
             </Glyph>
-            <Text style={{ fontSize: 14, color: c.text }}>잠실 보조경기장</Text>
+            <Text style={{ fontSize: 14, color: c.text }}>
+              {editing && plan?.place ? plan.place : '잠실 보조경기장'}
+            </Text>
           </View>
         </View>
 
@@ -343,7 +370,7 @@ export default function AddPlanScreen() {
             <Rect x="3" y="4.5" width="18" height="16" rx="2.5" />
             <Path d="M3 9.5h18M8 2.5v4M16 2.5v4M9 14l2 2 4-4" />
           </Glyph>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>약속 저장</Text>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>{editing ? '약속 수정' : '약속 저장'}</Text>
         </Pressable>
       </View>
     </Screen>

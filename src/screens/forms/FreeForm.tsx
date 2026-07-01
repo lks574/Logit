@@ -1,12 +1,12 @@
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../components/primitives';
 import { FormHeader } from '../../components/FormHeader';
 import { DisclosureButton, Field } from '../../components/Field';
 import { Segmented } from '../../components/controls';
-import { RatingInput } from '../../components/Rating';
+import { RatingInput, CompanionChip } from '../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../components/Glyph';
 import { useStore } from '../../store/StoreContext';
 import { useTheme } from '../../theme/ThemeContext';
@@ -15,41 +15,71 @@ import { useTheme } from '../../theme/ThemeContext';
 // Derived from the common skeleton (§02, HTML lines 296–437):
 //   필수 = 날짜·시간 row · core = 시간(duration) + 강도(segmented) + 평점(RatingInput)
 //   · 공통 세부 입력 disclosure · 메모 field · offline footer note.
+// Supports EDIT mode: with a recordId param, prefills state from the stored record
+// and saves via updateRecord.
 
 type Intensity = 'low' | 'mid' | 'high';
 
 const INTENSITY_LABEL: Record<Intensity, string> = { low: '낮음', mid: '보통', high: '높음' };
+const LABEL_INTENSITY: Record<string, Intensity> = { 낮음: 'low', 보통: 'mid', 높음: 'high' };
 
-export default function FreeForm({ activity }: { activity: string }) {
+export default function FreeForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, today } = useStore();
-  const [open, setOpen] = React.useState(false);
-  const [intensity, setIntensity] = React.useState<Intensity>('mid');
-  const [rating, setRating] = React.useState(4);
-  const [memo, setMemo] = React.useState('');
-  const [photos, setPhotos] = React.useState<string[]>([]);
+  const { addRecord, updateRecord, getRecord, today } = useStore();
+
+  const editing = !!recordId;
+  const record = recordId ? getRecord(recordId) : undefined;
+
+  // PREFILL controlled state from the record when editing.
+  const [duration, setDuration] = React.useState(record?.fields?.['시간']?.replace(/[^0-9]/g, '') || '45');
+  const [intensity, setIntensity] = React.useState<Intensity>(
+    (record?.fields?.['강도'] && LABEL_INTENSITY[record.fields['강도']]) || 'mid',
+  );
+  const [rating, setRating] = React.useState(record?.rating ?? 4);
+  const [memo, setMemo] = React.useState(record?.memo ?? '');
+  const [place, setPlace] = React.useState(record?.fields?.['장소'] ?? '');
+  const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
+  const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
+  const [open, setOpen] = React.useState(
+    !!(record?.companions?.length || record?.photos?.length || record?.fields?.['장소']),
+  );
+  const [newCompanion, setNewCompanion] = React.useState('');
 
   const pickPhoto = async () => {
     const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.7 });
     if (!res.canceled && res.assets?.[0]) setPhotos((p) => [...p, res.assets[0].uri]);
   };
 
+  const addCompanion = () => {
+    const name = newCompanion.trim();
+    if (!name) return;
+    setCompanions((p) => [...p, name]);
+    setNewCompanion('');
+  };
+
   const handleSave = () => {
-    const 시간 = '45분';
+    const 시간 = `${duration || '0'}분`;
     const 강도 = INTENSITY_LABEL[intensity];
-    addRecord({
+    const payload = {
       activity,
-      template: 'free',
-      dateISO: today,
-      timeLabel: '방금',
+      template: 'free' as const,
+      dateISO: editing ? record!.dateISO : today,
+      timeLabel: editing ? record!.timeLabel : '방금',
+      meta: `${시간} · 강도 ${강도}`,
       rating,
       memo,
+      companions,
       photos,
-      meta: `${시간} · 강도 ${강도}`,
-      fields: { 시간, 강도 },
-    });
-    nav.navigate('MainTabs');
+      fields: { 시간, 강도, ...(place ? { 장소: place } : {}) },
+    };
+    if (editing) {
+      updateRecord(recordId!, payload);
+      nav.goBack();
+    } else {
+      addRecord(payload);
+      nav.navigate('MainTabs');
+    }
   };
 
   return (
@@ -106,7 +136,14 @@ export default function FreeForm({ activity }: { activity: string }) {
               paddingHorizontal: 12,
             }}
           >
-            <Text style={{ fontSize: 18, fontWeight: '700', color: c.text }}>45</Text>
+            <TextInput
+              value={duration}
+              onChangeText={(t) => setDuration(t.replace(/[^0-9]/g, ''))}
+              keyboardType="number-pad"
+              placeholder="0"
+              placeholderTextColor={c.text3}
+              style={{ fontSize: 18, fontWeight: '700', color: c.text, padding: 0, minWidth: 28 }}
+            />
             <Text style={{ fontSize: 13, color: c.text2 }}>분</Text>
           </View>
         </View>
@@ -142,36 +179,78 @@ export default function FreeForm({ activity }: { activity: string }) {
           onPress={() => setOpen((o) => !o)}
         />
 
-        {/* Expanded — 사진 */}
         {open ? (
-          <View>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>사진</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-              {photos.map((uri) => (
-                <Image key={uri} source={{ uri }} style={{ width: 60, height: 60, borderRadius: 11 }} />
-              ))}
-              <Pressable
-                onPress={pickPhoto}
-                style={{
-                  width: 60,
-                  height: 60,
-                  borderRadius: 11,
-                  backgroundColor: c.surfaceAlt,
-                  borderWidth: 1,
-                  borderStyle: 'dashed',
-                  borderColor: c.border,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Glyph size={20} color={c.text3} strokeWidth={2}>
-                  <Rect x="3" y="5" width="18" height="15" rx="3" />
-                  <Path d="M3 16l5-4 4 3 3-2 6 4" />
-                  <Path d="M9 10 m -1.4 0 a 1.4 1.4 0 1 0 2.8 0 a 1.4 1.4 0 1 0 -2.8 0" />
-                </Glyph>
-              </Pressable>
+          <>
+            {/* 장소 */}
+            <Field label="장소" value={place} onChangeText={setPlace} placeholder="어디에서 했나요?" />
+
+            {/* 동행 */}
+            <View>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>동행</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                {companions.map((name, i) => (
+                  <CompanionChip key={`${name}-${i}`} name={name} />
+                ))}
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 5,
+                    backgroundColor: c.surface,
+                    borderWidth: 1,
+                    borderStyle: 'dashed',
+                    borderColor: c.border,
+                    borderRadius: 999,
+                    paddingVertical: 4,
+                    paddingHorizontal: 11,
+                  }}
+                >
+                  <Glyph size={12} color={c.text3} strokeWidth={2.4}>
+                    <Path d="M12 5v14M5 12h14" />
+                  </Glyph>
+                  <TextInput
+                    value={newCompanion}
+                    onChangeText={setNewCompanion}
+                    onSubmitEditing={addCompanion}
+                    returnKeyType="done"
+                    placeholder="추가"
+                    placeholderTextColor={c.text3}
+                    style={{ fontSize: 12, color: c.text2, padding: 0, minWidth: 44 }}
+                  />
+                </View>
+              </View>
             </View>
-          </View>
+
+            {/* 사진 */}
+            <View>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>사진</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {photos.map((uri) => (
+                  <Image key={uri} source={{ uri }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+                ))}
+                <Pressable
+                  onPress={pickPhoto}
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 11,
+                    backgroundColor: c.surfaceAlt,
+                    borderWidth: 1,
+                    borderStyle: 'dashed',
+                    borderColor: c.border,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Glyph size={20} color={c.text3} strokeWidth={2}>
+                    <Rect x="3" y="5" width="18" height="15" rx="3" />
+                    <Path d="M3 16l5-4 4 3 3-2 6 4" />
+                    <Path d="M9 10 m -1.4 0 a 1.4 1.4 0 1 0 2.8 0 a 1.4 1.4 0 1 0 -2.8 0" />
+                  </Glyph>
+                </Pressable>
+              </View>
+            </View>
+          </>
         ) : null}
 
         {/* 메모 */}

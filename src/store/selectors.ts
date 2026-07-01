@@ -142,6 +142,21 @@ export function statsSummary(records: StoredRecord[], filter: StatsFilter, today
   let topWorkCount = 0;
   for (const [w, n] of workCounts) if (n > topWorkCount) ((topWork = w), (topWorkCount = n));
 
+  // 최다 배우 — fields.출연진 ("역·배우 · 역·배우" 또는 "배우 · 배우")에서 배우 토큰 집계.
+  const actorCounts = new Map<string, number>();
+  for (const r of spec) {
+    const cast = r.fields?.출연진;
+    if (!cast) continue;
+    for (const entry of cast.split(/\s·\s|,/)) {
+      const parts = entry.trim().split('·');
+      const actor = parts[parts.length - 1].trim();
+      if (actor) actorCounts.set(actor, (actorCounts.get(actor) ?? 0) + 1);
+    }
+  }
+  let topActor = '';
+  let topActorCount = 0;
+  for (const [a, n] of actorCounts) if (n > topActorCount) ((topActor = a), (topActorCount = n));
+
   return {
     count: filtered.length,
     streak,
@@ -155,5 +170,7 @@ export function statsSummary(records: StoredRecord[], filter: StatsFilter, today
     spectateCount: spec.length,
     topWork,
     topWorkCount,
+    topActor,
+    topActorCount,
   };
 }

@@ -265,7 +265,7 @@ export default function CalendarScreen() {
                       const rec = completePlanAsRecord(p.id);
                       if (rec) nav.navigate('Detail', { activity: rec.activity, recordId: rec.id });
                     }}
-                    onPress={() => nav.navigate('AddPlan')}
+                    onPress={() => nav.navigate('AddPlan', { planId: p.id })}
                   />
                 );
               })}

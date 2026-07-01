@@ -12,7 +12,15 @@ const { today, records, plans, customActivities,
 - `today` = '2026-06-30' (design reference date; use instead of real Date).
 - `records: StoredRecord[]`, `plans: StoredPlan[]` (types in `../store/types`).
 - `addRecord(r: Omit<StoredRecord,'id'|'sync'>) => StoredRecord` — new record starts `sync:'pending'`, auto-flips to `'synced'` after ~1.5s.
-- `addPlan(p: Omit<StoredPlan,'id'>)`, `addActivity({name,template})`, `completePlan(id)`, `getRecord(id)`.
+- `addPlan(p: Omit<StoredPlan,'id'>)`, `addActivity({name,template})`, `completePlan(id)`, `getRecord(id)`, `getPlan(id)`.
+- `updateRecord(id, patch: Partial<StoredRecord>)`, `updatePlan(id, patch: Partial<StoredPlan>)` — for edit flows.
+
+## Edit mode (forms & AddPlan)
+Screens that create also edit. When a `recordId`/`planId` param is present:
+- Load the entity (`getRecord`/`getPlan`), **prefill controlled state** from it.
+- On save call `updateRecord(id, patch)` / `updatePlan(id, patch)` (NOT add), then `nav.goBack()`
+  (returns to Detail). On create: `addRecord`/`addPlan` then navigate as before.
+- Detail's 수정 passes `recordId`; Calendar plan tap passes `planId`.
 - `useSyncState()` → 'synced' | 'pending' | 'offline' for `SyncStatusBadge`.
 
 ## Types (summary)

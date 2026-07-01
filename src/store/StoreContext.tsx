@@ -27,6 +27,8 @@ type StoreValue = {
   addActivity: (a: CustomActivity) => void;
   completePlan: (id: string) => void;
   completePlanAsRecord: (id: string) => StoredRecord | null;
+  updateRecord: (id: string, patch: Partial<Omit<StoredRecord, 'id'>>) => void;
+  updatePlan: (id: string, patch: Partial<Omit<StoredPlan, 'id'>>) => void;
   getRecord: (id: string) => StoredRecord | undefined;
   getPlan: (id: string) => StoredPlan | undefined;
 };
@@ -121,6 +123,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }));
         markSynced(rec.id);
         return rec;
+      },
+      updateRecord: (id, patch) => {
+        setState((s) => ({
+          ...s,
+          records: s.records.map((r) => (r.id === id ? { ...r, ...patch } : r)),
+        }));
+      },
+      updatePlan: (id, patch) => {
+        setState((s) => ({
+          ...s,
+          plans: s.plans.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+        }));
       },
       getRecord: (id) => state.records.find((r) => r.id === id),
       getPlan: (id) => state.plans.find((p) => p.id === id),

@@ -31,7 +31,7 @@ export const seed: StoreState = {
       companions: [],
       photos: [],
       memo: '3차 관람',
-      fields: { 작품: '레미제라블', 공연장: '블루스퀘어', 회차: '3차' },
+      fields: { 작품: '레미제라블', 공연장: '블루스퀘어', 회차: '3차', 출연진: '장발장·민우혁 · 자베르·카이 · 판틴·조정은' },
       sync: 'synced',
     },
     {
@@ -110,7 +110,7 @@ export const seed: StoreState = {
     {
       id: 'r-play-0503', activity: '연극', template: 'spectate', dateISO: '2026-05-03', timeLabel: '5월 3일',
       meta: '〈고도를 기다리며〉 · 명동예술극장', rating: 4, photos: [], memo: '',
-      fields: { 작품: '고도를 기다리며', 공연장: '명동예술극장', 회차: '1차' }, sync: 'synced',
+      fields: { 작품: '고도를 기다리며', 공연장: '명동예술극장', 회차: '1차', 출연진: '블라디미르·신구 · 에스트라공·박근형' }, sync: 'synced',
     },
   ],
   plans: [

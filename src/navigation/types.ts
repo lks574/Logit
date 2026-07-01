@@ -3,9 +3,9 @@ import { TemplateType } from '../theme/tokens';
 export type RootStackParamList = {
   MainTabs: undefined;
   ActivitySelect: undefined;
-  RecordForm: { activity: string; template: TemplateType };
+  RecordForm: { activity: string; template: TemplateType; recordId?: string };
   Detail: { activity: string; recordId?: string };
-  AddPlan: undefined;
+  AddPlan: { planId?: string } | undefined;
   AddActivity: undefined;
   Plans: undefined;
   HomeEmpty: undefined;

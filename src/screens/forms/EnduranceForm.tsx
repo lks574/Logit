@@ -1,7 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import React from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, TextInput, View } from 'react-native';
 import { CompanionChip, RatingInput } from '../../components/Rating';
 import { DisclosureButton } from '../../components/Field';
 import { FormHeader } from '../../components/FormHeader';
@@ -14,13 +14,27 @@ import { withAlpha } from '../../theme/tokens';
 
 // §03 3.1 거리·시간형 — EnduranceForm (cardio). Embeds §02 common skeleton.
 // HTML source of truth: Logit.dc.html 2.1 (296–358), 2.2 (359–437), 3.1 (444–502).
-export default function EnduranceForm({ activity }: { activity: string }) {
+export default function EnduranceForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, today } = useStore();
-  const [open, setOpen] = React.useState(false); // 세부 입력 disclosure (collapsed default)
-  const [rating, setRating] = React.useState(4);
-  const [photos, setPhotos] = React.useState<string[]>([]);
+  const { addRecord, updateRecord, getRecord, today } = useStore();
+  const editing = !!recordId;
+  const record = recordId ? getRecord(recordId) : undefined;
+
+  const [open, setOpen] = React.useState(editing); // 세부 입력 disclosure (open when editing)
+  const [rating, setRating] = React.useState(record?.rating ?? 4);
+  const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
+  const [memo, setMemo] = React.useState(record?.memo ?? '노을이 좋았다. 마지막 1km 페이스 올림.');
+  const [place, setPlace] = React.useState(record?.fields?.장소 ?? '한강공원');
+  const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? ['민지']);
+
+  // Endurance core fields (prefilled from record.fields when editing)
+  const [거리, set거리] = React.useState(record?.fields?.거리 ?? '5.2km');
+  const [시간, set시간] = React.useState(record?.fields?.시간 ?? '27:12');
+  const [페이스, set페이스] = React.useState(record?.fields?.페이스 ?? '5′14″/km');
+  const [고도, set고도] = React.useState(record?.fields?.고도 ?? '42 m');
+  const [칼로리, set칼로리] = React.useState(record?.fields?.칼로리 ?? '328 kcal');
+  const [평균심박, set평균심박] = React.useState(record?.fields?.평균심박 ?? '152 bpm');
 
   const template = activities[activity]?.template ?? 'endurance';
   const { color, soft } = colorsFor(template, c);
@@ -31,29 +45,37 @@ export default function EnduranceForm({ activity }: { activity: string }) {
     if (!res.canceled && res.assets?.[0]) setPhotos((p) => [...p, res.assets[0].uri]);
   };
 
+  const addCompanion = () => {
+    setCompanions((prev) => [...prev, `동행 ${prev.length + 1}`]);
+  };
+
   const handleSave = () => {
-    const 거리 = '5.2km';
-    const 시간 = '27:12';
-    addRecord({
+    const payload = {
       activity,
-      template: 'endurance',
-      dateISO: today,
-      timeLabel: '방금',
+      template: 'endurance' as const,
+      dateISO: editing ? record!.dateISO : today,
+      timeLabel: editing ? record!.timeLabel : '방금',
+      meta: `${place || '한강공원'} · ${거리} · ${시간}`,
       rating,
-      memo: '노을이 좋았다. 마지막 1km 페이스 올림.',
+      memo,
+      companions,
       photos,
-      companions: ['민지'],
-      meta: `한강공원 · ${거리} · ${시간}`,
       fields: {
         거리,
         시간,
-        페이스: '5′14″/km',
-        고도: '42 m',
-        칼로리: '328 kcal',
-        평균심박: '152 bpm',
+        페이스,
+        고도,
+        칼로리,
+        평균심박,
       },
-    });
-    nav.navigate('MainTabs');
+    };
+    if (editing) {
+      updateRecord(recordId!, payload);
+      nav.goBack();
+    } else {
+      addRecord(payload);
+      nav.navigate('MainTabs');
+    }
   };
 
   return (
@@ -157,10 +179,13 @@ export default function EnduranceForm({ activity }: { activity: string }) {
               }}
             >
               <Text style={{ fontSize: 12, color: c.text2 }}>거리</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
-                <Text style={{ fontSize: 24, fontWeight: '700', color: c.text }}>5.2</Text>
-                <Text style={{ fontSize: 14, fontWeight: '600', color }}>km</Text>
-              </View>
+              <TextInput
+                value={거리}
+                onChangeText={set거리}
+                placeholder="5.2km"
+                placeholderTextColor={c.text3}
+                style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 4, padding: 0 }}
+              />
             </View>
             <View
               style={{
@@ -174,9 +199,13 @@ export default function EnduranceForm({ activity }: { activity: string }) {
               }}
             >
               <Text style={{ fontSize: 12, color: c.text2 }}>시간</Text>
-              <View style={{ marginTop: 4 }}>
-                <Text style={{ fontSize: 24, fontWeight: '700', color: c.text }}>27:12</Text>
-              </View>
+              <TextInput
+                value={시간}
+                onChangeText={set시간}
+                placeholder="27:12"
+                placeholderTextColor={c.text3}
+                style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 4, padding: 0 }}
+              />
             </View>
           </View>
         </View>
@@ -206,7 +235,13 @@ export default function EnduranceForm({ activity }: { activity: string }) {
             <DetailRow>
               <Text style={{ fontSize: 14, color: c.text }}>평균 페이스</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: c.text }}>5′14″/km</Text>
+                <TextInput
+                  value={페이스}
+                  onChangeText={set페이스}
+                  placeholder="5′14″/km"
+                  placeholderTextColor={c.text3}
+                  style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 80 }}
+                />
                 <View style={{ backgroundColor: soft, borderRadius: 5, paddingVertical: 2, paddingHorizontal: 6 }}>
                   <Text style={{ fontSize: 10, fontWeight: '600', color }}>자동</Text>
                 </View>
@@ -215,12 +250,24 @@ export default function EnduranceForm({ activity }: { activity: string }) {
             <View style={{ height: 1, backgroundColor: c.border }} />
             <DetailRow>
               <Text style={{ fontSize: 14, color: c.text }}>고도 상승</Text>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: c.text }}>42 m</Text>
+              <TextInput
+                value={고도}
+                onChangeText={set고도}
+                placeholder="42 m"
+                placeholderTextColor={c.text3}
+                style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 80 }}
+              />
             </DetailRow>
             <View style={{ height: 1, backgroundColor: c.border }} />
             <DetailRow>
               <Text style={{ fontSize: 14, color: c.text }}>칼로리</Text>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: c.text }}>328 kcal</Text>
+              <TextInput
+                value={칼로리}
+                onChangeText={set칼로리}
+                placeholder="328 kcal"
+                placeholderTextColor={c.text3}
+                style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 80 }}
+              />
             </DetailRow>
             <View style={{ height: 1, backgroundColor: c.border }} />
             <DetailRow>
@@ -230,7 +277,13 @@ export default function EnduranceForm({ activity }: { activity: string }) {
                 </Glyph>
                 <Text style={{ fontSize: 14, color: c.text }}>평균 심박</Text>
               </View>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: c.text }}>152 bpm</Text>
+              <TextInput
+                value={평균심박}
+                onChangeText={set평균심박}
+                placeholder="152 bpm"
+                placeholderTextColor={c.text3}
+                style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 80 }}
+              />
             </DetailRow>
           </View>
         </View>
@@ -266,12 +319,19 @@ export default function EnduranceForm({ activity }: { activity: string }) {
                   <Path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
                   <Path d="M12 10 m -2.6 0 a 2.6 2.6 0 1 0 5.2 0 a 2.6 2.6 0 1 0 -5.2 0" />
                 </Glyph>
-                <Text style={{ fontSize: 14, color: c.text }}>한강공원</Text>
+                <TextInput
+                  value={place}
+                  onChangeText={setPlace}
+                  placeholder="한강공원"
+                  placeholderTextColor={c.text3}
+                  style={{ flex: 1, fontSize: 14, color: c.text, padding: 0 }}
+                />
               </View>
               <View style={{ flexDirection: 'row', gap: 6, marginTop: 7 }}>
                 {['최근 · 올림픽공원', '양재천'].map((t) => (
-                  <View
+                  <Pressable
                     key={t}
+                    onPress={() => setPlace(t.replace('최근 · ', ''))}
                     style={{
                       backgroundColor: c.surface,
                       borderWidth: 1,
@@ -282,7 +342,7 @@ export default function EnduranceForm({ activity }: { activity: string }) {
                     }}
                   >
                     <Text style={{ fontSize: 12, color: c.text2 }}>{t}</Text>
-                  </View>
+                  </Pressable>
                 ))}
               </View>
             </View>
@@ -291,36 +351,40 @@ export default function EnduranceForm({ activity }: { activity: string }) {
             <View>
               <Text style={styleLabel(c)}>동행</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 6,
-                    backgroundColor: c.accent,
-                    borderRadius: 999,
-                    paddingVertical: 7,
-                    paddingLeft: 8,
-                    paddingRight: 11,
-                  }}
-                >
-                  <View
+                {companions.map((name, i) => (
+                  <Pressable
+                    key={`${name}-${i}`}
+                    onPress={() => setCompanions((prev) => prev.filter((_, idx) => idx !== i))}
                     style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: 9,
-                      backgroundColor: 'rgba(255,255,255,.25)',
+                      flexDirection: 'row',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      gap: 6,
+                      backgroundColor: c.accent,
+                      borderRadius: 999,
+                      paddingVertical: 7,
+                      paddingLeft: 8,
+                      paddingRight: 11,
                     }}
                   >
-                    <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>민</Text>
-                  </View>
-                  <Text style={{ fontSize: 13, color: '#fff' }}>민지</Text>
-                  <Glyph size={12} color="#fff" strokeWidth={2.6}>
-                    <Path d="M6 6l12 12M18 6 6 18" />
-                  </Glyph>
-                </View>
-                <View
+                    <View
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 9,
+                        backgroundColor: 'rgba(255,255,255,.25)',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>{name.slice(0, 1)}</Text>
+                    </View>
+                    <Text style={{ fontSize: 13, color: '#fff' }}>{name}</Text>
+                    <Glyph size={12} color="#fff" strokeWidth={2.6}>
+                      <Path d="M6 6l12 12M18 6 6 18" />
+                    </Glyph>
+                  </Pressable>
+                ))}
+                <Pressable
                   style={{
                     backgroundColor: c.surface,
                     borderWidth: 1,
@@ -329,10 +393,13 @@ export default function EnduranceForm({ activity }: { activity: string }) {
                     paddingVertical: 7,
                     paddingHorizontal: 12,
                   }}
+                  onPress={() => setCompanions((prev) => [...prev, '지훈'])}
                 >
                   <Text style={{ fontSize: 13, color: c.text2 }}>+ 지훈</Text>
-                </View>
-                <CompanionChip name="추가" dashed />
+                </Pressable>
+                <Pressable onPress={addCompanion}>
+                  <CompanionChip name="추가" dashed />
+                </Pressable>
               </View>
             </View>
 
@@ -423,9 +490,14 @@ export default function EnduranceForm({ activity }: { activity: string }) {
                   minHeight: 46,
                 }}
               >
-                <Text style={{ fontSize: 13, color: c.text, lineHeight: 20 }}>
-                  노을이 좋았다. 마지막 1km 페이스 올림.
-                </Text>
+                <TextInput
+                  value={memo}
+                  onChangeText={setMemo}
+                  multiline
+                  placeholder="메모를 입력하세요"
+                  placeholderTextColor={c.text3}
+                  style={{ fontSize: 13, color: c.text, lineHeight: 20, padding: 0 }}
+                />
               </View>
             </View>
           </View>
