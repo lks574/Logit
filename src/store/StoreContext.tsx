@@ -26,7 +26,9 @@ type StoreValue = {
   addPlan: (p: Omit<StoredPlan, 'id'>) => StoredPlan;
   addActivity: (a: CustomActivity) => void;
   completePlan: (id: string) => void;
+  completePlanAsRecord: (id: string) => StoredRecord | null;
   getRecord: (id: string) => StoredRecord | undefined;
+  getPlan: (id: string) => StoredPlan | undefined;
 };
 
 const StoreCtx = createContext<StoreValue | null>(null);
@@ -95,7 +97,33 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       completePlan: (id) => {
         setState((s) => ({ ...s, plans: s.plans.map((p) => (p.id === id ? { ...p, done: true } : p)) }));
       },
+      // 약속 → 기록 전환: 약속을 완료 처리하면서 그 정보로 새 Record를 생성한다.
+      // (README: "약속 카드의 체크 버튼 → 완료(기록으로 전환) 흐름") 세부 수치는
+      // 비어있는 채로 생성되고, 사용자가 상세에서 수정으로 채울 수 있다.
+      completePlanAsRecord: (id) => {
+        const plan = state.plans.find((p) => p.id === id);
+        if (!plan || plan.done) return null;
+        const rec: StoredRecord = {
+          id: uid('r'),
+          activity: plan.activity,
+          template: plan.template,
+          dateISO: plan.dateISO,
+          timeLabel: plan.timeLabel,
+          meta: plan.place || undefined,
+          memo: plan.memo,
+          photos: [],
+          sync: 'pending',
+        };
+        setState((s) => ({
+          ...s,
+          records: [rec, ...s.records],
+          plans: s.plans.map((p) => (p.id === id ? { ...p, done: true } : p)),
+        }));
+        markSynced(rec.id);
+        return rec;
+      },
       getRecord: (id) => state.records.find((r) => r.id === id),
+      getPlan: (id) => state.plans.find((p) => p.id === id),
     };
   }, [state, ready]);
 

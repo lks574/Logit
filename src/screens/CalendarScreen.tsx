@@ -18,7 +18,7 @@ import { activities, colorsFor } from '../data/activities';
 export default function CalendarScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { today, records, plans, completePlan } = useStore();
+  const { today, records, plans, completePlanAsRecord } = useStore();
   const [selected, setSelected] = useState<string>(today); // 오늘 = 6월 30일 (dateISO)
 
   // Build 6-row grid. June 2026: 1일 Mon → 1 leading blank (Sunday col empty),
@@ -242,7 +242,7 @@ export default function CalendarScreen() {
                     title={p.activity}
                     meta={meta}
                     tag={<Tag label="예정" color={c.accent} outline />}
-                    onCheck={() => completePlan(p.id)}
+                    onCheck={() => completePlanAsRecord(p.id)}
                     onPress={() => nav.navigate('AddPlan')}
                   />
                 );
