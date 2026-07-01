@@ -19,22 +19,41 @@ export default function CalendarScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const { today, records, plans, completePlanAsRecord } = useStore();
-  const [selected, setSelected] = useState<string>(today); // 오늘 = 6월 30일 (dateISO)
+  const [selected, setSelected] = useState<string>(today); // 선택일 (dateISO)
+  // Displayed month. Init to today's month; prev/next buttons move it.
+  const [view, setView] = useState<{ year: number; month: number }>(() => ({
+    year: parseInt(today.slice(0, 4), 10),
+    month: parseInt(today.slice(5, 7), 10), // 1–12
+  }));
 
-  // Build 6-row grid. June 2026: 1일 Mon → 1 leading blank (Sunday col empty),
-  // trailing days spill into July (1–5). Each cell carries its dateISO so
-  // markers/agenda resolve from the store.
-  const JUNE_DAYS = 30;
-  const FIRST_WEEKDAY = 1; // 0=Sun … 1=Mon
+  const iso = (y: number, m: number, d: number) =>
+    `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const shiftMonth = (delta: number) =>
+    setView((v) => {
+      const m0 = v.month - 1 + delta; // 0-based
+      return { year: v.year + Math.floor(m0 / 12), month: ((m0 % 12) + 12) % 12 + 1 };
+    });
+  const goToday = () => {
+    setSelected(today);
+    setView({ year: parseInt(today.slice(0, 4), 10), month: parseInt(today.slice(5, 7), 10) });
+  };
+
+  // Build the grid for the displayed month (leading blanks + month days +
+  // trailing next-month spill). Each cell carries its dateISO → store lookup.
+  const { year, month } = view;
+  const firstWeekday = new Date(Date.UTC(year, month - 1, 1)).getUTCDay(); // 0=Sun
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const nextY = month === 12 ? year + 1 : year;
+  const nextM = month === 12 ? 1 : month + 1;
   const cells: { day: number; inMonth: boolean; dateISO: string }[] = [];
-  for (let i = 0; i < FIRST_WEEKDAY; i++) cells.push({ day: 0, inMonth: false, dateISO: '' });
-  for (let d = 1; d <= JUNE_DAYS; d++)
-    cells.push({ day: d, inMonth: true, dateISO: `2026-06-${String(d).padStart(2, '0')}` });
+  for (let i = 0; i < firstWeekday; i++) cells.push({ day: 0, inMonth: false, dateISO: '' });
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, inMonth: true, dateISO: iso(year, month, d) });
   let next = 1;
   while (cells.length % 7 !== 0) {
     const d = next++;
-    cells.push({ day: d, inMonth: false, dateISO: `2026-07-${String(d).padStart(2, '0')}` });
+    cells.push({ day: d, inMonth: false, dateISO: iso(nextY, nextM, d) });
   }
+  const FIRST_WEEKDAY = firstWeekday; // used by leading-blank guard below
 
   const weekdays = [
     { label: '일', color: c.error },
@@ -75,16 +94,16 @@ export default function CalendarScreen() {
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 7 }}>
-          <Text style={{ fontSize: 22, fontWeight: '700', letterSpacing: -0.44, color: c.text }}>6월</Text>
-          <Text style={{ fontSize: 13, fontWeight: '500', color: c.text3 }}>2026</Text>
+          <Text style={{ fontSize: 22, fontWeight: '700', letterSpacing: -0.44, color: c.text }}>{month}월</Text>
+          <Text style={{ fontSize: 13, fontWeight: '500', color: c.text3 }}>{year}</Text>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <RoundBtn>
+          <RoundBtn onPress={() => shiftMonth(-1)}>
             <Icon.chevronLeft size={15} color={c.text2} strokeWidth={2.4} />
           </RoundBtn>
           <Pressable
             hitSlop={6}
-            onPress={() => setSelected(today)}
+            onPress={goToday}
             style={{
               height: 30,
               paddingHorizontal: 12,
@@ -96,7 +115,7 @@ export default function CalendarScreen() {
           >
             <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>오늘</Text>
           </Pressable>
-          <RoundBtn>
+          <RoundBtn onPress={() => shiftMonth(1)}>
             <Icon.chevronRight size={15} color={c.text2} strokeWidth={2.4} />
           </RoundBtn>
         </View>
@@ -242,7 +261,10 @@ export default function CalendarScreen() {
                     title={p.activity}
                     meta={meta}
                     tag={<Tag label="예정" color={c.accent} outline />}
-                    onCheck={() => completePlanAsRecord(p.id)}
+                    onCheck={() => {
+                      const rec = completePlanAsRecord(p.id);
+                      if (rec) nav.navigate('Detail', { activity: rec.activity, recordId: rec.id });
+                    }}
                     onPress={() => nav.navigate('AddPlan')}
                   />
                 );
@@ -259,11 +281,12 @@ export default function CalendarScreen() {
   );
 }
 
-function RoundBtn({ children }: { children: React.ReactNode }) {
+function RoundBtn({ children, onPress }: { children: React.ReactNode; onPress?: () => void }) {
   const { c } = useTheme();
   return (
     <Pressable
       hitSlop={6}
+      onPress={onPress}
       style={{
         width: 30,
         height: 30,
