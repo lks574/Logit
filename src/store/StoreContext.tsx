@@ -24,6 +24,7 @@ type StoreValue = {
   customActivities: CustomActivity[];
   profile: Profile;
   updateProfile: (patch: Partial<Profile>) => void;
+  replaceAll: (next: StoreState) => void;
   addRecord: (r: Omit<StoredRecord, 'id' | 'sync'>) => StoredRecord;
   addPlan: (p: Omit<StoredPlan, 'id'>) => StoredPlan;
   addActivity: (a: CustomActivity) => void;
@@ -87,6 +88,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       profile: state.profile,
       updateProfile: (patch) => {
         setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
+      },
+      // 가져오기(전체 교체): 검증된 StoreState로 통째 대체한다. 기존 persist effect가
+      // AsyncStorage에 자동 저장. seed 병합은 하지 않는다(가져온 파일이 유일 진실).
+      replaceAll: (next) => {
+        setState(next);
       },
       addRecord: (r) => {
         const rec: StoredRecord = { ...r, id: uid('r'), sync: 'pending' };

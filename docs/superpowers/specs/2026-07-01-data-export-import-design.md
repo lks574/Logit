@@ -1,6 +1,6 @@
 # 데이터 내보내기 / 가져오기 — 설계
 
-> 상태: 승인됨 (2026-07-01) · 다음 단계: 구현 계획(writing-plans)
+> 상태: **구현 완료** (2026-07-02) · 웹 프리뷰 검증 통과(라운드트립·검증실패·CSV BOM). 네이티브 공유/선택기는 dev 빌드 검증 필요.
 > 관련: `docs/DATA_MODEL.md`, `docs/STORE.md`, `src/store/types.ts`, `src/store/StoreContext.tsx`
 
 ## 목적

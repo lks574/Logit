@@ -30,7 +30,8 @@
           "cameraPermission": "기록에 사진을 촬영해 첨부하기 위해 카메라 접근이 필요합니다.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "expo-sharing"
     ]
   }
 }
