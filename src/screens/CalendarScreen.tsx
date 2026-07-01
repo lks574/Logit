@@ -45,15 +45,21 @@ export default function CalendarScreen() {
   const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
   const nextY = month === 12 ? year + 1 : year;
   const nextM = month === 12 ? 1 : month + 1;
+  const prevY = month === 1 ? year - 1 : year;
+  const prevM = month === 1 ? 12 : month - 1;
+  const daysInPrevMonth = new Date(Date.UTC(prevY, prevM, 0)).getUTCDate();
   const cells: { day: number; inMonth: boolean; dateISO: string }[] = [];
-  for (let i = 0; i < firstWeekday; i++) cells.push({ day: 0, inMonth: false, dateISO: '' });
+  // leading: 지난달 마지막 며칠 (다음달과 동일하게 표시 + 클릭 가능)
+  for (let i = 0; i < firstWeekday; i++) {
+    const d = daysInPrevMonth - firstWeekday + 1 + i;
+    cells.push({ day: d, inMonth: false, dateISO: iso(prevY, prevM, d) });
+  }
   for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d, inMonth: true, dateISO: iso(year, month, d) });
   let next = 1;
   while (cells.length % 7 !== 0) {
     const d = next++;
     cells.push({ day: d, inMonth: false, dateISO: iso(nextY, nextM, d) });
   }
-  const FIRST_WEEKDAY = firstWeekday; // used by leading-blank guard below
 
   const weekdays = [
     { label: '일', color: c.error },
@@ -137,9 +143,6 @@ export default function CalendarScreen() {
         {/* grid */}
         <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
           {cells.map((cell, i) => {
-            if (!cell.day && !cell.inMonth && i < FIRST_WEEKDAY) {
-              return <View key={`b${i}`} style={{ width: `${100 / 7}%`, height: 44 }} />;
-            }
             const col = i % 7;
             const isSun = col === 0;
             const isSat = col === 6;
@@ -159,7 +162,13 @@ export default function CalendarScreen() {
             return (
               <Pressable
                 key={`${cell.inMonth ? 'i' : 'o'}${cell.day}-${i}`}
-                onPress={() => cell.inMonth && setSelected(cell.dateISO)}
+                onPress={() => {
+                  setSelected(cell.dateISO);
+                  // 다른 달(지난달/다음달) 날짜 탭 → 그 달로 이동해 선택이 보이도록.
+                  if (!cell.inMonth) {
+                    setView({ year: +cell.dateISO.slice(0, 4), month: +cell.dateISO.slice(5, 7) });
+                  }
+                }}
                 style={{
                   width: `${100 / 7}%`,
                   height: 44,
