@@ -1,41 +1,130 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
-
-# dependencies
+# ==========================================================================
+# Node / JS
+# ==========================================================================
 node_modules/
-
-# Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
-
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Metro
-.metro-health-check*
-
-# debug
 npm-debug.*
 yarn-debug.*
 yarn-error.*
-
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env*.local
-
-# typescript
+.pnpm-debug.log*
 *.tsbuildinfo
+.eslintcache
 
-# generated native folders
+# ==========================================================================
+# Expo
+# ==========================================================================
+.expo/
+.expo-shared/
+dist/
+web-build/
+expo-env.d.ts
+*.orig.*
+
+# ==========================================================================
+# Metro
+# ==========================================================================
+.metro-health-check*
+
+# ==========================================================================
+# React Native
+# ==========================================================================
+.kotlin/
+# Generated native projects (Expo prebuild / CNG). Remove these two lines if
+# you switch to the bare workflow and want to commit native folders.
 /ios
 /android
+
+# ==========================================================================
+# Xcode / iOS  (apply even if /ios is later tracked)
+# ==========================================================================
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+project.xcworkspace/
+# CocoaPods
+ios/Pods/
+Pods/
+# Carthage
+Carthage/Build/
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# ==========================================================================
+# Android / Gradle  (apply even if /android is later tracked)
+# ==========================================================================
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+out/
+.gradle/
+build/
+local.properties
+proguard/
+*.iml
+.navigation/
+captures/
+.externalNativeBuild/
+.cxx/
+android/app/release/
+android/keystores/debug.keystore
+
+# ==========================================================================
+# Signing / secrets  (never commit)
+# ==========================================================================
+*.jks
+*.keystore
+!debug.keystore
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+*.cer
+google-services.json
+GoogleService-Info.plist
+
+# ==========================================================================
+# Environment
+# ==========================================================================
+.env
+.env.*
+!.env.example
+
+# ==========================================================================
+# IDE / Editors
+# ==========================================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ==========================================================================
+# OS
+# ==========================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
