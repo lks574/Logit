@@ -35,6 +35,26 @@ export default function SettingsScreen() {
     </T>
   );
 
+  // 라벨(아이콘) 위 · 컨트롤 전체 폭 아래로 스택. 세그먼트가 좁은 우측 슬롯에서
+  // 줄바꿈/오버플로우되던 문제 해결 (다국어 가변 라벨에도 안전).
+  const ControlRow = ({
+    icon,
+    label,
+    children,
+  }: {
+    icon: React.ReactNode;
+    label: string;
+    children: React.ReactNode;
+  }) => (
+    <View style={{ padding: 14, gap: 11 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+        {icon}
+        <T style={{ fontSize: 14, color: c.text }}>{label}</T>
+      </View>
+      {children}
+    </View>
+  );
+
   return (
     <Screen edges={['top']} contentStyle={{ paddingBottom: 24 }}>
       {/* Title */}
@@ -141,27 +161,26 @@ export default function SettingsScreen() {
         <View>
           <SectionLabel text="앱" />
           <Card>
-            <SettingsRow
+            <ControlRow
               icon={
                 <Glyph size={18} color={c.text2} strokeWidth={1.8}>
                   <Path d="M12 3a6 6 0 0 0 0 18 9 9 0 0 1 0-18z" />
                 </Glyph>
               }
               label="테마"
-              right={
-                <Segmented
-                  options={[
-                    { key: 'light', label: 'Light' },
-                    { key: 'dark', label: 'Dark' },
-                    { key: 'system', label: '시스템' },
-                  ]}
-                  value={mode}
-                  onChange={setMode}
-                />
-              }
-            />
+            >
+              <Segmented
+                options={[
+                  { key: 'light', label: 'Light' },
+                  { key: 'dark', label: 'Dark' },
+                  { key: 'system', label: '시스템' },
+                ]}
+                value={mode}
+                onChange={setMode}
+              />
+            </ControlRow>
             <Divider />
-            <SettingsRow
+            <ControlRow
               icon={
                 <Glyph size={18} color={c.text2} strokeWidth={1.8}>
                   <Circle cx="12" cy="12" r="9" />
@@ -169,17 +188,16 @@ export default function SettingsScreen() {
                 </Glyph>
               }
               label="언어"
-              right={
-                <Segmented
-                  options={[
-                    { key: 'ko', label: '한국어' },
-                    { key: 'en', label: 'English' },
-                  ]}
-                  value={lang}
-                  onChange={setLang}
-                />
-              }
-            />
+            >
+              <Segmented
+                options={[
+                  { key: 'ko', label: '한국어' },
+                  { key: 'en', label: 'English' },
+                ]}
+                value={lang}
+                onChange={setLang}
+              />
+            </ControlRow>
           </Card>
         </View>
       </View>
