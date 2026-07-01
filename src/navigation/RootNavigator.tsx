@@ -11,6 +11,7 @@ import CalendarScreen from '../screens/CalendarScreen';
 import StatsScreen from '../screens/StatsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import ActivitySelectScreen from '../screens/ActivitySelectScreen';
+import AddChooserScreen from '../screens/AddChooserScreen';
 import RecordFormScreen from '../screens/RecordFormScreen';
 import DetailScreen from '../screens/DetailScreen';
 import AddPlanScreen from '../screens/AddPlanScreen';
@@ -57,6 +58,7 @@ export function RootNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="MainTabs" component={MainTabs} />
         <Stack.Group screenOptions={{ presentation: 'modal' }}>
+          <Stack.Screen name="AddChooser" component={AddChooserScreen} />
           <Stack.Screen name="ActivitySelect" component={ActivitySelectScreen} />
           <Stack.Screen name="RecordForm" component={RecordFormScreen} />
           <Stack.Screen name="AddPlan" component={AddPlanScreen} />

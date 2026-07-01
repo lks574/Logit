@@ -5,7 +5,8 @@ export type RootStackParamList = {
   ActivitySelect: undefined;
   RecordForm: { activity: string; template: TemplateType; recordId?: string };
   Detail: { activity: string; recordId?: string };
-  AddPlan: { planId?: string } | undefined;
+  AddChooser: undefined;
+  AddPlan: { planId?: string; dateISO?: string } | undefined;
   AddActivity: undefined;
   Plans: undefined;
   HomeEmpty: undefined;

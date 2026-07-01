@@ -275,6 +275,26 @@ export default function CalendarScreen() {
               이 날의 기록이나 약속이 없어요.
             </Text>
           )}
+
+          {/* 선택일에 약속 추가 (날짜 프리필) */}
+          <Pressable
+            onPress={() => nav.navigate('AddPlan', { dateISO: selected })}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 6,
+              borderWidth: 1.5,
+              borderStyle: 'dashed',
+              borderColor: withAlpha(c.accent, 45),
+              borderRadius: 12,
+              paddingVertical: 12,
+              marginTop: 2,
+            }}
+          >
+            <Icon.plus size={16} color={c.accent} strokeWidth={2.4} />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: c.accent }}>이 날 약속 추가</Text>
+          </Pressable>
         </View>
       </View>
     </Screen>

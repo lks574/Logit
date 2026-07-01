@@ -54,7 +54,7 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
         {item(TABS[0])}
         {item(TABS[1])}
         <View style={{ flex: 0, alignItems: 'center', gap: 3, minWidth: 50 }}>
-          <Fab onPress={() => root.navigate('ActivitySelect')}>
+          <Fab onPress={() => root.navigate('AddChooser')}>
             <Icon.plus size={24} color="#fff" strokeWidth={2.4} />
           </Fab>
           <Text style={{ fontSize: 10, fontWeight: '600', color: c.text2 }}>추가</Text>
