@@ -25,7 +25,7 @@ type StoreValue = {
   customActivities: CustomActivity[];
   profile: Profile;
   updateProfile: (patch: Partial<Profile>) => void;
-  replaceAll: (next: StoreState) => void;
+  replaceAll: (next: StoreState) => Promise<void>;
   addRecord: (r: Omit<StoredRecord, 'id' | 'sync'>) => StoredRecord;
   addPlan: (p: Omit<StoredPlan, 'id'>) => StoredPlan;
   addActivity: (a: CustomActivity) => void;
@@ -96,10 +96,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       updateProfile: (patch) => {
         setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
       },
-      // 가져오기(전체 교체): 검증된 StoreState로 통째 대체한다. 기존 persist effect가
-      // AsyncStorage에 자동 저장. seed 병합은 하지 않는다(가져온 파일이 유일 진실).
-      replaceAll: (next) => {
+      // 가져오기(전체 교체): 검증된 StoreState로 통째 대체한다. seed 병합은 하지 않는다
+      // (가져온 파일이 유일 진실).
+      replaceAll: async (next) => {
+        // 교체로 참조가 끊기는 사진 파일 정리(고아 방지). 우리 소유 상대경로만 삭제.
+        const kept = new Set(next.records.flatMap((r) => r.photos ?? []));
+        state.records.forEach((r) => r.photos?.forEach((u) => (kept.has(u) ? null : deletePhoto(u))));
         setState(next);
+        // 즉시 영속하고 실패를 호출측에 전달 — persist effect의 무음 저장에 기대지 않아
+        // "가져오기 완료"가 미저장인데도 뜨는 것을 막는다.
+        await AsyncStorage.setItem(KEY, JSON.stringify(next));
       },
       addRecord: (r) => {
         const rec: StoredRecord = { ...r, id: uid('r'), sync: 'pending' };

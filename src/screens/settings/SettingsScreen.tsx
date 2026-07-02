@@ -51,9 +51,13 @@ export default function SettingsScreen() {
     }
   };
 
-  const confirmImport = (incoming: StoreState) => {
-    replaceAll(incoming);
-    setSheet({ kind: 'message', title: '가져오기 완료', message: '데이터를 복원했습니다.' });
+  const confirmImport = async (incoming: StoreState) => {
+    try {
+      await replaceAll(incoming);
+      setSheet({ kind: 'message', title: '가져오기 완료', message: '데이터를 복원했습니다.' });
+    } catch (e) {
+      setSheet({ kind: 'message', title: '가져오기 실패', message: '저장에 실패했습니다. 저장 공간을 확인해 주세요.' });
+    }
   };
 
   // 단일 ActionSheet에 넘길 콘텐츠(현재 sheet 종류에서 파생).
