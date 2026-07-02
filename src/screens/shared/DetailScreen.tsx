@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Text, View } from 'react-native';
+import { Alert, Image, Text, View } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Row, Screen } from '../../components/primitives';
 import { IconButton } from '../../components/Button';
@@ -284,8 +284,21 @@ export default function DetailScreen() {
             size={34}
             bg={c.surface}
             onPress={() => {
-              if (recordId) deleteRecord(recordId);
-              nav.goBack();
+              if (!recordId) {
+                nav.goBack();
+                return;
+              }
+              Alert.alert('기록 삭제', '이 기록을 삭제할까요?', [
+                { text: '취소', style: 'cancel' },
+                {
+                  text: '삭제',
+                  style: 'destructive',
+                  onPress: () => {
+                    deleteRecord(recordId);
+                    nav.goBack();
+                  },
+                },
+              ]);
             }}
           >
             <Icon.trash size={17} color={c.error} strokeWidth={2} />

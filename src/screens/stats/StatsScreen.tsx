@@ -27,7 +27,9 @@ export default function StatsScreen() {
     { key: 'all', label: '전체', color: c.accent, soft: c.accentSoft },
     { key: 'endurance', label: '유산소', color: c.cardio, soft: c.cardioSoft },
     { key: 'setrep', label: '근력', color: c.strength, soft: c.strengthSoft },
+    { key: 'match', label: '대전', color: c.team, soft: c.teamSoft },
     { key: 'spectate', label: '공연', color: c.perf, soft: c.perfSoft },
+    { key: 'free', label: '자유', color: c.accent, soft: c.accentSoft },
   ];
 
   const card = {

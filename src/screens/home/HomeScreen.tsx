@@ -20,13 +20,28 @@ function monthDayLabel(dateISO: string): string {
   return `${d.getUTCMonth() + 1}/${d.getUTCDate()} (${WEEKDAYS[d.getUTCDay()]})`;
 }
 
+// "6월 30일 월요일" — 헤더용, today에서 파생.
+function headerDate(dateISO: string): string {
+  const d = new Date(Date.parse(dateISO + 'T00:00:00Z'));
+  return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 ${WEEKDAYS[d.getUTCDay()]}요일`;
+}
+
+// "6/24 – 6/30" — 최근 7일 범위, today에서 파생.
+function weekRangeLabel(dateISO: string): string {
+  const base = Date.parse(dateISO + 'T00:00:00Z');
+  const f = (t: number) => {
+    const d = new Date(t);
+    return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+  };
+  return `${f(base - 6 * 86400000)} – ${f(base)}`;
+}
+
 export default function HomeScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const { today, records, plans } = useStore();
   const sync = useSyncState();
 
-  const cardio = colorsFor('endurance', c);
   const upcoming = upcomingPlans(plans, today).slice(0, 2);
   const week = weekStats(records, today);
 
@@ -44,7 +59,7 @@ export default function HomeScreen() {
         }}
       >
         <View>
-          <Text style={{ fontSize: 13, color: c.text2, fontWeight: '500' }}>6월 30일 월요일</Text>
+          <Text style={{ fontSize: 13, color: c.text2, fontWeight: '500' }}>{headerDate(today)}</Text>
           <Text style={{ fontSize: 25, fontWeight: '700', letterSpacing: -0.75, color: c.text, marginTop: 2 }}>
             기록
           </Text>
@@ -55,45 +70,48 @@ export default function HomeScreen() {
       </View>
 
       <View style={{ paddingHorizontal: 18, gap: 14 }}>
-        {/* 다가오는 약속 header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: -4 }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, letterSpacing: 0.24 }}>다가오는 약속</Text>
-          <Pressable
-            onPress={() => nav.navigate('Plans')}
-            hitSlop={8}
-            style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
-          >
-            <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>캘린더</Text>
-            <Icon.chevronRight size={14} color={c.accent} strokeWidth={2.2} />
-          </Pressable>
-        </View>
+        {/* 다가오는 약속 — 예정된 약속이 있을 때만 표시(빈 슬리버 방지) */}
+        {upcoming.length > 0 ? (
+          <>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: -4 }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, letterSpacing: 0.24 }}>다가오는 약속</Text>
+              <Pressable
+                onPress={() => nav.navigate('Plans')}
+                hitSlop={8}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
+              >
+                <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>캘린더</Text>
+                <Icon.chevronRight size={14} color={c.accent} strokeWidth={2.2} />
+              </Pressable>
+            </View>
 
-        {/* Hero plan card */}
-        <Pressable
-          onPress={() => nav.navigate('Plans')}
-          style={{
-            backgroundColor: c.accentSoft,
-            borderWidth: 1,
-            borderColor: withAlpha(c.accent, 20),
-            borderRadius: 16,
-            padding: 5,
-          }}
-        >
-          {upcoming.map((p, i) => (
-            <PlanRow key={p.id} plan={p} today={today} c={c} first={i === 0} showDivider={i > 0} />
-          ))}
-        </Pressable>
+            <Pressable
+              onPress={() => nav.navigate('Plans')}
+              style={{
+                backgroundColor: c.accentSoft,
+                borderWidth: 1,
+                borderColor: withAlpha(c.accent, 20),
+                borderRadius: 16,
+                padding: 5,
+              }}
+            >
+              {upcoming.map((p, i) => (
+                <PlanRow key={p.id} plan={p} today={today} c={c} first={i === 0} showDivider={i > 0} />
+              ))}
+            </Pressable>
+          </>
+        ) : null}
 
         {/* 이번 주 header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
           <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, letterSpacing: 0.24 }}>이번 주</Text>
-          <Text style={{ fontSize: 11, color: c.text3 }}>6/24 – 6/30</Text>
+          <Text style={{ fontSize: 11, color: c.text3 }}>{weekRangeLabel(today)}</Text>
         </View>
 
         <StatCard
           cells={[
             { value: String(week.count), label: '기록' },
-            { value: String(week.km), unit: 'km', label: '달린 거리', valueColor: c.cardio },
+            { value: String(week.km), unit: 'km', label: '이동 거리', valueColor: c.cardio },
             { value: `🔥${week.streak}`, label: '연속 일' },
           ]}
         />
