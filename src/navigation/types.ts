@@ -9,15 +9,12 @@ export type RootStackParamList = {
   AddPlan: { planId?: string; dateISO?: string } | undefined;
   AddActivity: undefined;
   Plans: undefined;
-  HomeEmpty: undefined;
-  StatsEmpty: undefined;
   ProfileEdit: undefined;
 };
 
 export type TabParamList = {
   Home: undefined;
   Calendar: undefined;
-  Add: undefined; // action tab → navigates to ActivitySelect
   Stats: undefined;
   Settings: undefined;
 };

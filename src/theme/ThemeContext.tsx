@@ -12,7 +12,6 @@ type ThemeValue = {
   scheme: Scheme;
   mode: ThemeMode;
   setMode: (m: ThemeMode) => void;
-  toggle: () => void;
 };
 
 const ThemeCtx = createContext<ThemeValue | null>(null);
@@ -42,7 +41,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       scheme,
       mode,
       setMode,
-      toggle: () => setMode(scheme === 'dark' ? 'light' : 'dark'),
     }),
     [scheme, mode, setMode]
   );

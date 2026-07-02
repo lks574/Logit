@@ -7,7 +7,6 @@ import { BottomTabBar } from './BottomTabBar';
 import { RootStackParamList, TabParamList } from './types';
 
 import HomeScreen from '../screens/home/HomeScreen';
-import HomeEmptyScreen from '../screens/home/HomeEmptyScreen';
 import CalendarScreen from '../screens/calendar/CalendarScreen';
 import PlansScreen from '../screens/calendar/PlansScreen';
 import AddPlanScreen from '../screens/calendar/AddPlanScreen';
@@ -16,7 +15,6 @@ import ActivitySelectScreen from '../screens/add/ActivitySelectScreen';
 import AddActivityScreen from '../screens/add/AddActivityScreen';
 import RecordFormScreen from '../screens/add/RecordFormScreen';
 import StatsScreen from '../screens/stats/StatsScreen';
-import StatsEmptyScreen from '../screens/stats/StatsEmptyScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
 import ProfileEditScreen from '../screens/settings/ProfileEditScreen';
 import DetailScreen from '../screens/shared/DetailScreen';
@@ -24,17 +22,11 @@ import DetailScreen from '../screens/shared/DetailScreen';
 const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-// Empty "Add" tab; the FAB in BottomTabBar navigates to ActivitySelect instead.
-function AddPlaceholder() {
-  return null;
-}
-
 function MainTabs() {
   return (
     <Tab.Navigator tabBar={(props) => <BottomTabBar {...props} />} screenOptions={{ headerShown: false }}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Calendar" component={CalendarScreen} />
-      <Tab.Screen name="Add" component={AddPlaceholder} />
       <Tab.Screen name="Stats" component={StatsScreen} />
       <Tab.Screen name="Settings" component={SettingsScreen} />
     </Tab.Navigator>
@@ -68,8 +60,6 @@ export function RootNavigator() {
         </Stack.Group>
         <Stack.Screen name="Detail" component={DetailScreen} />
         <Stack.Screen name="Plans" component={PlansScreen} />
-        <Stack.Screen name="HomeEmpty" component={HomeEmptyScreen} />
-        <Stack.Screen name="StatsEmpty" component={StatsEmptyScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

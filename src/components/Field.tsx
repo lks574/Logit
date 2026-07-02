@@ -1,7 +1,6 @@
 import React from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-import { withAlpha } from '../theme/tokens';
 import { Icon } from './Glyph';
 
 // Field — labeled text input. required → accent 1.5px border. Gallery §07.
@@ -149,5 +148,3 @@ export function SettingsRow({
     </Pressable>
   );
 }
-
-export { withAlpha };
