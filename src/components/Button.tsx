@@ -50,6 +50,9 @@ export function Button({
   return (
     <Pressable
       onPress={disabled ? undefined : onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
       style={({ pressed }) => [
         {
           flexDirection: 'row',
@@ -83,18 +86,22 @@ export function IconButton({
   size = 38,
   bg,
   style,
+  label,
 }: {
   children: React.ReactNode;
   onPress?: () => void;
   size?: number;
   bg?: string;
   style?: StyleProp<ViewStyle>;
+  label?: string;
 }) {
   const { c } = useTheme();
   return (
     <Pressable
       onPress={onPress}
       hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={label}
       style={({ pressed }) => [
         {
           width: size,
@@ -114,11 +121,13 @@ export function IconButton({
 }
 
 // Accent FAB 46x46, radius 16, floats -14 up (BottomTabBar center).
-export function Fab({ children, onPress }: { children: React.ReactNode; onPress?: () => void }) {
+export function Fab({ children, onPress, label }: { children: React.ReactNode; onPress?: () => void; label?: string }) {
   const { c } = useTheme();
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
       style={({ pressed }) => ({
         width: 46,
         height: 46,

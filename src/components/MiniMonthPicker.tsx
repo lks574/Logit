@@ -38,11 +38,11 @@ export function MiniMonthPicker({ value, onChange }: { value: string; onChange: 
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, marginBottom: 6 }}>
-        <Pressable onPress={() => shift(-1)} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => shift(-1)} hitSlop={8} accessibilityRole="button" accessibilityLabel="이전 달" style={{ padding: 4 }}>
           <Icon.chevronLeft size={16} color={c.text2} strokeWidth={2.4} />
         </Pressable>
         <Text style={{ fontSize: 13, fontWeight: '700', color: c.text }}>{`${year}년 ${month}월`}</Text>
-        <Pressable onPress={() => shift(1)} hitSlop={8} style={{ padding: 4 }}>
+        <Pressable onPress={() => shift(1)} hitSlop={8} accessibilityRole="button" accessibilityLabel="다음 달" style={{ padding: 4 }}>
           <Icon.chevronRight size={16} color={c.text2} strokeWidth={2.4} />
         </Pressable>
       </View>

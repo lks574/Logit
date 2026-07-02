@@ -28,7 +28,14 @@ export function RatingInput({
   return (
     <View style={{ flexDirection: 'row', gap: 4 }}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <Pressable key={n} onPress={() => onChange(n)} hitSlop={4}>
+        <Pressable
+          key={n}
+          onPress={() => onChange(n)}
+          hitSlop={4}
+          accessibilityRole="button"
+          accessibilityLabel={`${n}점`}
+          accessibilityState={{ selected: n <= value }}
+        >
           <Text style={{ fontSize: size, color: n <= value ? c.star : c.text3 }}>★</Text>
         </Pressable>
       ))}

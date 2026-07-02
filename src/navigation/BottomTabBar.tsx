@@ -8,7 +8,7 @@ import { Icon, IconName } from '../components/Glyph';
 import { useTheme } from '../theme/ThemeContext';
 
 // BottomTabBar — 홈 · 캘린더 · [＋추가 FAB] · 통계 · 설정. Center FAB (accent,
-// 46/r16, floats -14) opens ActivitySelect. HTML lines 167–176.
+// 46/r16, floats -14) opens AddChooser. HTML lines 167–176.
 const TABS: { key: string; label: string; icon: IconName }[] = [
   { key: 'Home', label: '홈', icon: 'home' },
   { key: 'Calendar', label: '캘린더', icon: 'calendar' },
@@ -29,6 +29,9 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
       <Pressable
         key={t.key}
         onPress={() => navigation.navigate(t.key)}
+        accessibilityRole="tab"
+        accessibilityLabel={t.label}
+        accessibilityState={{ selected: active }}
         style={{ flex: 1, alignItems: 'center', gap: 3, minWidth: 40 }}
       >
         <IconCmp size={22} color={active ? c.accent : c.text3} />
@@ -54,7 +57,7 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
         {item(TABS[0])}
         {item(TABS[1])}
         <View style={{ flex: 0, alignItems: 'center', gap: 3, minWidth: 50 }}>
-          <Fab onPress={() => root.navigate('AddChooser')}>
+          <Fab onPress={() => root.navigate('AddChooser')} label="추가">
             <Icon.plus size={24} color="#fff" strokeWidth={2.4} />
           </Fab>
           <Text style={{ fontSize: 10, fontWeight: '600', color: c.text2 }}>추가</Text>

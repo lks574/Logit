@@ -267,7 +267,7 @@ export default function DetailScreen() {
     <Screen edges={['top']} contentStyle={{ paddingBottom: 28 }}>
       {/* Header row: back / edit / delete */}
       <Row between center style={{ paddingHorizontal: 12, paddingTop: 6, paddingBottom: 10 }}>
-        <IconButton size={34} bg={c.surface} onPress={() => nav.goBack()}>
+        <IconButton size={34} bg={c.surface} label="뒤로" onPress={() => nav.goBack()}>
           <Glyph size={18} color={c.text} strokeWidth={2.2}>
             <Path d="M15 6l-6 6 6 6" />
           </Glyph>
@@ -276,6 +276,7 @@ export default function DetailScreen() {
           <IconButton
             size={34}
             bg={c.surface}
+            label="수정"
             onPress={() => nav.navigate('RecordForm', { activity: v.activity, template, recordId })}
           >
             <Icon.edit size={17} color={c.text2} strokeWidth={2} />
@@ -283,6 +284,7 @@ export default function DetailScreen() {
           <IconButton
             size={34}
             bg={c.surface}
+            label="삭제"
             onPress={() => {
               if (!recordId) {
                 nav.goBack();

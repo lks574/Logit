@@ -31,7 +31,8 @@ export default function SettingsScreen() {
     e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다.';
 
   const runExport = async (format: 'json' | 'csv') => {
-    setSheet({ kind: 'none' });
+    // 시트를 먼저 none으로 닫지 않는다 — 단일 Modal이 dismiss→재present되는 race를 피하고,
+    // 결과 message로 콘텐츠만 교체한다.
     try {
       const msg = await exportData({ records, plans, customActivities, profile }, format);
       setSheet({ kind: 'message', title: '내보내기', message: msg });
@@ -55,6 +56,38 @@ export default function SettingsScreen() {
     replaceAll(incoming);
     setSheet({ kind: 'message', title: '가져오기 완료', message: '데이터를 복원했습니다.' });
   };
+
+  // 단일 ActionSheet에 넘길 콘텐츠(현재 sheet 종류에서 파생).
+  const sheetView: {
+    title: string;
+    message?: string;
+    actions: { label: string; onPress: () => void; destructive?: boolean }[];
+    cancelLabel: string;
+  } = (() => {
+    switch (sheet.kind) {
+      case 'export':
+        return {
+          title: '데이터 내보내기',
+          message: '형식을 선택하세요. JSON은 전체 복원용, CSV는 기록 열람용입니다.',
+          cancelLabel: '취소',
+          actions: [
+            { label: 'JSON (전체 백업)', onPress: () => runExport('json') },
+            { label: 'CSV (기록 표)', onPress: () => runExport('csv') },
+          ],
+        };
+      case 'confirmImport':
+        return {
+          title: '데이터 가져오기',
+          message: sheet.summary,
+          cancelLabel: '취소',
+          actions: [{ label: '전체 교체', destructive: true, onPress: () => confirmImport(sheet.incoming) }],
+        };
+      case 'message':
+        return { title: sheet.title, message: sheet.message, cancelLabel: '확인', actions: [] };
+      default:
+        return { title: '', message: undefined, cancelLabel: '취소', actions: [] };
+    }
+  })();
 
   // Theme selector: Light / Dark / 시스템 — fully wired via ThemeContext mode.
   // 시스템 defers to the OS color scheme; light/dark override it.
@@ -258,37 +291,13 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      {/* 단일 Modal — 형제 Modal 동시 전환(dismiss+present) race를 피하려고 콘텐츠만 교체한다. */}
       <ActionSheet
-        visible={sheet.kind === 'export'}
-        title="데이터 내보내기"
-        message="형식을 선택하세요. JSON은 전체 복원용, CSV는 기록 열람용입니다."
-        actions={[
-          { label: 'JSON (전체 백업)', onPress: () => runExport('json') },
-          { label: 'CSV (기록 표)', onPress: () => runExport('csv') },
-        ]}
-        onCancel={() => setSheet({ kind: 'none' })}
-      />
-      <ActionSheet
-        visible={sheet.kind === 'confirmImport'}
-        title="데이터 가져오기"
-        message={sheet.kind === 'confirmImport' ? sheet.summary : undefined}
-        actions={[
-          {
-            label: '전체 교체',
-            destructive: true,
-            onPress: () => {
-              if (sheet.kind === 'confirmImport') confirmImport(sheet.incoming);
-            },
-          },
-        ]}
-        onCancel={() => setSheet({ kind: 'none' })}
-      />
-      <ActionSheet
-        visible={sheet.kind === 'message'}
-        title={sheet.kind === 'message' ? sheet.title : ''}
-        message={sheet.kind === 'message' ? sheet.message : undefined}
-        actions={[]}
-        cancelLabel="확인"
+        visible={sheet.kind !== 'none'}
+        title={sheetView.title}
+        message={sheetView.message}
+        actions={sheetView.actions}
+        cancelLabel={sheetView.cancelLabel}
         onCancel={() => setSheet({ kind: 'none' })}
       />
     </Screen>

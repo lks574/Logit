@@ -3,11 +3,14 @@ import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 
 // Toggle — 44x26, on = accent. Gallery §07.
-export function Toggle({ value, onChange, color }: { value: boolean; onChange?: (v: boolean) => void; color?: string }) {
+export function Toggle({ value, onChange, color, label }: { value: boolean; onChange?: (v: boolean) => void; color?: string; label?: string }) {
   const { c } = useTheme();
   return (
     <Pressable
       onPress={() => onChange?.(!value)}
+      accessibilityRole="switch"
+      accessibilityState={{ checked: value }}
+      accessibilityLabel={label}
       style={{
         width: 44,
         height: 26,
@@ -88,9 +91,12 @@ export function Stepper({
   color?: string;
 }) {
   const { c } = useTheme();
-  const btn = (label: string, onPress: () => void) => (
+  const btn = (label: string, a11y: string, onPress: () => void) => (
     <Pressable
       onPress={onPress}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={a11y}
       style={{
         width: 30,
         height: 30,
@@ -105,11 +111,11 @@ export function Stepper({
   );
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      {btn('−', () => onChange(Math.max(0, value - 1)))}
+      {btn('−', '감소', () => onChange(Math.max(0, value - 1)))}
       <Text style={{ fontSize: 16, fontWeight: '700', color: color ?? c.text, minWidth: 28, textAlign: 'center' }}>
         {format ? format(value) : value}
       </Text>
-      {btn('＋', () => onChange(value + 1))}
+      {btn('＋', '증가', () => onChange(value + 1))}
     </View>
   );
 }
