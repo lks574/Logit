@@ -19,6 +19,7 @@ function uid(prefix: string): string {
 
 type StoreValue = {
   ready: boolean;
+  persistError: boolean; // 마지막 저장이 실패했는지(저장 공간 부족 등) → 전역 배너
   today: string;
   records: StoredRecord[];
   plans: StoredPlan[];
@@ -44,6 +45,7 @@ const StoreCtx = createContext<StoreValue | null>(null);
 export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<StoreState>(seed);
   const [ready, setReady] = useState(false);
+  const [persistError, setPersistError] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const completing = useRef<Set<string>>(new Set()); // 약속→기록 전환 in-flight 가드(더블탭)
 
@@ -69,8 +71,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Persist on change (after ready, so we don't clobber before rehydrate).
+  // 저장 실패는 persistError로 노출 — 무음 삼킴은 다음 실행 때 데이터 유실로 이어진다.
   useEffect(() => {
-    if (ready) AsyncStorage.setItem(KEY, JSON.stringify(state)).catch((e) => console.warn('[store] persist 실패', e));
+    if (!ready) return;
+    AsyncStorage.setItem(KEY, JSON.stringify(state))
+      .then(() => setPersistError(false))
+      .catch((e) => {
+        console.warn('[store] persist 실패', e);
+        setPersistError(true);
+      });
   }, [state, ready]);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -88,6 +97,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
     return {
       ready,
+      persistError,
       today: TODAY,
       records: state.records,
       plans: state.plans,
@@ -178,7 +188,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       getRecord: (id) => state.records.find((r) => r.id === id),
       getPlan: (id) => state.plans.find((p) => p.id === id),
     };
-  }, [state, ready]);
+  }, [state, ready, persistError]);
 
   return <StoreCtx.Provider value={value}>{children}</StoreCtx.Provider>;
 }
