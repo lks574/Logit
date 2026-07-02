@@ -48,7 +48,10 @@ const CSV_CORE = [
 ] as const;
 
 function csvCell(v: unknown): string {
-  const s = v === null || v === undefined ? '' : String(v);
+  let s = v === null || v === undefined ? '' : String(v);
+  // CSV 수식 인젝션 방어: =,+,-,@ 로 시작하는 셀은 앞에 '를 붙여 Excel이 수식으로
+  // 실행하지 못하게 한다.
+  if (/^[=+\-@]/.test(s)) s = `'${s}`;
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

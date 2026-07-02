@@ -410,9 +410,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                 >
                   <Text style={{ fontSize: 13, color: c.text2 }}>+ 지훈</Text>
                 </Pressable>
-                <Pressable onPress={addCompanion}>
-                  <CompanionChip name="추가" dashed />
-                </Pressable>
+                <CompanionChip name="추가" dashed onPress={addCompanion} />
               </View>
             </View>
 

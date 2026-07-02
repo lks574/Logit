@@ -67,6 +67,9 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
   const resultFromLabel = (label?: string) =>
     label === '무' ? 'draw' : label === '패' ? 'loss' : label === '승' ? 'win' : undefined;
   const [result, setResult] = React.useState<string>(resultFromLabel(record?.fields?.결과) ?? 'win');
+  // 사용자가 결과 세그먼트를 건드렸는지(또는 편집 중 기존 결과가 있었는지). 안 건드렸으면
+  // 기본값 '승'을 저장하지 않는다.
+  const [resultTouched, setResultTouched] = React.useState<boolean>(!!record?.fields?.결과);
 
   // 종목 전환 시 현재 결과가 새 옵션에 없으면(예: 팀→개인 전환 시 '무') '승'으로 리셋.
   const selectSport = (key: string) => {
@@ -109,7 +112,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
     const fields: Record<string, string> = {};
     fields.종목 = sportKey; // 종목 보존 — 편집 시 활동명 역추론에 기대지 않는다.
     if (score) fields.스코어 = score;
-    if (resultLabel) fields.결과 = resultLabel;
+    if (resultTouched && resultLabel) fields.결과 = resultLabel;
     if (meNameOut) fields.나 = meNameOut;
     if (oppNameOut) fields.상대 = oppNameOut;
     for (const f of sport.fields) {
@@ -118,7 +121,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
     }
 
     // meta: 비어있지 않은 부분만 결합.
-    const meta = [oppNameOut, score, resultLabel].filter(Boolean).join(' · ');
+    const meta = [oppNameOut, score, resultTouched ? resultLabel : ''].filter(Boolean).join(' · ');
 
     const payload = {
       activity,
@@ -228,7 +231,15 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
         </View>
 
         {/* 결과 Segmented — 개인전 승/패, 팀전 승/무/패 */}
-        <Segmented options={resultOptions} value={result} onChange={setResult} color={c.success} />
+        <Segmented
+          options={resultOptions}
+          value={result}
+          onChange={(v) => {
+            setResult(v);
+            setResultTouched(true);
+          }}
+          color={c.success}
+        />
 
         {/* 종목별 핵심 기록 — 선택된 종목의 필드 스키마(src/data/sports.ts)로 렌더 */}
         <View>

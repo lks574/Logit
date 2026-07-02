@@ -63,8 +63,10 @@ export function CompanionChip({ name, dashed, onPress }: { name: string; dashed?
       </Pressable>
     );
   }
+  const Wrap: any = onPress ? Pressable : View;
   return (
-    <View
+    <Wrap
+      onPress={onPress}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -91,6 +93,6 @@ export function CompanionChip({ name, dashed, onPress }: { name: string; dashed?
         <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>{name.slice(0, 1)}</Text>
       </View>
       <Text style={{ fontSize: 12, color: c.text2 }}>{name}</Text>
-    </View>
+    </Wrap>
   );
 }

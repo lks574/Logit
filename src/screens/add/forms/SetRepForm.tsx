@@ -385,10 +385,10 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
             <View>
               <Text style={styleLabel(c)}>동행</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-                {companions.map((name) => (
+                {companions.map((name, i) => (
                   <Pressable
-                    key={name}
-                    onPress={() => setCompanions((list) => list.filter((n) => n !== name))}
+                    key={`${name}-${i}`}
+                    onPress={() => setCompanions((list) => list.filter((_, idx) => idx !== i))}
                     style={{
                       flexDirection: 'row',
                       alignItems: 'center',

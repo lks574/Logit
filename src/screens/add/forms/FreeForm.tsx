@@ -199,7 +199,11 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
               <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>동행</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                 {companions.map((name, i) => (
-                  <CompanionChip key={`${name}-${i}`} name={name} />
+                  <CompanionChip
+                    key={`${name}-${i}`}
+                    name={name}
+                    onPress={() => setCompanions((prev) => prev.filter((_, idx) => idx !== i))}
+                  />
                 ))}
                 <View
                   style={{

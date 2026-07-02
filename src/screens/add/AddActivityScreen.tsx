@@ -1,8 +1,9 @@
 import React from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Screen } from '../../components/primitives';
 import { Icon, Glyph, Path, Circle } from '../../components/Glyph';
+import { activities } from '../../data/activities';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStore } from '../../store/StoreContext';
 import { templateColor, TemplateType, Palette } from '../../theme/tokens';
@@ -29,7 +30,7 @@ const COLOR_KEYS: (keyof Palette)[] = ['strength', 'cardio', 'team', 'perf', 'ac
 export default function AddActivityScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addActivity } = useStore();
+  const { addActivity, customActivities } = useStore();
 
   const [name, setName] = React.useState('');
   const [selected, setSelected] = React.useState<TemplateType>('setrep');
@@ -39,6 +40,11 @@ export default function AddActivityScreen() {
   const onSave = () => {
     const trimmed = name.trim();
     if (!trimmed) return; // skip when name empty
+    // 중복이면 저장된 척 이동하지 않고 알린다(빌트인·커스텀 모두 검사).
+    if (activities[trimmed] || customActivities.some((a) => a.name === trimmed)) {
+      Alert.alert('이미 있는 활동', '같은 이름의 활동이 이미 있어요.');
+      return;
+    }
     addActivity({ name: trimmed, template: selected });
     nav.navigate('MainTabs');
   };
