@@ -214,8 +214,16 @@ function normalize(parsed: any): StoreState {
   if (!d.records.every(validRecord) || !d.plans.every(validPlan)) {
     throw badFormat();
   }
+  // 중복 id 거부 — 이후 update/delete가 여러 항목을 동시에 건드리는 것을 막는다.
+  const rIds = d.records.map((r: any) => r.id);
+  const pIds = d.plans.map((p: any) => p.id);
+  if (new Set(rIds).size !== rIds.length || new Set(pIds).size !== pIds.length) {
+    throw badFormat();
+  }
   return {
-    records: d.records,
+    // 가져온 기록은 이미 존재하는 데이터이므로 synced로 고정 — 'pending'으로 들어오면
+    // 타이머가 없어 SyncStatusBadge가 영구히 "대기 중"에 걸린다.
+    records: d.records.map((r: StoredRecord) => ({ ...r, sync: 'synced' as const })),
     plans: d.plans,
     customActivities: Array.isArray(d.customActivities) ? d.customActivities : [],
     profile:

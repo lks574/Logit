@@ -42,6 +42,17 @@ export function photoUri(stored: string): string {
   }
 }
 
+// 우리가 복사해 둔 사진 파일 삭제(레코드 삭제 시 고아 파일 방지). 상대경로만 대상 —
+// 절대 uri/웹 blob은 우리 소유가 아니므로 건드리지 않는다. best-effort.
+export function deletePhoto(stored: string): void {
+  if (Platform.OS === 'web' || /^[a-z][a-z0-9+.-]*:/i.test(stored)) return;
+  try {
+    const { File, Paths } = require('expo-file-system');
+    const f = new File(Paths.document, stored);
+    if (f.exists) f.delete();
+  } catch {}
+}
+
 async function launch(source: 'camera' | 'library'): Promise<string | null> {
   if (source === 'camera') {
     const perm = await ImagePicker.requestCameraPermissionsAsync();

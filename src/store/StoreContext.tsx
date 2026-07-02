@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { seed, TODAY } from './seed';
+import { deletePhoto } from '../lib/photos';
 import { CustomActivity, Profile, StoredPlan, StoredRecord, StoreState } from './types';
 
 // Offline-first store: single source of truth in memory, persisted to
@@ -69,7 +70,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   // Persist on change (after ready, so we don't clobber before rehydrate).
   useEffect(() => {
-    if (ready) AsyncStorage.setItem(KEY, JSON.stringify(state)).catch(() => {});
+    if (ready) AsyncStorage.setItem(KEY, JSON.stringify(state)).catch((e) => console.warn('[store] persist 실패', e));
   }, [state, ready]);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
@@ -164,6 +165,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         setState((s) => ({ ...s, plans: s.plans.filter((p) => p.id !== id) }));
       },
       deleteRecord: (id) => {
+        // 이 레코드가 소유한 사진 파일 정리(고아 파일 방지). best-effort.
+        state.records.find((r) => r.id === id)?.photos?.forEach(deletePhoto);
         setState((s) => ({ ...s, records: s.records.filter((r) => r.id !== id) }));
       },
       getRecord: (id) => state.records.find((r) => r.id === id),
