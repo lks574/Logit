@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { choosePhoto } from '../../../lib/photos';
+import { choosePhoto, photoUri } from '../../../lib/photos';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../../components/primitives';
@@ -23,9 +23,9 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
-  // 종목: 편집 시 record.activity → 종목 key, 아니면 진입 활동명 기준.
+  // 종목: 편집 시 저장된 fields.종목 우선(칩을 바꿔 저장한 값 보존), 없으면 활동명 기준.
   const [sportKey, setSportKey] = React.useState(
-    ACTIVITY_TO_SPORT[record?.activity ?? activity] ?? ACTIVITY_TO_SPORT[activity] ?? SPORTS[0].key,
+    record?.fields?.종목 ?? ACTIVITY_TO_SPORT[record?.activity ?? activity] ?? ACTIVITY_TO_SPORT[activity] ?? SPORTS[0].key,
   );
   const [open, setOpen] = React.useState(editing); // 세부 입력 disclosure (open when editing)
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
@@ -107,6 +107,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
 
     // 빈 값은 fields에서 제외.
     const fields: Record<string, string> = {};
+    fields.종목 = sportKey; // 종목 보존 — 편집 시 활동명 역추론에 기대지 않는다.
     if (score) fields.스코어 = score;
     if (resultLabel) fields.결과 = resultLabel;
     if (meNameOut) fields.나 = meNameOut;
@@ -290,7 +291,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
             <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>사진</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {photos.map((uri) => (
-                <Image key={uri} source={{ uri }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+                <Image key={uri} source={{ uri: photoUri(uri) }} style={{ width: 60, height: 60, borderRadius: 11 }} />
               ))}
               <Pressable
                 onPress={pickPhoto}

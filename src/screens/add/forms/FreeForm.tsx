@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { choosePhoto } from '../../../lib/photos';
+import { choosePhoto, photoUri } from '../../../lib/photos';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../../components/primitives';
@@ -236,7 +236,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
               <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>사진</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {photos.map((uri) => (
-                  <Image key={uri} source={{ uri }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+                  <Image key={uri} source={{ uri: photoUri(uri) }} style={{ width: 60, height: 60, borderRadius: 11 }} />
                 ))}
                 <Pressable
                   onPress={pickPhoto}

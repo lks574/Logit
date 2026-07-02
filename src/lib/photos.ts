@@ -22,9 +22,23 @@ async function persist(uri: string): Promise<string> {
     const src = new File(uri);
     const dest = new File(dir, name);
     await src.copy(dest);
-    return dest.uri;
+    // 상대경로만 저장한다. iOS는 앱 업데이트마다 컨테이너 UUID가 바뀌어 절대 uri가
+    // 깨지므로, 렌더 시 photoUri()로 현재 document 경로에 다시 결합한다.
+    return `photos/${name}`;
   } catch {
     return uri; // 네이티브 모듈 부재/복사 실패 시 원본 uri 폴백
+  }
+}
+
+// 저장된 사진 값 → 렌더용 uri. 절대 uri(웹 blob/http/data, 구버전 file://)는 그대로,
+// 상대경로(photos/…)만 현재 document 경로로 해석한다.
+export function photoUri(stored: string): string {
+  if (Platform.OS === 'web' || /^[a-z][a-z0-9+.-]*:/i.test(stored)) return stored;
+  try {
+    const { File, Paths } = require('expo-file-system');
+    return new File(Paths.document, stored).uri;
+  } catch {
+    return stored;
   }
 }
 

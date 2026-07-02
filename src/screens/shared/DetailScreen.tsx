@@ -8,6 +8,7 @@ import { Stars } from '../../components/Rating';
 import { Glyph, Icon, Path } from '../../components/Glyph';
 import { activities, colorsFor } from '../../data/activities';
 import { RootStackParamList } from '../../navigation/types';
+import { photoUri } from '../../lib/photos';
 import { useStore } from '../../store/StoreContext';
 import { StoredRecord } from '../../store/types';
 import { useTheme } from '../../theme/ThemeContext';
@@ -372,7 +373,7 @@ export default function DetailScreen() {
             {photos!.slice(0, 2).map((uri, i) => (
               <Image
                 key={`${uri}-${i}`}
-                source={{ uri }}
+                source={{ uri: photoUri(uri) }}
                 style={{ flex: 1, height: v.photoHeight, borderRadius: 13, backgroundColor: c.surfaceAlt }}
                 resizeMode="cover"
               />

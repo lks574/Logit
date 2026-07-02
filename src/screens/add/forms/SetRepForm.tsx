@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { choosePhoto } from '../../../lib/photos';
+import { choosePhoto, photoUri } from '../../../lib/photos';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../../components/primitives';
@@ -449,7 +449,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
                   </>
                 ) : (
                   photos.map((uri) => (
-                    <Image key={uri} source={{ uri }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+                    <Image key={uri} source={{ uri: photoUri(uri) }} style={{ width: 60, height: 60, borderRadius: 11 }} />
                   ))
                 )}
                 <Pressable

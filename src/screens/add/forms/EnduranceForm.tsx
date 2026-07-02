@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { choosePhoto } from '../../../lib/photos';
+import { choosePhoto, photoUri } from '../../../lib/photos';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { CompanionChip, RatingInput } from '../../../components/Rating';
@@ -427,7 +427,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                   </>
                 ) : (
                   photos.map((uri) => (
-                    <Image key={uri} source={{ uri }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+                    <Image key={uri} source={{ uri: photoUri(uri) }} style={{ width: 60, height: 60, borderRadius: 11 }} />
                   ))
                 )}
                 <Pressable
