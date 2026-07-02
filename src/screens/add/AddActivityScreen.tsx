@@ -6,7 +6,7 @@ import { Icon, Glyph, Path, Circle } from '../../components/Glyph';
 import { activities } from '../../data/activities';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStore } from '../../store/StoreContext';
-import { templateColor, TemplateType, Palette } from '../../theme/tokens';
+import { templateColor, TemplateType } from '../../theme/tokens';
 
 type TemplateDef = {
   id: TemplateType;
@@ -24,9 +24,6 @@ const TEMPLATES: TemplateDef[] = [
   { id: 'free', name: '자유 기록형', example: '제목 · 메모 · 사진', icon: Icon.yoga },
 ];
 
-// color swatch options — same order/colors as the HTML swatch row.
-const COLOR_KEYS: (keyof Palette)[] = ['strength', 'cardio', 'team', 'perf', 'accent', 'star'];
-
 export default function AddActivityScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
@@ -34,7 +31,6 @@ export default function AddActivityScreen() {
 
   const [name, setName] = React.useState('');
   const [selected, setSelected] = React.useState<TemplateType>('setrep');
-  const [colorKey, setColorKey] = React.useState<keyof Palette>('strength');
 
   const onCancel = () => nav.goBack();
   const onSave = () => {
@@ -129,10 +125,7 @@ export default function AddActivityScreen() {
             return (
               <Pressable
                 key={t.id}
-                onPress={() => {
-                  setSelected(t.id);
-                  setColorKey(keys.color);
-                }}
+                onPress={() => setSelected(t.id)}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -177,41 +170,6 @@ export default function AddActivityScreen() {
               </Pressable>
             );
           })}
-        </View>
-
-        {/* 색상 · 아이콘 */}
-        <View style={{ gap: 8 }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>색상 · 아이콘</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            {COLOR_KEYS.map((k) => {
-              const isSel = colorKey === k;
-              return (
-                <Pressable
-                  key={k}
-                  onPress={() => setColorKey(k)}
-                  hitSlop={6}
-                  style={{
-                    width: 30,
-                    height: 30,
-                    borderRadius: 15,
-                    backgroundColor: c[k],
-                    borderWidth: isSel ? 2 : 0,
-                    borderColor: c.surface,
-                    // ring around the selected swatch (box-shadow 0 0 0 2px)
-                    ...(isSel
-                      ? {
-                          shadowColor: c[k],
-                          shadowOpacity: 1,
-                          shadowRadius: 0,
-                          shadowOffset: { width: 0, height: 0 },
-                          elevation: 2,
-                        }
-                      : {}),
-                  }}
-                />
-              );
-            })}
-          </View>
         </View>
 
         {/* Note */}

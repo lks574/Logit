@@ -24,7 +24,6 @@ export default function SettingsScreen() {
   const nav = useNavigation<any>();
   const { profile, records, plans, customActivities, replaceAll } = useStore();
   const initial = (profile.name.trim()[0] ?? '?').toUpperCase();
-  const [lang, setLang] = React.useState<'ko' | 'en'>('ko');
   const [sheet, setSheet] = React.useState<SheetState>({ kind: 'none' });
 
   const errMessage = (e: unknown) =>
@@ -185,9 +184,8 @@ export default function SettingsScreen() {
               }
               label="클라우드 백업"
               right={
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                  <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: c.success }} />
-                  <T style={{ fontSize: 12, color: c.success }}>최신</T>
+                <View style={{ backgroundColor: c.surfaceAlt, borderRadius: 6, paddingVertical: 4, paddingHorizontal: 9 }}>
+                  <T style={{ fontSize: 11, fontWeight: '600', color: c.text2 }}>곧 지원</T>
                 </View>
               }
             />
@@ -266,25 +264,6 @@ export default function SettingsScreen() {
                 ]}
                 value={mode}
                 onChange={setMode}
-              />
-            </ControlRow>
-            <Divider />
-            <ControlRow
-              icon={
-                <Glyph size={18} color={c.text2} strokeWidth={1.8}>
-                  <Circle cx="12" cy="12" r="9" />
-                  <Path d="M3 12h18M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18z" />
-                </Glyph>
-              }
-              label="언어"
-            >
-              <Segmented
-                options={[
-                  { key: 'ko', label: '한국어' },
-                  { key: 'en', label: 'English' },
-                ]}
-                value={lang}
-                onChange={setLang}
               />
             </ControlRow>
           </Card>
