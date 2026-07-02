@@ -234,6 +234,8 @@ function normalize(parsed: any): StoreState {
 }
 
 // 파일을 선택·파싱·검증해 StoreState를 반환. 취소 시 null. 잘못된 파일이면 throw.
+// ponytail: 가져오기는 JSON(무손실 전체 백업) 전용. CSV 가져오기는 별도 경로 —
+//   CSV 파서 + 헤더→fields 매핑 + records-only 부분복원 정책이 필요하다. 요청 시 추가.
 export async function importData(): Promise<StoreState | null> {
   let text: string | null;
   if (Platform.OS === 'web') {
