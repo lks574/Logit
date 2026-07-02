@@ -14,6 +14,15 @@ import { withAlpha } from '../../../theme/tokens';
 
 // §03 3.1 거리·시간형 — EnduranceForm (cardio). Embeds §02 common skeleton.
 // HTML source of truth: Logit.dc.html 2.1 (296–358), 2.2 (359–437), 3.1 (444–502).
+
+// 기분 4단계 — 얼굴 path + 저장 라벨(fields.기분).
+const MOODS = [
+  { d: 'M8.5 15.5c1-1.4 6-1.4 7 0M9 9.5h.01M15 9.5h.01', label: '별로' },
+  { d: 'M8.5 14h7M9 9.5h.01M15 9.5h.01', label: '보통' },
+  { d: 'M8.5 13.5c1 1.4 6 1.4 7 0M9 9.5h.01M15 9.5h.01', label: '좋음' },
+  { d: 'M8 13c1.2 2 6.8 2 8 0M9 9.5h.01M15 9.5h.01', label: '최고' },
+];
+
 export default function EnduranceForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
@@ -27,6 +36,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
   const [memo, setMemo] = React.useState(record?.memo ?? '');
   const [place, setPlace] = React.useState(record?.fields?.장소 ?? '');
   const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
+  const [mood, setMood] = React.useState<number>(() => MOODS.findIndex((m) => m.label === record?.fields?.기분));
 
   // Endurance core fields (prefilled from record.fields when editing, blank on create)
   const [거리, set거리] = React.useState(record?.fields?.거리 ?? '');
@@ -63,6 +73,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
       ['칼로리', 칼로리],
       ['평균심박', 평균심박],
       ['장소', place],
+      ['기분', mood >= 0 ? MOODS[mood].label : ''],
     ];
     const fields = Object.fromEntries(fieldEntries.filter(([, v]) => v !== ''));
 
@@ -461,31 +472,33 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
             <View>
               <Text style={styleLabel(c)}>기분</Text>
               <View style={{ flexDirection: 'row', gap: 8 }}>
-                {[
-                  { d: 'M8.5 15.5c1-1.4 6-1.4 7 0M9 9.5h.01M15 9.5h.01', on: false },
-                  { d: 'M8.5 14h7M9 9.5h.01M15 9.5h.01', on: false },
-                  { d: 'M8.5 13.5c1 1.4 6 1.4 7 0M9 9.5h.01M15 9.5h.01', on: true },
-                  { d: 'M8 13c1.2 2 6.8 2 8 0M9 9.5h.01M15 9.5h.01', on: false },
-                ].map((m, i) => (
-                  <View
-                    key={i}
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 11,
-                      backgroundColor: m.on ? c.accentSoft : c.surface,
-                      borderWidth: m.on ? 1.5 : 1,
-                      borderColor: m.on ? c.accent : c.border,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Glyph size={20} color={m.on ? c.accent : c.text3} strokeWidth={2}>
-                      <Path d="M12 12 m -9 0 a 9 9 0 1 0 18 0 a 9 9 0 1 0 -18 0" />
-                      <Path d={m.d} />
-                    </Glyph>
-                  </View>
-                ))}
+                {MOODS.map((m, i) => {
+                  const on = mood === i;
+                  return (
+                    <Pressable
+                      key={i}
+                      onPress={() => setMood(on ? -1 : i)}
+                      accessibilityRole="button"
+                      accessibilityLabel={`기분 ${m.label}`}
+                      accessibilityState={{ selected: on }}
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 11,
+                        backgroundColor: on ? c.accentSoft : c.surface,
+                        borderWidth: on ? 1.5 : 1,
+                        borderColor: on ? c.accent : c.border,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Glyph size={20} color={on ? c.accent : c.text3} strokeWidth={2}>
+                        <Path d="M12 12 m -9 0 a 9 9 0 1 0 18 0 a 9 9 0 1 0 -18 0" />
+                        <Path d={m.d} />
+                      </Glyph>
+                    </Pressable>
+                  );
+                })}
               </View>
             </View>
 

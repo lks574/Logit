@@ -213,7 +213,7 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
                 <TextInput
                   value={castDraft}
                   onChangeText={setCastDraft}
-                  placeholder="역할 · 배우"
+                  placeholder="역할·배우"
                   placeholderTextColor={c.text3}
                   autoFocus
                   returnKeyType="done"
