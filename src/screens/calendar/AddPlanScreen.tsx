@@ -32,7 +32,7 @@ export default function AddPlanScreen() {
   const nav = useNavigation<any>();
   const { params } = useRoute<RouteProp<RootStackParamList, 'AddPlan'>>();
   const planId = params?.planId;
-  const { addPlan, updatePlan, deletePlan, getPlan, customActivities } = useStore();
+  const { addPlan, updatePlan, deletePlan, getPlan, customActivities, today } = useStore();
   const editing = !!planId;
   const plan = planId ? getPlan(planId) : undefined;
 
@@ -42,7 +42,7 @@ export default function AddPlanScreen() {
   // ---- state (prefilled in edit mode) ----
   const [act, setAct] = React.useState<string>(plan?.activity ?? FAVORITES[0]);
   const [showAll, setShowAll] = React.useState(false);
-  const [dateISO, setDateISO] = React.useState<string>(plan?.dateISO ?? params?.dateISO ?? '2026-07-02');
+  const [dateISO, setDateISO] = React.useState<string>(plan?.dateISO ?? params?.dateISO ?? today);
   const initTime = parseTime(plan?.timeLabel);
   const [ampm, setAmpm] = React.useState<'오전' | '오후'>(initTime.ampm);
   const [h12, setH12] = React.useState(initTime.h12);

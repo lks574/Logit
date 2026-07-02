@@ -92,6 +92,7 @@ export function statsSummary(records: StoredRecord[], filter: StatsFilter, today
   // 최근 5개월 월별 거리 (오늘 달 포함), 막대 높이 20–84px 스케일.
   const ty = +today.slice(0, 4);
   const tm = +today.slice(5, 7);
+  const yearPrefix = `${ty}-`; // "올해" 집계용(count·spectateCount)
   const window: { y: number; m: number }[] = [];
   for (let k = 4; k >= 0; k--) {
     const m0 = tm - 1 - k;
@@ -158,7 +159,7 @@ export function statsSummary(records: StoredRecord[], filter: StatsFilter, today
   for (const [a, n] of actorCounts) if (n > topActorCount) ((topActor = a), (topActorCount = n));
 
   return {
-    count: filtered.length,
+    count: filtered.filter((r) => r.dateISO.startsWith(yearPrefix)).length,
     streak,
     hasDistance: endur.length > 0,
     totalKm,
@@ -167,7 +168,7 @@ export function statsSummary(records: StoredRecord[], filter: StatsFilter, today
     maxDateLabel: maxDate ? monthDayLabel(maxDate) : '',
     avgPace: avgPaceSec != null ? formatPace(avgPaceSec) : null,
     paceDeltaSec,
-    spectateCount: spec.length,
+    spectateCount: spec.filter((r) => r.dateISO.startsWith(yearPrefix)).length,
     topWork,
     topWorkCount,
     topActor,

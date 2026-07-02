@@ -51,9 +51,15 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
   const [place, setPlace] = React.useState(record?.fields?.장소 ?? '');
   const [memo, setMemo] = React.useState(record?.memo ?? '');
   const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
-  const [총볼륨, set총볼륨] = React.useState(record?.fields?.총볼륨 ?? '');
   const [운동시간, set운동시간] = React.useState(record?.fields?.운동시간 ?? '');
   const [rows, setRows] = React.useState<SetRow[]>(() => parseRows(record?.fields?.세트));
+
+  // 총 볼륨 = Σ(반복 × 중량), 워밍업 제외 — "자동" 뱃지대로 세트 값에서 계산한다.
+  const totalVolume = rows.reduce((sum, r) => {
+    if (r.warmup) return sum;
+    return sum + (parseFloat(r.reps) || 0) * (parseFloat(r.weight) || 0);
+  }, 0);
+  const 총볼륨 = totalVolume > 0 ? `${totalVolume}kg` : '';
 
   const addSet = () =>
     setRows((r) => [
@@ -307,16 +313,13 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
           </View>
           <View style={{ flex: 1, backgroundColor: c.surfaceAlt, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14 }}>
             <Text style={{ fontSize: 11, color: c.text2 }}>운동 시간</Text>
-            <Text style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 2 }}>
-              {운동시간 ? (
-                <>
-                  {운동시간.replace(/분$/, '')}
-                  <Text style={{ fontSize: 12, color: c.text2 }}>분</Text>
-                </>
-              ) : (
-                <Text style={{ fontSize: 15, fontWeight: '600', color: c.text3 }}>예: 52분</Text>
-              )}
-            </Text>
+            <TextInput
+              value={운동시간}
+              onChangeText={set운동시간}
+              placeholder="예: 52분"
+              placeholderTextColor={c.text3}
+              style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 2, padding: 0 }}
+            />
           </View>
         </View>
 

@@ -185,8 +185,9 @@ function krDate(dateISO: string): string {
 // Build a Variant-shaped view model from a real stored record so the existing
 // JSX (which renders a Variant) can display it unchanged.
 function variantFromRecord(r: StoredRecord, c: Palette): Variant {
-  // meta: "6월 30일 오후 6:30 · 한강공원" — place taken from record.meta's first segment.
-  const place = r.meta ? r.meta.split('·')[0].trim() : '';
+  // place: fields.장소에서 가져온다(모든 폼이 여기 저장). meta 첫 세그먼트 파싱은
+  // endurance에만 맞아 다른 종목에선 작품명/상대명을 장소로 오인했다.
+  const place = r.fields?.장소 ?? '';
   const metaParts = [krDate(r.dateISO), r.timeLabel].filter(Boolean);
   const meta = place ? `${metaParts.join(' ')} · ${place}` : metaParts.join(' ');
 
@@ -197,7 +198,10 @@ function variantFromRecord(r: StoredRecord, c: Palette): Variant {
   };
 
   const fields = r.fields ?? {};
-  const detail: DetailRow[] = Object.entries(fields).map(([label, value]) => ({ label, value }));
+  // 헤더/내부용 키는 상세 수치 표에서 제외(장소=헤더에 표시, 세트=JSON 직렬화, 종목=sport key).
+  const detail: DetailRow[] = Object.entries(fields)
+    .filter(([k]) => k !== '장소' && k !== '세트' && k !== '종목')
+    .map(([label, value]) => ({ label, value }));
 
   return {
     activity: r.activity,
@@ -224,6 +228,25 @@ export default function DetailScreen() {
   const activityKey = route.params?.activity;
   const recordId = route.params?.recordId;
   const record = recordId ? getRecord(recordId) : undefined;
+
+  // recordId로 왔는데 레코드가 없으면(삭제됨·stale·가져오기로 교체됨) 가짜 showcase
+  // 대신 빈 상태를 보여준다.
+  if (recordId && !record) {
+    return (
+      <Screen edges={['top']}>
+        <Row between center style={{ paddingHorizontal: 12, paddingTop: 6, paddingBottom: 10 }}>
+          <IconButton size={34} bg={c.surface} onPress={() => nav.goBack()}>
+            <Glyph size={18} color={c.text} strokeWidth={2.2}>
+              <Path d="M15 6l-6 6 6 6" />
+            </Glyph>
+          </IconButton>
+        </Row>
+        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
+          <Text style={{ fontSize: 15, color: c.text2 }}>기록을 찾을 수 없어요.</Text>
+        </View>
+      </Screen>
+    );
+  }
 
   // Real record → render its data; otherwise keep the design showcase variants.
   const v = record
