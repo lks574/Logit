@@ -11,6 +11,7 @@
       "bundleIdentifier": "com.anonymous.Logit"
     },
     "android": {
+      "package": "com.anonymous.Logit",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
