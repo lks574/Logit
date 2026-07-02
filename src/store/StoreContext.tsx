@@ -44,18 +44,24 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<StoreState>(seed);
   const [ready, setReady] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const completing = useRef<Set<string>>(new Set()); // 약속→기록 전환 in-flight 가드(더블탭)
 
   // Rehydrate once.
   useEffect(() => {
     let alive = true;
     AsyncStorage.getItem(KEY)
       .then((raw) => {
+        if (!alive) return;
         // Merge over seed so blobs written before a field existed (e.g. profile)
         // pick up its default instead of becoming undefined.
-        if (alive && raw) setState({ ...seed, ...JSON.parse(raw) });
+        if (raw) setState({ ...seed, ...JSON.parse(raw) });
+        // ready는 읽기/파싱 성공(빈 저장소 포함) 시에만 올린다. 실패 시 올리지 않아야
+        // persist effect가 메모리의 seed로 사용자의 실제 blob을 덮어쓰지 않는다.
+        setReady(true);
       })
-      .catch(() => {})
-      .finally(() => alive && setReady(true));
+      .catch(() => {
+        // getItem reject / JSON.parse throw: ready를 올리지 않고 다음 실행에서 재시도.
+      });
     return () => {
       alive = false;
     };
@@ -120,7 +126,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       // 비어있는 채로 생성되고, 사용자가 상세에서 수정으로 채울 수 있다.
       completePlanAsRecord: (id) => {
         const plan = state.plans.find((p) => p.id === id);
-        if (!plan || plan.done) return null;
+        // stale-closure state로 done을 검사하므로, 렌더 전 연타를 in-flight ref로 막는다.
+        if (!plan || plan.done || completing.current.has(id)) return null;
+        completing.current.add(id);
         const rec: StoredRecord = {
           id: uid('r'),
           activity: plan.activity,

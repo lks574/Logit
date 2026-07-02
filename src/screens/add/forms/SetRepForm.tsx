@@ -19,6 +19,24 @@ type SetRow = { set: string; reps: string; weight: string; warmup: boolean };
 
 const PARTS = ['가슴', '삼두', '등', '어깨', '하체'];
 
+// fields.세트(JSON)에서 세트 행 복원. 저장값이 없거나 손상 시 빈 1행으로 시작.
+function parseRows(saved?: string): SetRow[] {
+  if (saved) {
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length) {
+        return parsed.map((r) => ({
+          set: String(r?.set ?? ''),
+          reps: String(r?.reps ?? ''),
+          weight: String(r?.weight ?? ''),
+          warmup: !!r?.warmup,
+        }));
+      }
+    } catch {}
+  }
+  return [{ set: '1', reps: '', weight: '', warmup: false }];
+}
+
 export default function SetRepForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
@@ -35,15 +53,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
   const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
   const [총볼륨, set총볼륨] = React.useState(record?.fields?.총볼륨 ?? '');
   const [운동시간, set운동시간] = React.useState(record?.fields?.운동시간 ?? '');
-  const [rows, setRows] = React.useState<SetRow[]>(
-    editing
-      ? [
-          { set: 'W', reps: '15', weight: '40', warmup: true },
-          { set: '1', reps: '10', weight: '70', warmup: false },
-          { set: '2', reps: '8', weight: '75', warmup: false },
-        ]
-      : [{ set: '1', reps: '', weight: '', warmup: false }],
-  );
+  const [rows, setRows] = React.useState<SetRow[]>(() => parseRows(record?.fields?.세트));
 
   const addSet = () =>
     setRows((r) => [
@@ -73,6 +83,8 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
     if (총볼륨) fields.총볼륨 = 총볼륨;
     if (운동시간) fields.운동시간 = 운동시간;
     if (place) fields.장소 = place;
+    const filledRows = rows.filter((r) => r.reps.trim() !== '' || r.weight.trim() !== '');
+    if (filledRows.length) fields.세트 = JSON.stringify(filledRows);
 
     const meta = [part, 총볼륨 ? `총 볼륨 ${총볼륨}` : '']
       .filter(Boolean)

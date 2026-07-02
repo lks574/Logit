@@ -154,19 +154,31 @@ const TEMPLATES = ['endurance', 'setrep', 'match', 'spectate', 'free'];
 const SYNC = ['synced', 'pending'];
 
 const isStr = (v: unknown): v is string => typeof v === 'string';
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const isStrArr = (v: unknown): boolean => Array.isArray(v) && v.every((x) => typeof x === 'string');
+const isStrMap = (v: unknown): boolean =>
+  !!v && typeof v === 'object' && !Array.isArray(v) && Object.values(v as object).every((x) => typeof x === 'string');
 const badFormat = () => new Error('백업 파일의 형식이 올바르지 않습니다.');
 
-// 전체 교체(replaceAll)로 영구 저장하므로, 배열 여부만이 아니라 각 항목의 필수 필드도
-// 검증한다(types.ts 기준). 하나라도 어긋나면 거부 — 손상 파일이 앱 상태를 덮어쓰지 않게.
+// 전체 교체(replaceAll)로 영구 저장하므로, 필수 필드뿐 아니라 optional 필드의 타입·형식도
+// 검증한다(types.ts 기준). 하나라도 어긋나면 거부 — 손상 파일이 앱 상태를 덮어써
+// 화면을 영구 크래시시키거나(잘못된 companions/fields) 레코드가 사라지는 것(잘못된 dateISO)을 막는다.
 function validRecord(r: any): boolean {
   return (
     !!r &&
     isStr(r.id) &&
     isStr(r.activity) &&
     isStr(r.dateISO) &&
+    DATE_RE.test(r.dateISO) &&
     isStr(r.timeLabel) &&
     TEMPLATES.includes(r.template) &&
-    SYNC.includes(r.sync)
+    SYNC.includes(r.sync) &&
+    (r.meta === undefined || isStr(r.meta)) &&
+    (r.memo === undefined || isStr(r.memo)) &&
+    (r.rating === undefined || typeof r.rating === 'number') &&
+    (r.companions === undefined || isStrArr(r.companions)) &&
+    (r.photos === undefined || isStrArr(r.photos)) &&
+    (r.fields === undefined || isStrMap(r.fields))
   );
 }
 function validPlan(p: any): boolean {
@@ -175,8 +187,13 @@ function validPlan(p: any): boolean {
     isStr(p.id) &&
     isStr(p.activity) &&
     isStr(p.dateISO) &&
+    DATE_RE.test(p.dateISO) &&
     isStr(p.timeLabel) &&
-    TEMPLATES.includes(p.template)
+    TEMPLATES.includes(p.template) &&
+    (p.place === undefined || isStr(p.place)) &&
+    (p.memo === undefined || isStr(p.memo)) &&
+    (p.reminder === undefined || typeof p.reminder === 'boolean') &&
+    (p.done === undefined || typeof p.done === 'boolean')
   );
 }
 
