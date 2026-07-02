@@ -53,14 +53,15 @@ npx expo start --dev-client --tunnel
 - 인터넷 경유(ngrok `*.exp.direct`)라 **셀룰러(5G)로도** 붙고, 코드 저장 시 **Fast Refresh 라이브 반영**된다.
 - 조건: 맥이 켜져 있고 이 Metro가 계속 실행. 맥 슬립/종료 시 끊김.
 
-### 접속 방법 — **https 수동 입력만 확실**
-1. dev 앱 열기 → **"Enter URL manually"**
-2. 터널 URL 입력 후 Connect:
-   ```
-   https://<sub>.exp.direct
-   ```
+> **`scheme` 필수.** `app.json`의 `expo.scheme`(예: `"logit"`)이 없으면 Metro가
+> `Could not find a shared URI scheme for the dev client` 경고를 내고, dev 앱이 URL을 못 받아
+> **null URL로 네이티브 크래시**(`RCTFatal` → `handleBundleLoadingError`, `unsanitizedScriptURLString = (null)`)한다.
+> 런처 UI조차 안 뜨고 흔들기(dev 메뉴)도 안 먹는다. `scheme` 추가 후 **재빌드**(`expo run:ios`, prebuild가 서명 주입을 지우니 §1 재주입)해야 반영된다.
+
+### 접속 방법 — QR 스캔 (scheme 설정 후) 또는 https 수동 입력
+- **QR**: `scheme`이 있으면 터미널 QR을 카메라로 스캔 → dev 앱이 URL 물고 바로 열림. 딥링크 직접: `logit://expo-development-client/?url=<터널URL>`
+- **수동 입력**: dev 앱 → **"Enter URL manually"** → `https://<sub>.exp.direct` Connect
 - 터널 URL이 비대화형 출력엔 안 찍히면: `curl -s http://localhost:4040/api/tunnels`
-- **`exp://` 및 커스텀스킴 딥링크(`com.anonymous.Logit://expo-development-client/?url=...`)는 URL 전달이 안 돼 "No script URL provided (null)" 로 뜬다. 쓰지 말 것.**
 - 터널 URL은 **Metro 재시작마다 바뀐다**.
 - 사무실 등 **ngrok 차단망에선 터널 자체가 실패**("ngrok tunnel took too long") → 격리 없는 망 또는 폰 핫스팟(맥을 핫스팟에 연결) 사용.
 
@@ -82,4 +83,32 @@ npx expo run:ios --device <UDID> --configuration Release
 | "No script URL provided (null)" | dev 앱에 Metro URL 미전달. → "Enter URL manually"에 https 수동 입력 |
 | "No Account for Team" | Xcode Accounts에 Apple ID 미로그인 |
 | "ngrok tunnel took too long" | 네트워크가 ngrok 차단. → 다른 망/핫스팟 |
+| "remote gone away" / "failed to start tunnel" | ngrok 일시 오류. → 기존 ngrok/expo 프로세스 정리 후 재시도 |
 | LAN에서 연결만 하다 실패 | Wi-Fi 기기격리. → 터널 또는 핫스팟 |
+
+## 용어 정리
+
+**Expo Go** — 앱스토어의 범용 Expo 실행 앱. 네이티브 모듈을 못 바꿔서 SDK 57 커스텀 빌드는 못 연다. → 이 프로젝트는 dev 빌드 필수.
+
+**dev 빌드 (dev client)** — 우리 앱을 직접 빌드한 개발용 앱. 안에 개발용 런처가 들어 있어 Metro 서버 주소를 물려주면 그 JS를 받아 실행한다. `expo run:ios`로 만든다.
+
+**Metro (번들러)** — 맥에서 도는 개발 서버. TS/JS를 하나의 JS 번들로 묶어 `localhost:8081`로 서빙하고, 파일 저장 시 바뀐 부분만 다시 밀어준다(Fast Refresh). dev 앱/웹은 이걸 물어야 화면이 뜬다.
+
+**localhost / `127.0.0.1`** — "이 기기 자신". 맥에서 `localhost:8081`은 맥의 Metro지만, 폰에서 같은 주소를 열면 폰 자신을 가리켜 실패한다. → 폰에서 보려면 LAN IP나 터널 주소가 필요.
+
+**LAN** — 같은 Wi-Fi(공유기) 안에서 서로의 사설 IP로 직접 통신. 빠르지만 폰·맥이 같은 망이어야 하고, 회사/카페의 "기기격리(client isolation)"가 켜져 있으면 서로 못 본다.
+
+**터널 (tunnel)** — 맥의 로컬 서버를 인터넷에 공개하는 우회로. 같은 Wi-Fi가 아니어도(셀룰러 포함) 붙는다. Expo는 ngrok으로 구현.
+
+**ngrok** — 로컬 서버를 인터넷에 잠깐 노출시켜주는 독립 터널링 서비스(expo와 무관, `ngrok.com`). 내 맥에서 **밖으로 나가는** 연결을 ngrok 서버에 뚫고, 공개 URL을 발급받아 그리로 온 요청을 내 맥으로 되돌려 배달한다. 밖으로 뚫기 때문에 공유기 포트포워딩·NAT 설정 없이도 노출된다. `expo start --tunnel`이 이걸 자동 실행하고 전용 도메인 `*.exp.direct`로 URL을 준다.
+- URL 구조 예 `wvkp2ue-anonymous-8081.exp.direct` = `랜덤서브도메인-계정라벨-로컬포트.exp.direct`
+- 익명/무료라 URL은 **세션마다 바뀌고** 끊기기 쉽다. 로컬 대시보드 `http://localhost:4040`(`/api/tunnels`)에서 현재 URL 확인 가능.
+- 공개 주소이므로 민감 서버를 오래 열어두지 말 것. 회사망이 ngrok을 차단하면 터널 자체가 안 뚫린다.
+
+**Fast Refresh / HMR** — 코드 저장 시 앱을 껐다 켜지 않고 바뀐 부분만 갈아끼워 화면에 즉시 반영하는 것. dev 빌드·웹에서 동작(Release 빌드는 JS가 내장돼 반영 안 됨).
+
+**scheme (URI 스킴)** — 앱을 여는 커스텀 URL 접두사(예 `logit://`). dev 앱에 Metro 주소를 딥링크/QR로 넘길 때 필요. `app.json`의 `expo.scheme`. 없으면 §3 경고처럼 URL 전달이 깨진다.
+
+**prebuild / CNG (Continuous Native Generation)** — `app.json` 설정으로부터 `ios/`·`android/` 네이티브 프로젝트를 자동 생성하는 것. 이 레포는 `ios/`를 커밋하지 않고(`.gitignore`) 필요 시 재생성한다. 그래서 prebuild가 돌면 pbxproj에 손으로 넣은 코드서명 설정이 날아가 §1 재주입이 필요.
+
+**UDID** — 개별 기기의 고유 식별자. 실기기에 빌드/설치할 때 `--device <UDID>`로 대상 지정. `xcrun xctrace list devices`로 확인(케이블 연결 시 `== Devices ==`에 표시).
