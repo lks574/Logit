@@ -43,16 +43,8 @@ export function weekStats(records: StoredRecord[], today: string) {
     const d = r.fields?.거리; // "5.2km"
     if (d) km += parseFloat(d) || 0;
   }
-  // streak: consecutive days ending today with ≥1 record.
-  const days = new Set(records.map((r) => r.dateISO));
-  let streak = 0;
-  for (let i = 0; ; i++) {
-    const d = new Date(Date.parse(today + 'T00:00:00Z') - i * 86400000)
-      .toISOString()
-      .slice(0, 10);
-    if (days.has(d)) streak++;
-    else break;
-  }
+  // streak: consecutive days ending today(하루 유예 포함) with ≥1 record.
+  const streak = countStreak(new Set(records.map((r) => r.dateISO)), today);
   return { count, km: Math.round(km * 10) / 10, streak };
 }
 
@@ -62,6 +54,14 @@ export type StatsFilter = 'all' | TemplateType;
 
 const isoMinusDays = (fromISO: string, i: number) =>
   new Date(Date.parse(fromISO + 'T00:00:00Z') - i * 86400000).toISOString().slice(0, 10);
+
+// 연속 기록 일수 — 오늘부터 거슬러 센다. 단 오늘 기록이 아직 없으면 어제부터 세어,
+// 자정~그날 첫 기록 전까지 진행 중인 연속이 0으로 리셋되지 않도록 하루 유예를 준다.
+function countStreak(days: Set<string>, today: string): number {
+  let streak = 0;
+  for (let i = days.has(today) ? 0 : 1; days.has(isoMinusDays(today, i)); i++) streak++;
+  return streak;
+}
 
 const parseKm = (r: StoredRecord) => parseFloat(r.fields?.거리 ?? '') || 0;
 // "5′14″" → seconds. Tolerates ' and " variants.
@@ -80,10 +80,9 @@ const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.le
 export function statsSummary(records: StoredRecord[], filter: StatsFilter, today: string) {
   const filtered = filter === 'all' ? records : records.filter((r) => r.template === filter);
 
-  // 연속 기록 streak (filtered days ending today).
+  // 연속 기록 streak (filtered days ending today, 하루 유예 포함).
   const days = new Set(filtered.map((r) => r.dateISO));
-  let streak = 0;
-  for (let i = 0; days.has(isoMinusDays(today, i)); i++) streak++;
+  const streak = countStreak(days, today);
 
   // 유산소 거리 집계 (전체/유산소에서만 의미).
   const endur = filtered.filter((r) => r.template === 'endurance');
