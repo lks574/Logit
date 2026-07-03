@@ -21,9 +21,11 @@ export function Field({
 }) {
   const { c } = useTheme();
   const [focused, setFocused] = React.useState(false);
+  const ref = React.useRef<TextInput>(null);
   const active = focused || required;
   return (
-    <View
+    <Pressable
+      onPress={() => ref.current?.focus()}
       style={{
         backgroundColor: c.bg,
         borderWidth: active ? 1.5 : 1,
@@ -38,6 +40,7 @@ export function Field({
         {required ? <Text style={{ color: c.accent, fontWeight: '600' }}> · 필수</Text> : null}
       </Text>
       <TextInput
+        ref={ref}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
@@ -52,7 +55,7 @@ export function Field({
           padding: 0,
         }}
       />
-    </View>
+    </Pressable>
   );
 }
 

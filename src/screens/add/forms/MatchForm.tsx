@@ -6,7 +6,7 @@ import { Screen } from '../../../components/primitives';
 import { FormHeader } from '../../../components/FormHeader';
 import { DisclosureButton } from '../../../components/Field';
 import { Segmented, Chip } from '../../../components/controls';
-import { RatingInput } from '../../../components/Rating';
+import { RatingInput, CompanionField } from '../../../components/Rating';
 import { Glyph, Path, Rect, Icon } from '../../../components/Glyph';
 import { SPORTS, ACTIVITY_TO_SPORT, sportFor } from '../../../data/sports';
 import { useStore } from '../../../store/StoreContext';
@@ -31,6 +31,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
   const [rating, setRating] = React.useState(editing ? record?.rating ?? 0 : 0);
   const [memo, setMemo] = React.useState(record?.memo ?? '');
+  const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
   const sport = sportFor(sportKey);
 
   // 스코어 카드 값 — CREATE는 공백(placeholder), EDIT는 record.fields.스코어("a:b") 파싱.
@@ -48,6 +49,8 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
   );
   const setFieldValue = (key: string, value: string) =>
     setFieldValues((prev) => ({ ...prev, [key]: value }));
+  // 카드 여백 탭 시 해당 입력에 포커스 — 필드 key별 ref 보관.
+  const fieldRefs = React.useRef<Record<string, TextInput | null>>({});
 
   // 렌더 그룹: text 필드(게임스코어·포지션)는 전체 폭 행, number 필드는 2열 그리드 카드.
   const textFields = sport.fields.filter((f) => f.type === 'text');
@@ -131,6 +134,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
       meta,
       rating,
       memo,
+      companions,
       photos,
       fields,
     };
@@ -252,16 +256,21 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
           {textFields.length > 0 ? (
             <View style={{ gap: 8, marginBottom: numberFields.length > 0 ? 10 : 0 }}>
               {textFields.map((f) => (
-                <View key={f.key} style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 13 }}>
+                <Pressable
+                  key={f.key}
+                  onPress={() => fieldRefs.current[f.key]?.focus()}
+                  style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 13 }}
+                >
                   <Text style={{ fontSize: 12, color: c.text2 }}>{f.label}</Text>
                   <TextInput
+                    ref={(r) => { fieldRefs.current[f.key] = r; }}
                     value={fieldValues[f.key] ?? ''}
                     onChangeText={(t) => setFieldValue(f.key, t)}
                     placeholder={f.placeholder}
                     placeholderTextColor={c.text3}
                     style={{ fontSize: 15, fontWeight: '600', color: c.text, marginTop: 3, padding: 0 }}
                   />
-                </View>
+                </Pressable>
               ))}
             </View>
           ) : null}
@@ -270,9 +279,14 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
           {numberFields.length > 0 ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               {numberFields.map((f) => (
-                <View key={f.key} style={{ flexGrow: 1, flexBasis: '45%', backgroundColor: c.teamSoft, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14 }}>
+                <Pressable
+                  key={f.key}
+                  onPress={() => fieldRefs.current[f.key]?.focus()}
+                  style={{ flexGrow: 1, flexBasis: '45%', backgroundColor: c.teamSoft, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14 }}
+                >
                   <Text style={{ fontSize: 12, color: c.text2 }}>{f.label}</Text>
                   <TextInput
+                    ref={(r) => { fieldRefs.current[f.key] = r; }}
                     value={fieldValues[f.key] ?? ''}
                     onChangeText={(t) => setFieldValue(f.key, t)}
                     placeholder={f.placeholder ?? '0'}
@@ -280,7 +294,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
                     keyboardType="number-pad"
                     style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 2, padding: 0 }}
                   />
-                </View>
+                </Pressable>
               ))}
             </View>
           ) : null}
@@ -290,7 +304,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
         <DisclosureButton
           title="세부 입력"
           badge="선택"
-          subtitle="장소 · 동행 · 사진 · 메모 · 평점 · 기분 · 비용"
+          subtitle="사진 · 함께한 사람 · 평점 · 메모"
           icon={<Icon.plus size={17} color={c.text2} strokeWidth={2.2} />}
           open={open}
           onPress={() => setOpen((o) => !o)}
@@ -302,7 +316,20 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
             <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>사진</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {photos.map((uri) => (
-                <Image key={uri} source={{ uri: photoUri(uri) }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+                <View key={uri} style={{ width: 60, height: 60 }}>
+                  <Image source={{ uri: photoUri(uri) }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+                  <Pressable
+                    onPress={() => setPhotos((p) => p.filter((u) => u !== uri))}
+                    hitSlop={6}
+                    accessibilityRole="button"
+                    accessibilityLabel="사진 삭제"
+                    style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: c.text, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.bg }}
+                  >
+                    <Glyph size={9} color={c.bg} strokeWidth={2.8}>
+                      <Path d="M6 6l12 12M18 6l-12 12" />
+                    </Glyph>
+                  </Pressable>
+                </View>
               ))}
               <Pressable
                 onPress={pickPhoto}
@@ -330,6 +357,12 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
             <View style={{ marginTop: 14 }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>평점</Text>
               <RatingInput value={rating} onChange={setRating} size={20} />
+            </View>
+
+            {/* 함께한 사람 */}
+            <View style={{ marginTop: 14 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>함께한 사람</Text>
+              <CompanionField companions={companions} onChange={setCompanions} />
             </View>
 
             {/* 메모 */}

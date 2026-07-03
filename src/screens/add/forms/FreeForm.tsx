@@ -45,6 +45,8 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
     !!(record?.companions?.length || record?.photos?.length || record?.fields?.['장소']),
   );
 
+  const durationRef = React.useRef<TextInput>(null);
+
   const pickPhoto = async () => {
     const uri = await choosePhoto();
     if (uri) setPhotos((p) => [...p, uri]);
@@ -127,7 +129,8 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
         {/* core — 시간 (duration) */}
         <View>
           <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>시간</Text>
-          <View
+          <Pressable
+            onPress={() => durationRef.current?.focus()}
             style={{
               flexDirection: 'row',
               alignItems: 'baseline',
@@ -139,6 +142,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
             }}
           >
             <TextInput
+              ref={durationRef}
               value={duration}
               onChangeText={(t) => setDuration(t.replace(/[^0-9]/g, ''))}
               keyboardType="number-pad"
@@ -147,7 +151,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
               style={{ fontSize: 18, fontWeight: '700', color: c.text, padding: 0, minWidth: 56 }}
             />
             <Text style={{ fontSize: 13, color: c.text2 }}>분</Text>
-          </View>
+          </Pressable>
         </View>
 
         {/* core — 강도 (segmented) */}
@@ -197,7 +201,20 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
               <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>사진</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {photos.map((uri) => (
-                  <Image key={uri} source={{ uri: photoUri(uri) }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+                  <View key={uri} style={{ width: 60, height: 60 }}>
+                    <Image source={{ uri: photoUri(uri) }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+                    <Pressable
+                      onPress={() => setPhotos((p) => p.filter((u) => u !== uri))}
+                      hitSlop={6}
+                      accessibilityRole="button"
+                      accessibilityLabel="사진 삭제"
+                      style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: c.text, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.bg }}
+                    >
+                      <Glyph size={9} color={c.bg} strokeWidth={2.8}>
+                        <Path d="M6 6l12 12M18 6l-12 12" />
+                      </Glyph>
+                    </Pressable>
+                  </View>
                 ))}
                 <Pressable
                   onPress={pickPhoto}

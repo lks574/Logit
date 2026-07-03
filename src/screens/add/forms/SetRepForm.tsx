@@ -10,6 +10,7 @@ import { CompanionField, RatingInput } from '../../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
 import { useStore } from '../../../store/StoreContext';
 import { useTheme } from '../../../theme/ThemeContext';
+import { withAlpha } from '../../../theme/tokens';
 
 // SetRepForm (HTML 3.2, lines 503–556) — 세트·횟수형 (strength template).
 // 운동 부위 chips · per-exercise set table · ＋세트/종목 추가 · 볼륨/시간 summary
@@ -19,12 +20,12 @@ type SetRow = { set: string; reps: string; weight: string; warmup: boolean };
 
 const PARTS = ['가슴', '삼두', '등', '어깨', '하체'];
 
-// 기분 4단계 — 얼굴 path + 저장 라벨(fields.기분).
+// 기분 4단계 — 이모지 + 저장 라벨(fields.기분). 이모지라 표정 구분이 확실.
 const MOODS = [
-  { d: 'M8.5 15.5c1-1.4 6-1.4 7 0M9 9.5h.01M15 9.5h.01', label: '별로' },
-  { d: 'M8.5 14h7M9 9.5h.01M15 9.5h.01', label: '보통' },
-  { d: 'M8.5 13.5c1 1.4 6 1.4 7 0M9 9.5h.01M15 9.5h.01', label: '좋음' },
-  { d: 'M8 13c1.2 2 6.8 2 8 0M9 9.5h.01M15 9.5h.01', label: '최고' },
+  { emoji: '🙁', label: '별로' },
+  { emoji: '😐', label: '보통' },
+  { emoji: '🙂', label: '좋음' },
+  { emoji: '😄', label: '최고' },
 ];
 
 // fields.세트(JSON)에서 세트 행 복원. 저장값이 없거나 손상 시 빈 1행으로 시작.
@@ -62,6 +63,9 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
   const [mood, setMood] = React.useState<number>(() => MOODS.findIndex((m) => m.label === record?.fields?.기분));
   const [운동시간, set운동시간] = React.useState(record?.fields?.운동시간 ?? '');
   const [rows, setRows] = React.useState<SetRow[]>(() => parseRows(record?.fields?.세트));
+
+  const 운동시간Ref = React.useRef<TextInput>(null);
+  const moodColors = [c.error, c.warning, c.success, c.cardio];
 
   // 총 볼륨 = Σ(반복 × 중량), 워밍업 제외 — "자동" 뱃지대로 세트 값에서 계산한다.
   const totalVolume = rows.reduce((sum, r) => {
@@ -321,16 +325,20 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
               )}
             </Text>
           </View>
-          <View style={{ flex: 1, backgroundColor: c.surfaceAlt, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14 }}>
+          <Pressable
+            onPress={() => 운동시간Ref.current?.focus()}
+            style={{ flex: 1, backgroundColor: c.surfaceAlt, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14 }}
+          >
             <Text style={{ fontSize: 11, color: c.text2 }}>운동 시간</Text>
             <TextInput
+              ref={운동시간Ref}
               value={운동시간}
               onChangeText={set운동시간}
               placeholder="예: 52분"
               placeholderTextColor={c.text3}
               style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 2, padding: 0 }}
             />
-          </View>
+          </Pressable>
         </View>
 
         {/* 공통 세부 입력 (collapsed default) */}
@@ -401,16 +409,22 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
             <View>
               <Text style={styleLabel(c)}>사진</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {photos.length === 0 ? (
-                  <>
-                    <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#b7c4ca' }} />
-                    <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#d6b9a6' }} />
-                  </>
-                ) : (
-                  photos.map((uri) => (
-                    <Image key={uri} source={{ uri: photoUri(uri) }} style={{ width: 60, height: 60, borderRadius: 11 }} />
-                  ))
-                )}
+                {photos.map((uri) => (
+                  <View key={uri} style={{ width: 60, height: 60 }}>
+                    <Image source={{ uri: photoUri(uri) }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+                    <Pressable
+                      onPress={() => setPhotos((p) => p.filter((u) => u !== uri))}
+                      hitSlop={6}
+                      accessibilityRole="button"
+                      accessibilityLabel="사진 삭제"
+                      style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: c.text, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.bg }}
+                    >
+                      <Glyph size={9} color={c.bg} strokeWidth={2.8}>
+                        <Path d="M6 6l12 12M18 6l-12 12" />
+                      </Glyph>
+                    </Pressable>
+                  </View>
+                ))}
                 <Pressable
                   onPress={pickPhoto}
                   style={{
@@ -446,6 +460,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {MOODS.map((m, i) => {
                   const on = mood === i;
+                  const mc = moodColors[i];
                   return (
                     <Pressable
                       key={i}
@@ -454,20 +469,18 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
                       accessibilityLabel={`기분 ${m.label}`}
                       accessibilityState={{ selected: on }}
                       style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 11,
-                        backgroundColor: on ? c.strengthSoft : c.surface,
+                        flex: 1,
+                        height: 46,
+                        borderRadius: 12,
+                        backgroundColor: on ? withAlpha(mc, 15) : c.surface,
                         borderWidth: on ? 1.5 : 1,
-                        borderColor: on ? c.strength : c.border,
+                        borderColor: on ? mc : c.border,
                         alignItems: 'center',
                         justifyContent: 'center',
+                        gap: 2,
                       }}
                     >
-                      <Glyph size={20} color={on ? c.strength : c.text3} strokeWidth={2}>
-                        <Path d="M12 12 m -9 0 a 9 9 0 1 0 18 0 a 9 9 0 1 0 -18 0" />
-                        <Path d={m.d} />
-                      </Glyph>
+                      <Text style={{ fontSize: 24, opacity: on ? 1 : 0.65 }}>{m.emoji}</Text>
                     </Pressable>
                   );
                 })}
