@@ -2,7 +2,7 @@ import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Screen } from '../../components/primitives';
-import { Icon } from '../../components/Glyph';
+import { Glyph, Path, Icon } from '../../components/Glyph';
 import { ActivityCard } from '../../components/cards';
 import { SyncStatusBadge } from '../../components/badges';
 import { useTheme } from '../../theme/ThemeContext';
@@ -144,30 +144,63 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* 최근 기록 */}
-        <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, letterSpacing: 0.24, marginTop: 2 }}>
-          최근 기록
-        </Text>
+        {/* 최근 기록 — 기록이 있을 때만. 없으면 시작 유도 CTA로 대체. */}
+        {records.length > 0 ? (
+          <>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, letterSpacing: 0.24, marginTop: 2 }}>
+              최근 기록
+            </Text>
 
-        {records.slice(0, 6).map((r) => {
-          const rc = colorsFor(r.template, c);
-          const iconName = activities[r.activity]?.icon;
-          const IconComp = iconName ? Icon[iconName] : Icon.yoga;
-          return (
-            <ActivityCard
-              key={r.id}
-              color={rc.color}
-              soft={rc.soft}
-              icon={<IconComp size={19} color={rc.color} />}
-              title={r.activity}
-              time={r.timeLabel}
-              meta={r.meta}
-              ratingFilled={r.rating}
-              memo={r.memo}
-              onPress={() => nav.navigate('Detail', { activity: r.activity, recordId: r.id })}
-            />
-          );
-        })}
+            {records.slice(0, 6).map((r) => {
+              const rc = colorsFor(r.template, c);
+              const iconName = activities[r.activity]?.icon;
+              const IconComp = iconName ? Icon[iconName] : Icon.yoga;
+              return (
+                <ActivityCard
+                  key={r.id}
+                  color={rc.color}
+                  soft={rc.soft}
+                  icon={<IconComp size={19} color={rc.color} />}
+                  title={r.activity}
+                  time={r.timeLabel}
+                  meta={r.meta}
+                  ratingFilled={r.rating}
+                  memo={r.memo}
+                  onPress={() => nav.navigate('Detail', { activity: r.activity, recordId: r.id })}
+                />
+              );
+            })}
+          </>
+        ) : (
+          <View style={{ alignItems: 'center', paddingVertical: 36, gap: 14 }}>
+            <View
+              style={{
+                width: 60,
+                height: 60,
+                borderRadius: 30,
+                backgroundColor: c.accentSoft,
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Glyph size={28} color={c.accent} strokeWidth={2.2}>
+                <Path d="M12 5v14M5 12h14" />
+              </Glyph>
+            </View>
+            <View style={{ alignItems: 'center', gap: 5 }}>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>첫 기록을 남겨보세요</Text>
+              <Text style={{ fontSize: 12.5, color: c.text2, textAlign: 'center', lineHeight: 18 }}>
+                운동이나 공연을 기록하면{'\n'}여기와 통계에 차곡차곡 모여요.
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => nav.navigate('AddChooser')}
+              style={{ backgroundColor: c.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 2 }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>기록 추가하기</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
     </Screen>
   );
