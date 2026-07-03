@@ -50,7 +50,8 @@ export function RootNavigator() {
     <NavigationContainer theme={navTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="MainTabs" component={MainTabs} />
-        <Stack.Group screenOptions={{ presentation: 'modal' }}>
+        {/* 모달 시트는 상단 세이프에어리어 inset이 0이라 헤더가 시트 top에 붙는다 → 공통 상단 여백. */}
+        <Stack.Group screenOptions={{ presentation: 'modal', contentStyle: { paddingTop: 14 } }}>
           <Stack.Screen name="AddChooser" component={AddChooserScreen} />
           <Stack.Screen name="ActivitySelect" component={ActivitySelectScreen} />
           <Stack.Screen name="RecordForm" component={RecordFormScreen} />
