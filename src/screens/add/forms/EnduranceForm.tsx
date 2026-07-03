@@ -2,7 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import { choosePhoto, photoUri } from '../../../lib/photos';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
-import { CompanionChip, RatingInput } from '../../../components/Rating';
+import { CompanionField, RatingInput } from '../../../components/Rating';
 import { DisclosureButton } from '../../../components/Field';
 import { FormHeader } from '../../../components/FormHeader';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
@@ -15,12 +15,12 @@ import { withAlpha } from '../../../theme/tokens';
 // §03 3.1 거리·시간형 — EnduranceForm (cardio). Embeds §02 common skeleton.
 // HTML source of truth: Logit.dc.html 2.1 (296–358), 2.2 (359–437), 3.1 (444–502).
 
-// 기분 4단계 — 얼굴 path + 저장 라벨(fields.기분).
+// 기분 4단계 — 이모지 + 저장 라벨(fields.기분). 이모지라 표정 구분이 확실.
 const MOODS = [
-  { d: 'M8.5 15.5c1-1.4 6-1.4 7 0M9 9.5h.01M15 9.5h.01', label: '별로' },
-  { d: 'M8.5 14h7M9 9.5h.01M15 9.5h.01', label: '보통' },
-  { d: 'M8.5 13.5c1 1.4 6 1.4 7 0M9 9.5h.01M15 9.5h.01', label: '좋음' },
-  { d: 'M8 13c1.2 2 6.8 2 8 0M9 9.5h.01M15 9.5h.01', label: '최고' },
+  { emoji: '🙁', label: '별로' },
+  { emoji: '😐', label: '보통' },
+  { emoji: '🙂', label: '좋음' },
+  { emoji: '😄', label: '최고' },
 ];
 
 export default function EnduranceForm({ activity, recordId }: { activity: string; recordId?: string }) {
@@ -38,48 +38,75 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
   const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
   const [mood, setMood] = React.useState<number>(() => MOODS.findIndex((m) => m.label === record?.fields?.기분));
 
-  // Endurance core fields (prefilled from record.fields when editing, blank on create)
+  // Endurance core fields (prefilled from record.fields when editing, blank on create).
+  // 시간은 분·초로 분리 입력(콜론 없이), 고도/칼로리/심박은 숫자만 받고 단위는 UI에서 표기.
+  const parseMMSS = (s?: string) => {
+    const m = (s ?? '').match(/(\d+):(\d+)/);
+    return { mm: m ? m[1] : '', ss: m ? m[2] : '' };
+  };
+  const stripUnit = (s?: string) => (s ?? '').replace(/[^\d.]/g, '');
+  const t0 = parseMMSS(record?.fields?.시간);
   const [거리, set거리] = React.useState(record?.fields?.거리 ?? '');
-  const [시간, set시간] = React.useState(record?.fields?.시간 ?? '');
-  const [페이스, set페이스] = React.useState(record?.fields?.페이스 ?? '');
-  const [고도, set고도] = React.useState(record?.fields?.고도 ?? '');
-  const [칼로리, set칼로리] = React.useState(record?.fields?.칼로리 ?? '');
-  const [평균심박, set평균심박] = React.useState(record?.fields?.평균심박 ?? '');
+  const [분, set분] = React.useState(t0.mm);
+  const [초, set초] = React.useState(t0.ss);
+  const [고도, set고도] = React.useState(stripUnit(record?.fields?.고도));
+  const [칼로리, set칼로리] = React.useState(stripUnit(record?.fields?.칼로리));
+  const [평균심박, set평균심박] = React.useState(stripUnit(record?.fields?.평균심박));
+
+  // 탭하면 포커스되도록 각 입력에 ref
+  const 거리Ref = React.useRef<TextInput>(null);
+  const 분Ref = React.useRef<TextInput>(null);
+  const 고도Ref = React.useRef<TextInput>(null);
+  const 칼로리Ref = React.useRef<TextInput>(null);
+  const 심박Ref = React.useRef<TextInput>(null);
+  const placeRef = React.useRef<TextInput>(null);
+  const memoRef = React.useRef<TextInput>(null);
+
+  // 평균 페이스 = 시간 ÷ 거리(km). 자동 모드일 때만 계산값으로 채운다.
+  const km = parseFloat((거리.match(/[\d.]+/) || ['0'])[0]) || 0;
+  const totalSec = (parseInt(분 || '0', 10) || 0) * 60 + (parseInt(초 || '0', 10) || 0);
+  const autoPace =
+    km > 0 && totalSec > 0
+      ? (() => {
+          const spk = Math.round(totalSec / km);
+          return `${Math.floor(spk / 60)}:${String(spk % 60).padStart(2, '0')}`;
+        })()
+      : '';
 
   const template = activities[activity]?.template ?? 'endurance';
   const { color, soft } = colorsFor(template, c);
   const ActIcon = Icon.running;
+  const moodColors = [c.team, c.warning, c.success, c.star]; // 별로·보통·좋음·최고 (부드러운 톤)
 
   const pickPhoto = async () => {
     const uri = await choosePhoto();
     if (uri) setPhotos((p) => [...p, uri]);
   };
 
-  const addCompanion = () => {
-    setCompanions((prev) => [...prev, `동행 ${prev.length + 1}`]);
-  };
+
+  const 시간val = 분 || 초 ? `${분 || '0'}:${String(초 || '0').padStart(2, '0')}` : '';
 
   const handleSave = () => {
-    if (거리.trim() === '' && 시간.trim() === '') {
+    if (거리.trim() === '' && !시간val) {
       Alert.alert('필수 항목', '거리 또는 시간을 입력해 주세요.');
       return;
     }
     // Build fields with only non-empty values so blank inputs are omitted.
+    // 고도/칼로리/심박은 숫자 state에 단위를 붙여 저장.
     const fieldEntries: [string, string][] = [
       ['거리', 거리],
-      ['시간', 시간],
-      ['페이스', 페이스],
-      ['고도', 고도],
-      ['칼로리', 칼로리],
-      ['평균심박', 평균심박],
+      ['시간', 시간val],
+      ['페이스', autoPace],
+      ['고도', 고도 ? `${고도}m` : ''],
+      ['칼로리', 칼로리 ? `${칼로리}kcal` : ''],
+      ['평균심박', 평균심박 ? `${평균심박}bpm` : ''],
       ['장소', place],
       ['기분', mood >= 0 ? MOODS[mood].label : ''],
     ];
     const fields = Object.fromEntries(fieldEntries.filter(([, v]) => v !== ''));
 
-    // 거리 stored verbatim (with its unit, e.g. "5.2km") like 고도/칼로리 — avoids
-    // double-unit on edit round-trip. Join only non-empty parts.
-    const meta = [place, 거리, 시간].filter(Boolean).join(' · ');
+    // 거리 stored verbatim (with its unit, e.g. "5.2km"). Join only non-empty parts.
+    const meta = [place, 거리, 시간val].filter(Boolean).join(' · ');
 
     const payload = {
       activity,
@@ -191,12 +218,13 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
             핵심 수치 · 필수
           </Text>
           <View style={{ flexDirection: 'row', gap: 10 }}>
-            <View
+            <Pressable
+              onPress={() => 거리Ref.current?.focus()}
               style={{
                 flex: 1,
                 backgroundColor: c.surface,
-                borderWidth: 1.5,
-                borderColor: color,
+                borderWidth: 1,
+                borderColor: c.border,
                 borderRadius: 13,
                 paddingVertical: 12,
                 paddingHorizontal: 13,
@@ -204,14 +232,16 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
             >
               <Text style={{ fontSize: 12, color: c.text2 }}>거리</Text>
               <TextInput
+                ref={거리Ref}
                 value={거리}
                 onChangeText={set거리}
                 placeholder="예: 5.2km"
                 placeholderTextColor={c.text3}
                 style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 4, padding: 0 }}
               />
-            </View>
-            <View
+            </Pressable>
+            <Pressable
+              onPress={() => 분Ref.current?.focus()}
               style={{
                 flex: 1,
                 backgroundColor: c.surface,
@@ -223,14 +253,30 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
               }}
             >
               <Text style={{ fontSize: 12, color: c.text2 }}>시간</Text>
-              <TextInput
-                value={시간}
-                onChangeText={set시간}
-                placeholder="예: 27:12"
-                placeholderTextColor={c.text3}
-                style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 4, padding: 0 }}
-              />
-            </View>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 4 }}>
+                <TextInput
+                  ref={분Ref}
+                  value={분}
+                  onChangeText={(v) => set분(v.replace(/[^\d]/g, ''))}
+                  keyboardType="number-pad"
+                  placeholder="27"
+                  placeholderTextColor={c.text3}
+                  maxLength={3}
+                  style={{ fontSize: 24, fontWeight: '700', color: c.text, padding: 0, minWidth: 30 }}
+                />
+                <Text style={{ fontSize: 14, color: c.text2, marginHorizontal: 3, marginBottom: 3 }}>분</Text>
+                <TextInput
+                  value={초}
+                  onChangeText={(v) => set초(v.replace(/[^\d]/g, '').slice(0, 2))}
+                  keyboardType="number-pad"
+                  placeholder="12"
+                  placeholderTextColor={c.text3}
+                  maxLength={2}
+                  style={{ fontSize: 24, fontWeight: '700', color: c.text, padding: 0, minWidth: 28 }}
+                />
+                <Text style={{ fontSize: 14, color: c.text2, marginLeft: 3, marginBottom: 3 }}>초</Text>
+              </View>
+            </Pressable>
           </View>
         </View>
 
@@ -259,55 +305,67 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
             <DetailRow>
               <Text style={{ fontSize: 14, color: c.text }}>평균 페이스</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                <TextInput
-                  value={페이스}
-                  onChangeText={set페이스}
-                  placeholder="자동"
-                  placeholderTextColor={c.text3}
-                  style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 80 }}
-                />
+                <Text style={{ fontSize: 15, fontWeight: '600', color: autoPace ? c.text : c.text3, textAlign: 'right', minWidth: 52 }}>
+                  {autoPace || '자동'}
+                </Text>
+                <Text style={{ fontSize: 13, color: c.text3 }}>/km</Text>
                 <View style={{ backgroundColor: soft, borderRadius: 5, paddingVertical: 2, paddingHorizontal: 6 }}>
                   <Text style={{ fontSize: 10, fontWeight: '600', color }}>자동</Text>
                 </View>
               </View>
             </DetailRow>
             <View style={{ height: 1, backgroundColor: c.border }} />
-            <DetailRow>
+            <DetailRow onPress={() => 고도Ref.current?.focus()}>
               <Text style={{ fontSize: 14, color: c.text }}>고도 상승</Text>
-              <TextInput
-                value={고도}
-                onChangeText={set고도}
-                placeholder="예: 42m"
-                placeholderTextColor={c.text3}
-                style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 80 }}
-              />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <TextInput
+                  ref={고도Ref}
+                  value={고도}
+                  onChangeText={(v) => set고도(v.replace(/[^\d.]/g, ''))}
+                  keyboardType="numeric"
+                  placeholder="42"
+                  placeholderTextColor={c.text3}
+                  style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 44 }}
+                />
+                <Text style={{ fontSize: 13, color: c.text3 }}>m</Text>
+              </View>
             </DetailRow>
             <View style={{ height: 1, backgroundColor: c.border }} />
-            <DetailRow>
+            <DetailRow onPress={() => 칼로리Ref.current?.focus()}>
               <Text style={{ fontSize: 14, color: c.text }}>칼로리</Text>
-              <TextInput
-                value={칼로리}
-                onChangeText={set칼로리}
-                placeholder="예: 328kcal"
-                placeholderTextColor={c.text3}
-                style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 80 }}
-              />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <TextInput
+                  ref={칼로리Ref}
+                  value={칼로리}
+                  onChangeText={(v) => set칼로리(v.replace(/[^\d.]/g, ''))}
+                  keyboardType="numeric"
+                  placeholder="328"
+                  placeholderTextColor={c.text3}
+                  style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 44 }}
+                />
+                <Text style={{ fontSize: 13, color: c.text3 }}>kcal</Text>
+              </View>
             </DetailRow>
             <View style={{ height: 1, backgroundColor: c.border }} />
-            <DetailRow>
+            <DetailRow onPress={() => 심박Ref.current?.focus()}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
                 <Glyph size={16} color={c.error} strokeWidth={2}>
                   <Path d="M20.8 5.6a5.5 5.5 0 0 0-8.8 1 5.5 5.5 0 0 0-8.8-1c-2.2 2.2-2 5.6.4 8L12 21l8.4-7.4c2.4-2.4 2.6-5.8.4-8z" />
                 </Glyph>
                 <Text style={{ fontSize: 14, color: c.text }}>평균 심박</Text>
               </View>
-              <TextInput
-                value={평균심박}
-                onChangeText={set평균심박}
-                placeholder="예: 152bpm"
-                placeholderTextColor={c.text3}
-                style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 80 }}
-              />
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <TextInput
+                  ref={심박Ref}
+                  value={평균심박}
+                  onChangeText={(v) => set평균심박(v.replace(/[^\d]/g, ''))}
+                  keyboardType="number-pad"
+                  placeholder="152"
+                  placeholderTextColor={c.text3}
+                  style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 44 }}
+                />
+                <Text style={{ fontSize: 13, color: c.text3 }}>bpm</Text>
+              </View>
             </DetailRow>
           </View>
         </View>
@@ -328,7 +386,8 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
             {/* 장소 */}
             <View>
               <Text style={styleLabel(c)}>장소</Text>
-              <View
+              <Pressable
+                onPress={() => placeRef.current?.focus()}
                 style={{
                   flexDirection: 'row',
                   alignItems: 'center',
@@ -344,13 +403,14 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                   <Path d="M12 10 m -2.6 0 a 2.6 2.6 0 1 0 5.2 0 a 2.6 2.6 0 1 0 -5.2 0" />
                 </Glyph>
                 <TextInput
+                  ref={placeRef}
                   value={place}
                   onChangeText={setPlace}
                   placeholder="장소"
                   placeholderTextColor={c.text3}
                   style={{ flex: 1, fontSize: 14, color: c.text, padding: 0 }}
                 />
-              </View>
+              </Pressable>
               <View style={{ flexDirection: 'row', gap: 6, marginTop: 7 }}>
                 {['최근 · 올림픽공원', '양재천'].map((t) => (
                   <Pressable
@@ -374,71 +434,29 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
             {/* 동행 */}
             <View>
               <Text style={styleLabel(c)}>동행</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-                {companions.map((name, i) => (
-                  <Pressable
-                    key={`${name}-${i}`}
-                    onPress={() => setCompanions((prev) => prev.filter((_, idx) => idx !== i))}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 6,
-                      backgroundColor: c.accent,
-                      borderRadius: 999,
-                      paddingVertical: 7,
-                      paddingLeft: 8,
-                      paddingRight: 11,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: 9,
-                        backgroundColor: 'rgba(255,255,255,.25)',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>{name.slice(0, 1)}</Text>
-                    </View>
-                    <Text style={{ fontSize: 13, color: '#fff' }}>{name}</Text>
-                    <Glyph size={12} color="#fff" strokeWidth={2.6}>
-                      <Path d="M6 6l12 12M18 6 6 18" />
-                    </Glyph>
-                  </Pressable>
-                ))}
-                <Pressable
-                  style={{
-                    backgroundColor: c.surface,
-                    borderWidth: 1,
-                    borderColor: c.border,
-                    borderRadius: 999,
-                    paddingVertical: 7,
-                    paddingHorizontal: 12,
-                  }}
-                  onPress={() => setCompanions((prev) => [...prev, '지훈'])}
-                >
-                  <Text style={{ fontSize: 13, color: c.text2 }}>+ 지훈</Text>
-                </Pressable>
-                <CompanionChip name="추가" dashed onPress={addCompanion} />
-              </View>
+              <CompanionField companions={companions} onChange={setCompanions} />
             </View>
 
             {/* 사진 */}
             <View>
               <Text style={styleLabel(c)}>사진</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {photos.length === 0 ? (
-                  <>
-                    <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#b7c4ca' }} />
-                    <View style={{ width: 60, height: 60, borderRadius: 11, backgroundColor: '#d6b9a6' }} />
-                  </>
-                ) : (
-                  photos.map((uri) => (
-                    <Image key={uri} source={{ uri: photoUri(uri) }} style={{ width: 60, height: 60, borderRadius: 11 }} />
-                  ))
-                )}
+                {photos.map((uri) => (
+                  <View key={uri} style={{ width: 60, height: 60 }}>
+                    <Image source={{ uri: photoUri(uri) }} style={{ width: 60, height: 60, borderRadius: 11 }} />
+                    <Pressable
+                      onPress={() => setPhotos((p) => p.filter((u) => u !== uri))}
+                      hitSlop={6}
+                      accessibilityRole="button"
+                      accessibilityLabel="사진 삭제"
+                      style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: c.text, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.bg }}
+                    >
+                      <Glyph size={9} color={c.bg} strokeWidth={2.8}>
+                        <Path d="M6 6l12 12M18 6l-12 12" />
+                      </Glyph>
+                    </Pressable>
+                  </View>
+                ))}
                 <Pressable
                   onPress={pickPhoto}
                   style={{
@@ -474,6 +492,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {MOODS.map((m, i) => {
                   const on = mood === i;
+                  const mc = moodColors[i];
                   return (
                     <Pressable
                       key={i}
@@ -482,20 +501,18 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                       accessibilityLabel={`기분 ${m.label}`}
                       accessibilityState={{ selected: on }}
                       style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 11,
-                        backgroundColor: on ? c.accentSoft : c.surface,
+                        flex: 1,
+                        height: 46,
+                        borderRadius: 12,
+                        backgroundColor: on ? withAlpha(mc, 15) : c.surface,
                         borderWidth: on ? 1.5 : 1,
-                        borderColor: on ? c.accent : c.border,
+                        borderColor: on ? mc : c.border,
                         alignItems: 'center',
                         justifyContent: 'center',
+                        gap: 2,
                       }}
                     >
-                      <Glyph size={20} color={on ? c.accent : c.text3} strokeWidth={2}>
-                        <Path d="M12 12 m -9 0 a 9 9 0 1 0 18 0 a 9 9 0 1 0 -18 0" />
-                        <Path d={m.d} />
-                      </Glyph>
+                      <Text style={{ fontSize: 24, opacity: on ? 1 : 0.45 }}>{m.emoji}</Text>
                     </Pressable>
                   );
                 })}
@@ -505,7 +522,8 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
             {/* 메모 */}
             <View>
               <Text style={styleLabel(c)}>메모</Text>
-              <View
+              <Pressable
+                onPress={() => memoRef.current?.focus()}
                 style={{
                   backgroundColor: c.surfaceAlt,
                   borderRadius: 10,
@@ -515,6 +533,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                 }}
               >
                 <TextInput
+                  ref={memoRef}
                   value={memo}
                   onChangeText={setMemo}
                   multiline
@@ -522,7 +541,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                   placeholderTextColor={c.text3}
                   style={{ fontSize: 13, color: c.text, lineHeight: 20, padding: 0 }}
                 />
-              </View>
+              </Pressable>
             </View>
           </View>
         ) : (
@@ -545,19 +564,20 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
   );
 }
 
-function DetailRow({ children }: { children: React.ReactNode }) {
-  return (
-    <View
-      style={{
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 12,
-        paddingHorizontal: 14,
-      }}
-    >
+function DetailRow({ children, onPress }: { children: React.ReactNode; onPress?: () => void }) {
+  const style = {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  };
+  return onPress ? (
+    <Pressable onPress={onPress} style={style}>
       {children}
-    </View>
+    </Pressable>
+  ) : (
+    <View style={style}>{children}</View>
   );
 }
 
