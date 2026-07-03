@@ -16,6 +16,7 @@ type SheetState =
   | { kind: 'none' }
   | { kind: 'export' }
   | { kind: 'confirmImport'; incoming: StoreState; summary: string }
+  | { kind: 'confirmReset' }
   | { kind: 'message'; title: string; message?: string };
 
 // 4.8 설정 — profile card, grouped surface cards with rows + dividers.
@@ -60,6 +61,16 @@ export default function SettingsScreen() {
     }
   };
 
+  // 데이터 리셋: 기록·약속·활동을 전부 비운다(프로필은 유지). replaceAll이 사진 고아까지 정리.
+  const confirmReset = async () => {
+    try {
+      await replaceAll({ records: [], plans: [], customActivities: [], profile });
+      setSheet({ kind: 'message', title: '초기화 완료', message: '모든 기록과 약속을 삭제했습니다.' });
+    } catch (e) {
+      setSheet({ kind: 'message', title: '초기화 실패', message: '삭제에 실패했습니다. 다시 시도해 주세요.' });
+    }
+  };
+
   // 단일 ActionSheet에 넘길 콘텐츠(현재 sheet 종류에서 파생).
   const sheetView: {
     title: string;
@@ -84,6 +95,13 @@ export default function SettingsScreen() {
           message: sheet.summary,
           cancelLabel: '취소',
           actions: [{ label: '전체 교체', destructive: true, onPress: () => confirmImport(sheet.incoming) }],
+        };
+      case 'confirmReset':
+        return {
+          title: '데이터 리셋',
+          message: '모든 기록·약속·활동을 삭제합니다. 이 작업은 되돌릴 수 없습니다.',
+          cancelLabel: '취소',
+          actions: [{ label: '전체 삭제', destructive: true, onPress: confirmReset }],
         };
       case 'message':
         return { title: sheet.title, message: sheet.message, cancelLabel: '확인', actions: [] };
@@ -271,6 +289,26 @@ export default function SettingsScreen() {
               />
             </ControlRow>
           </Card>
+        </View>
+
+        {/* 데이터 초기화 */}
+        <View>
+          <SectionLabel text="데이터 초기화" />
+          <Card>
+            <SettingsRow
+              icon={
+                <Glyph size={18} color={c.error} strokeWidth={1.8}>
+                  <Path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M6 6l1 14a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-14M10 11v6M14 11v6" />
+                </Glyph>
+              }
+              label="데이터 리셋"
+              right={<T style={{ fontSize: 13, fontWeight: '600', color: c.error }}>전체 삭제</T>}
+              onPress={() => setSheet({ kind: 'confirmReset' })}
+            />
+          </Card>
+          <T style={{ fontSize: 11, color: c.text3, marginHorizontal: 4, marginTop: 7 }}>
+            모든 기록·약속·활동을 지웁니다. 되돌릴 수 없습니다.
+          </T>
         </View>
       </View>
 
