@@ -161,7 +161,7 @@ export default function StatsScreen() {
             </View>
             {s.topWork ? (
               <Text style={{ fontSize: 13, color: c.text2, lineHeight: 19.5 }}>
-                최다 관람 <Text style={{ color: c.text, fontWeight: '600' }}>{s.topWork} {s.topWorkCount}회</Text>
+                최다 관람 <Text style={{ color: c.text, fontWeight: '600' }}>{s.topWork} {s.topWorkCount}편</Text>
                 {s.topActor ? (
                   <>
                     {' · 최다 배우 '}

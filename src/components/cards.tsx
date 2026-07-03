@@ -34,6 +34,8 @@ export function ActivityCard({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={[title, time, meta].filter(Boolean).join(', ')}
       style={({ pressed }) => ({
         flexDirection: 'row',
         backgroundColor: bg ?? c.surface,
@@ -107,6 +109,8 @@ export function PlanCard({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={['약속', title, meta].filter(Boolean).join(', ')}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -148,6 +152,8 @@ export function PlanCard({
       <Pressable
         onPress={onCheck}
         hitSlop={8}
+        accessibilityRole="button"
+        accessibilityLabel={`${title} 완료 처리`}
         style={{
           width: 30,
           height: 30,
