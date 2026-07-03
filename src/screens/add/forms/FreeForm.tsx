@@ -6,7 +6,7 @@ import { Screen } from '../../../components/primitives';
 import { FormHeader } from '../../../components/FormHeader';
 import { DisclosureButton, Field } from '../../../components/Field';
 import { Segmented } from '../../../components/controls';
-import { RatingInput, CompanionChip } from '../../../components/Rating';
+import { RatingInput, CompanionField } from '../../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
 import { useStore } from '../../../store/StoreContext';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -44,18 +44,10 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
   const [open, setOpen] = React.useState(
     !!(record?.companions?.length || record?.photos?.length || record?.fields?.['장소']),
   );
-  const [newCompanion, setNewCompanion] = React.useState('');
 
   const pickPhoto = async () => {
     const uri = await choosePhoto();
     if (uri) setPhotos((p) => [...p, uri]);
-  };
-
-  const addCompanion = () => {
-    const name = newCompanion.trim();
-    if (!name) return;
-    setCompanions((p) => [...p, name]);
-    setNewCompanion('');
   };
 
   const handleSave = () => {
@@ -197,42 +189,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
             {/* 동행 */}
             <View>
               <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>동행</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-                {companions.map((name, i) => (
-                  <CompanionChip
-                    key={`${name}-${i}`}
-                    name={name}
-                    onPress={() => setCompanions((prev) => prev.filter((_, idx) => idx !== i))}
-                  />
-                ))}
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    gap: 5,
-                    backgroundColor: c.surface,
-                    borderWidth: 1,
-                    borderStyle: 'dashed',
-                    borderColor: c.border,
-                    borderRadius: 999,
-                    paddingVertical: 4,
-                    paddingHorizontal: 11,
-                  }}
-                >
-                  <Glyph size={12} color={c.text3} strokeWidth={2.4}>
-                    <Path d="M12 5v14M5 12h14" />
-                  </Glyph>
-                  <TextInput
-                    value={newCompanion}
-                    onChangeText={setNewCompanion}
-                    onSubmitEditing={addCompanion}
-                    returnKeyType="done"
-                    placeholder="추가"
-                    placeholderTextColor={c.text3}
-                    style={{ fontSize: 12, color: c.text2, padding: 0, minWidth: 44 }}
-                  />
-                </View>
-              </View>
+              <CompanionField companions={companions} onChange={setCompanions} />
             </View>
 
             {/* 사진 */}

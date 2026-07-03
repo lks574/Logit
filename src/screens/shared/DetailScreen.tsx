@@ -2,6 +2,7 @@ import React from 'react';
 import { Alert, Image, Text, View } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Row, Screen } from '../../components/primitives';
+import { ScreenHeader } from '../../components/ScreenHeader';
 import { IconButton } from '../../components/Button';
 import { Stars } from '../../components/Rating';
 import { Glyph, Icon, Path } from '../../components/Glyph';
@@ -111,48 +112,46 @@ export default function DetailScreen() {
 
   return (
     <Screen edges={['top']} contentStyle={{ paddingBottom: 28 }}>
-      {/* Header row: back / edit / delete */}
-      <Row between center style={{ paddingHorizontal: 12, paddingTop: 6, paddingBottom: 10 }}>
-        <IconButton size={34} bg={c.surface} label="뒤로" onPress={() => nav.goBack()}>
-          <Glyph size={18} color={c.text} strokeWidth={2.2}>
-            <Path d="M15 6l-6 6 6 6" />
-          </Glyph>
-        </IconButton>
-        <Row gap={8} center>
-          <IconButton
-            size={34}
-            bg={c.surface}
-            label="수정"
-            onPress={() => nav.navigate('RecordForm', { activity: v.activity, template, recordId })}
-          >
-            <Icon.edit size={17} color={c.text2} strokeWidth={2} />
-          </IconButton>
-          <IconButton
-            size={34}
-            bg={c.surface}
-            label="삭제"
-            onPress={() => {
-              if (!recordId) {
-                nav.goBack();
-                return;
-              }
-              Alert.alert('기록 삭제', '이 기록을 삭제할까요?', [
-                { text: '취소', style: 'cancel' },
-                {
-                  text: '삭제',
-                  style: 'destructive',
-                  onPress: () => {
-                    deleteRecord(recordId);
-                    nav.goBack();
+      {/* Header: 뒤로 / 수정 / 삭제 */}
+      <ScreenHeader
+        style={{ paddingTop: 6 }}
+        right={
+          <>
+            <IconButton
+              size={34}
+              bg={c.surface}
+              label="수정"
+              onPress={() => nav.navigate('RecordForm', { activity: v.activity, template, recordId })}
+            >
+              <Icon.edit size={17} color={c.text2} strokeWidth={2} />
+            </IconButton>
+            <IconButton
+              size={34}
+              bg={c.surface}
+              label="삭제"
+              onPress={() => {
+                if (!recordId) {
+                  nav.goBack();
+                  return;
+                }
+                Alert.alert('기록 삭제', '이 기록을 삭제할까요?', [
+                  { text: '취소', style: 'cancel' },
+                  {
+                    text: '삭제',
+                    style: 'destructive',
+                    onPress: () => {
+                      deleteRecord(recordId);
+                      nav.goBack();
+                    },
                   },
-                },
-              ]);
-            }}
-          >
-            <Icon.trash size={17} color={c.error} strokeWidth={2} />
-          </IconButton>
-        </Row>
-      </Row>
+                ]);
+              }}
+            >
+              <Icon.trash size={17} color={c.error} strokeWidth={2} />
+            </IconButton>
+          </>
+        }
+      />
 
       <View style={{ paddingHorizontal: 16, gap: v.contentGap }}>
         {/* Activity header */}

@@ -6,7 +6,7 @@ import { Screen } from '../../../components/primitives';
 import { FormHeader } from '../../../components/FormHeader';
 import { DisclosureButton } from '../../../components/Field';
 import { Chip } from '../../../components/controls';
-import { CompanionChip, RatingInput } from '../../../components/Rating';
+import { CompanionField, RatingInput } from '../../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
 import { useStore } from '../../../store/StoreContext';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -394,61 +394,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
             {/* 동행 */}
             <View>
               <Text style={styleLabel(c)}>동행</Text>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
-                {companions.map((name, i) => (
-                  <Pressable
-                    key={`${name}-${i}`}
-                    onPress={() => setCompanions((list) => list.filter((_, idx) => idx !== i))}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 6,
-                      backgroundColor: c.strength,
-                      borderRadius: 999,
-                      paddingVertical: 7,
-                      paddingLeft: 8,
-                      paddingRight: 11,
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: 9,
-                        backgroundColor: 'rgba(255,255,255,.25)',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>{name.slice(0, 1)}</Text>
-                    </View>
-                    <Text style={{ fontSize: 13, color: '#fff' }}>{name}</Text>
-                    <Glyph size={12} color="#fff" strokeWidth={2.6}>
-                      <Path d="M6 6l12 12M18 6 6 18" />
-                    </Glyph>
-                  </Pressable>
-                ))}
-                {!companions.includes('지훈') ? (
-                  <Pressable
-                    onPress={() => setCompanions((list) => [...list, '지훈'])}
-                    style={{
-                      backgroundColor: c.surface,
-                      borderWidth: 1,
-                      borderColor: c.border,
-                      borderRadius: 999,
-                      paddingVertical: 7,
-                      paddingHorizontal: 12,
-                    }}
-                  >
-                    <Text style={{ fontSize: 13, color: c.text2 }}>+ 지훈</Text>
-                  </Pressable>
-                ) : null}
-                <CompanionChip
-                  name="추가"
-                  dashed
-                  onPress={() => setCompanions((list) => [...list, `동행 ${list.length + 1}`])}
-                />
-              </View>
+              <CompanionField companions={companions} onChange={setCompanions} />
             </View>
 
             {/* 사진 */}

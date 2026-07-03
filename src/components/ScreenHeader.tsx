@@ -14,7 +14,7 @@ export function ScreenHeader({
   right,
   style,
 }: {
-  title: string;
+  title?: string; // 없으면 타이틀 숨김(뒤로 + 우측 액션만)
   onBack?: (() => void) | null; // null이면 back 버튼 숨김
   right?: React.ReactNode; // 우측 액션(IconButton/pill 등)
   style?: StyleProp<ViewStyle>;
@@ -24,12 +24,14 @@ export function ScreenHeader({
   const back = onBack === null ? undefined : onBack ?? (() => nav.goBack());
   return (
     <View style={[{ height: 44, justifyContent: 'center', paddingHorizontal: 16 }, style]}>
-      <Text
-        numberOfLines={1}
-        style={{ position: 'absolute', left: 56, right: 56, textAlign: 'center', fontSize: 16, fontWeight: '700', color: c.text }}
-      >
-        {title}
-      </Text>
+      {title ? (
+        <Text
+          numberOfLines={1}
+          style={{ position: 'absolute', left: 56, right: 56, textAlign: 'center', fontSize: 16, fontWeight: '700', color: c.text }}
+        >
+          {title}
+        </Text>
+      ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         {back ? (
           <IconButton size={30} bg={c.surfaceAlt} label="뒤로" onPress={back}>

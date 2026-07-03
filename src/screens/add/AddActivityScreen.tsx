@@ -2,6 +2,7 @@ import React from 'react';
 import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Screen } from '../../components/primitives';
+import { ScreenHeader } from '../../components/ScreenHeader';
 import { Icon, Glyph, Path, Circle } from '../../components/Glyph';
 import { activities } from '../../data/activities';
 import { useTheme } from '../../theme/ThemeContext';
@@ -47,47 +48,21 @@ export default function AddActivityScreen() {
 
   return (
     <Screen edges={['top', 'bottom']}>
-      {/* Header: 취소 / 활동 추가 / 저장 */}
-      <View
-        style={{
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          paddingHorizontal: 12,
-          paddingTop: 6,
-          paddingBottom: 12,
-        }}
-      >
-        <Pressable
-          onPress={onCancel}
-          hitSlop={8}
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 15,
-            backgroundColor: c.surfaceAlt,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Icon.chevronLeft size={16} color={c.text2} strokeWidth={2.4} />
-        </Pressable>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>활동 추가</Text>
-        <Pressable
-          onPress={onSave}
-          hitSlop={8}
-          style={{
-            height: 30,
-            paddingHorizontal: 12,
-            borderRadius: 999,
-            backgroundColor: c.accentSoft,
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>저장</Text>
-        </Pressable>
-      </View>
+      {/* Header: 뒤로 / 활동 추가 / 저장 */}
+      <ScreenHeader
+        title="활동 추가"
+        onBack={onCancel}
+        style={{ paddingTop: 6 }}
+        right={
+          <Pressable
+            onPress={onSave}
+            hitSlop={8}
+            style={{ height: 30, paddingHorizontal: 12, borderRadius: 999, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>저장</Text>
+          </Pressable>
+        }
+      />
 
       <View style={{ paddingHorizontal: 16, paddingTop: 2, gap: 16, paddingBottom: 24 }}>
         {/* 활동 이름 */}

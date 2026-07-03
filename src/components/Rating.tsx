@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { Glyph, Path } from './Glyph';
 
@@ -142,6 +142,64 @@ export function CompanionChip({
           </Glyph>
         </Pressable>
       ) : null}
+    </View>
+  );
+}
+
+// CompanionField — 동행/함께한 사람 공용: 이름 입력 추가 + × 명시 삭제.
+export function CompanionField({
+  companions,
+  onChange,
+}: {
+  companions: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const { c } = useTheme();
+  const [draft, setDraft] = React.useState('');
+  const [adding, setAdding] = React.useState(false);
+  const commit = () => {
+    const name = draft.trim();
+    if (name) onChange([...companions, name]);
+    setDraft('');
+    setAdding(false);
+  };
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7, alignItems: 'center' }}>
+      {companions.map((name, i) => (
+        <CompanionChip
+          key={`${name}-${i}`}
+          name={name}
+          onRemove={() => onChange(companions.filter((_, idx) => idx !== i))}
+        />
+      ))}
+      {adding ? (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderRadius: 999,
+            paddingVertical: 5,
+            paddingHorizontal: 13,
+            backgroundColor: c.surface,
+            borderWidth: 1,
+            borderColor: c.accent,
+          }}
+        >
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            placeholder="이름"
+            placeholderTextColor={c.text3}
+            autoFocus
+            returnKeyType="done"
+            onSubmitEditing={commit}
+            onBlur={commit}
+            style={{ fontSize: 13, color: c.text, padding: 0, minWidth: 70 }}
+          />
+        </View>
+      ) : (
+        <CompanionChip name="추가" dashed onPress={() => setAdding(true)} />
+      )}
     </View>
   );
 }

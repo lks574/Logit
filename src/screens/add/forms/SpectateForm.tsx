@@ -4,7 +4,7 @@ import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../../components/primitives';
 import { FormHeader } from '../../../components/FormHeader';
-import { RatingInput, CompanionChip } from '../../../components/Rating';
+import { RatingInput, CompanionField } from '../../../components/Rating';
 import { Stepper, Chip } from '../../../components/controls';
 import { Glyph, Path, Rect, Icon } from '../../../components/Glyph';
 import { useStore } from '../../../store/StoreContext';
@@ -91,8 +91,6 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
   });
   const [castDraft, setCastDraft] = React.useState('');
   const [adding, setAdding] = React.useState(false);
-  const [companionDraft, setCompanionDraft] = React.useState('');
-  const [addingCompanion, setAddingCompanion] = React.useState(false);
   const [rating, setRating] = React.useState(record?.rating ?? 0);
   const [memo, setMemo] = React.useState(record?.memo ?? '');
   const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
@@ -111,13 +109,6 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
     if (name) setCast((p) => [...p, name]);
     setCastDraft('');
     setAdding(false);
-  };
-
-  const commitCompanion = () => {
-    const name = companionDraft.trim();
-    if (name) setCompanions((p) => [...p, name]);
-    setCompanionDraft('');
-    setAddingCompanion(false);
   };
 
   const handleSave = () => {
@@ -155,6 +146,7 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
   };
 
   const titleRef = React.useRef<TextInput>(null);
+  const memoRef = React.useRef<TextInput>(null);
 
   return (
     <Screen edges={['top', 'bottom']}>
@@ -290,8 +282,9 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
 
         <View>
           <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>메모</Text>
-          <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 13 }}>
+          <Pressable onPress={() => memoRef.current?.focus()} style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 13 }}>
             <TextInput
+              ref={memoRef}
               value={memo}
               onChangeText={setMemo}
               placeholder="메모"
@@ -299,48 +292,12 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
               multiline
               style={{ fontSize: 14, color: c.text, padding: 0, minHeight: 44, textAlignVertical: 'top' }}
             />
-          </View>
+          </Pressable>
         </View>
 
         <View>
           <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>함께한 사람</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7, alignItems: 'center' }}>
-            {companions.map((name, i) => (
-              <CompanionChip
-                key={`${name}-${i}`}
-                name={name}
-                onRemove={() => setCompanions((p) => p.filter((_, idx) => idx !== i))}
-              />
-            ))}
-            {addingCompanion ? (
-              <View
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  borderRadius: 999,
-                  paddingVertical: 5,
-                  paddingHorizontal: 13,
-                  backgroundColor: c.surface,
-                  borderWidth: 1,
-                  borderColor: c.accent,
-                }}
-              >
-                <TextInput
-                  value={companionDraft}
-                  onChangeText={setCompanionDraft}
-                  placeholder="이름"
-                  placeholderTextColor={c.text3}
-                  autoFocus
-                  returnKeyType="done"
-                  onSubmitEditing={commitCompanion}
-                  onBlur={commitCompanion}
-                  style={{ fontSize: 13, color: c.text, padding: 0, minWidth: 70 }}
-                />
-              </View>
-            ) : (
-              <CompanionChip name="추가" dashed onPress={() => setAddingCompanion(true)} />
-            )}
-          </View>
+          <CompanionField companions={companions} onChange={setCompanions} />
         </View>
 
         <View>
