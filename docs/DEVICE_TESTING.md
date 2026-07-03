@@ -46,6 +46,8 @@ LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 npx expo run:ios --device <UDID>
 
 > ⚠️ `ios/`는 `.gitignore`(CNG로 prebuild 재생성). **`expo prebuild` 재실행/새 클론 시 위 서명 주입이 날아가** 서명 이슈가 재발한다. 그때 pbxproj에 다시 주입할 것.
 
+> ⚠️ **bundle id / package 변경 시**: `app.json`만 고치면 반영 안 된다(`expo run:ios`의 prebuild는 기존 `ios/`를 덮어쓰지 않음). `npx expo prebuild --clean`으로 네이티브 재생성해야 iOS·Android 양쪽 반영된다. clean은 서명을 지우므로 재주입 필요, 새 bundle id엔 프로파일이 없어 첫 빌드가 "No profiles for '…' were found"로 실패 → 위 §1-3 xcodebuild `-allowProvisioningUpdates`로 프로파일 1회 생성 후 `expo run:ios` 재시도. **bundle id를 바꾸면 iOS가 다른 앱으로 취급해 기존 저장 데이터는 새 앱에 넘어오지 않는다.**
+
 ## 2. 같은 Wi-Fi (LAN)
 
 ```bash
