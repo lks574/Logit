@@ -24,7 +24,7 @@ export type StoredPlan = {
   activity: string;
   template: TemplateType;
   dateISO: string; // YYYY-MM-DD
-  timeLabel: string; // e.g. "오후 8:00"
+  timeLabel?: string; // e.g. "오후 8:00" — 미정이면 없음
   place?: string;
   memo?: string;
   reminder?: boolean;

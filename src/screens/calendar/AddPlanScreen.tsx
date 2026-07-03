@@ -45,7 +45,16 @@ export default function AddPlanScreen() {
   const [act, setAct] = React.useState<string>(plan?.activity ?? FAVORITES[0]);
   const [showAll, setShowAll] = React.useState(false);
   const [dateISO, setDateISO] = React.useState<string>(plan?.dateISO ?? params?.dateISO ?? today);
-  const initTime = parseTime(plan?.timeLabel);
+  // 시간 초기값: 편집이면 저장된 시간, 신규면 현재 시각. 시간은 옵셔널(미정 가능).
+  const now = React.useMemo(() => new Date(), []);
+  const initTime = plan?.timeLabel
+    ? parseTime(plan.timeLabel)
+    : {
+        ampm: (now.getHours() < 12 ? '오전' : '오후') as '오전' | '오후',
+        h12: ((now.getHours() + 11) % 12) + 1,
+        minute: now.getMinutes(),
+      };
+  const [hasTime, setHasTime] = React.useState(editing ? !!plan?.timeLabel : true);
   const [ampm, setAmpm] = React.useState<'오전' | '오후'>(initTime.ampm);
   const [h12, setH12] = React.useState(initTime.h12);
   const [minute, setMinute] = React.useState(initTime.minute);
@@ -65,10 +74,10 @@ export default function AddPlanScreen() {
       activity: act,
       template: templateOf(act),
       dateISO,
-      timeLabel: timeLabelOf(ampm, h12, minute),
+      timeLabel: hasTime ? timeLabelOf(ampm, h12, minute) : undefined,
       place: place.trim() || undefined,
       memo: memo.trim() || undefined,
-      reminder: alarm,
+      reminder: hasTime ? alarm : false,
     };
     if (editing && planId) updatePlan(planId, payload);
     else addPlan(payload);
@@ -216,12 +225,38 @@ export default function AddPlanScreen() {
               </Glyph>
               <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{dateLabel(dateISO)}</Text>
             </Pressable>
-            <Pressable style={[fieldBox, { flex: 1 }]} onPress={() => { setShowTime((s) => !s); setShowDate(false); }}>
-              <Glyph size={17} color={c.accent}>
+            <Pressable
+              style={[fieldBox, { flex: 1 }]}
+              onPress={() => {
+                if (!hasTime) {
+                  setHasTime(true);
+                  setShowTime(true);
+                  setShowDate(false);
+                } else {
+                  setShowTime((s) => !s);
+                  setShowDate(false);
+                }
+              }}
+            >
+              <Glyph size={17} color={hasTime ? c.accent : c.text3}>
                 <Circle cx="12" cy="12" r="9" />
                 <Path d="M12 7v5l3.5 2" />
               </Glyph>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{timeLabelOf(ampm, h12, minute)}</Text>
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: hasTime ? c.text : c.text3 }}>
+                {hasTime ? timeLabelOf(ampm, h12, minute) : '시간 미정'}
+              </Text>
+              {hasTime ? (
+                <Pressable
+                  onPress={() => { setHasTime(false); setShowTime(false); }}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="시간 지우기"
+                >
+                  <Glyph size={15} color={c.text3} strokeWidth={2.4}>
+                    <Path d="M6 6l12 12M18 6l-12 12" />
+                  </Glyph>
+                </Pressable>
+              ) : null}
             </Pressable>
           </View>
 
@@ -229,7 +264,7 @@ export default function AddPlanScreen() {
             <MiniMonthPicker value={dateISO} onChange={(iso) => { setDateISO(iso); setShowDate(false); }} />
           ) : null}
 
-          {showTime ? (
+          {showTime && hasTime ? (
             <View style={{ gap: 12, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 12, marginTop: 8 }}>
               <Segmented
                 options={[{ key: '오전', label: '오전' }, { key: '오후', label: '오후' }]}
@@ -279,18 +314,18 @@ export default function AddPlanScreen() {
           </View>
         </View>
 
-        {/* 알림 */}
-        <View style={[fieldBox, { justifyContent: 'space-between', paddingHorizontal: 14 }]}>
+        {/* 알림 — 시간 미정이면 비활성(알림 기준 시각이 없음) */}
+        <View style={[fieldBox, { justifyContent: 'space-between', paddingHorizontal: 14, opacity: hasTime ? 1 : 0.5 }]}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
             <Glyph size={17} color={c.text2}>
               <Path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.5 21a1.7 1.7 0 0 1-3 0" />
             </Glyph>
             <View>
               <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>알림</Text>
-              <Text style={{ fontSize: 11, color: c.text3, marginTop: 1 }}>1시간 전</Text>
+              <Text style={{ fontSize: 11, color: c.text3, marginTop: 1 }}>{hasTime ? '1시간 전' : '시간 미정 시 알림 없음'}</Text>
             </View>
           </View>
-          <Toggle value={alarm} onChange={setAlarm} />
+          <Toggle value={hasTime && alarm} onChange={hasTime ? setAlarm : undefined} />
         </View>
 
         {/* 신규 추가에만 하단 CTA */}

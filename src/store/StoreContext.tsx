@@ -151,7 +151,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           activity: plan.activity,
           template: plan.template,
           dateISO: plan.dateISO,
-          timeLabel: plan.timeLabel,
+          timeLabel: plan.timeLabel ?? '',
           meta: plan.place || undefined,
           memo: plan.memo,
           photos: [],
