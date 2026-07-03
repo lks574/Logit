@@ -1,7 +1,9 @@
 import React from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, Text, TextInput, View } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Screen } from '../../components/primitives';
+import { ScreenHeader } from '../../components/ScreenHeader';
+import { IconButton } from '../../components/Button';
 import { Toggle, Segmented } from '../../components/controls';
 import { Icon, Glyph, Path, Circle, Rect } from '../../components/Glyph';
 import { MiniMonthPicker } from '../../components/MiniMonthPicker';
@@ -73,8 +75,21 @@ export default function AddPlanScreen() {
     nav.goBack();
   };
   const onDelete = () => {
-    if (planId) deletePlan(planId);
-    nav.goBack();
+    if (!planId) {
+      nav.goBack();
+      return;
+    }
+    Alert.alert('약속 삭제', '이 약속을 삭제할까요?', [
+      { text: '취소', style: 'cancel' },
+      {
+        text: '삭제',
+        style: 'destructive',
+        onPress: () => {
+          deletePlan(planId);
+          nav.goBack();
+        },
+      },
+    ]);
   };
 
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
@@ -140,26 +155,26 @@ export default function AddPlanScreen() {
   return (
     <Screen edges={['top', 'bottom']} scroll>
       {/* header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 6, paddingBottom: 12 }}>
-        <Pressable onPress={() => nav.goBack()} hitSlop={8} style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
-          <Icon.chevronLeft size={16} color={c.text2} strokeWidth={2.4} />
-        </Pressable>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>{editing ? '약속' : '약속 추가'}</Text>
-        {editing ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <Pressable onPress={onSave} hitSlop={8} style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
-              <Icon.check size={16} color={c.accent} strokeWidth={2.4} />
+      <ScreenHeader
+        title={editing ? '약속' : '약속 추가'}
+        style={{ paddingTop: 6 }}
+        right={
+          editing ? (
+            <>
+              <IconButton size={30} bg={c.accentSoft} label="저장" onPress={onSave}>
+                <Icon.check size={16} color={c.accent} strokeWidth={2.4} />
+              </IconButton>
+              <IconButton size={30} bg={withAlpha(c.error, 12)} label="삭제" onPress={onDelete}>
+                <Icon.trash size={16} color={c.error} strokeWidth={2} />
+              </IconButton>
+            </>
+          ) : (
+            <Pressable onPress={onSave} hitSlop={8} style={{ height: 30, paddingHorizontal: 12, borderRadius: 999, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>저장</Text>
             </Pressable>
-            <Pressable onPress={onDelete} hitSlop={8} style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: withAlpha(c.error, 12), alignItems: 'center', justifyContent: 'center' }}>
-              <Icon.trash size={16} color={c.error} strokeWidth={2} />
-            </Pressable>
-          </View>
-        ) : (
-          <Pressable onPress={onSave} hitSlop={8} style={{ height: 30, paddingHorizontal: 12, borderRadius: 999, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>저장</Text>
-          </Pressable>
-        )}
-      </View>
+          )
+        }
+      />
 
       <View style={{ paddingHorizontal: 18, paddingTop: 2, gap: 16, paddingBottom: 24 }}>
         {/* 활동 */}
@@ -215,13 +230,13 @@ export default function AddPlanScreen() {
           ) : null}
 
           {showTime ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 12, marginTop: 8 }}>
+            <View style={{ gap: 12, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 12, marginTop: 8 }}>
               <Segmented
                 options={[{ key: '오전', label: '오전' }, { key: '오후', label: '오후' }]}
                 value={ampm}
                 onChange={(v) => setAmpm(v as '오전' | '오후')}
               />
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' }}>
                 <Wheel value={`${h12}시`} onDec={() => setH12((h) => (h === 1 ? 12 : h - 1))} onInc={() => setH12((h) => (h === 12 ? 1 : h + 1))} />
                 <Wheel value={`${String(minute).padStart(2, '0')}분`} onDec={() => setMinute((m) => (m + 55) % 60)} onInc={() => setMinute((m) => (m + 5) % 60)} />
               </View>

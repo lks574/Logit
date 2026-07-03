@@ -33,6 +33,8 @@ export function Screen({
           style={{ flex: 1 }}
           contentContainerStyle={contentStyle}
           showsVerticalScrollIndicator={false}
+          automaticallyAdjustKeyboardInsets
+          keyboardShouldPersistTaps="handled"
         >
           {children}
         </ScrollView>
