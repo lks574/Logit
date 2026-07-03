@@ -43,9 +43,19 @@ export function weekStats(records: StoredRecord[], today: string) {
     const d = r.fields?.거리; // "5.2km"
     if (d) km += parseFloat(d) || 0;
   }
+  // 활동 구성: 이번 주 기록을 종목(activity)별로 집계 — 색은 template로 결정.
+  const byActivity = new Map<string, { count: number; template: TemplateType }>();
+  for (const r of inWindow) {
+    const e = byActivity.get(r.activity) ?? { count: 0, template: r.template };
+    e.count += 1;
+    byActivity.set(r.activity, e);
+  }
+  const composition = [...byActivity.entries()]
+    .map(([activity, v]) => ({ activity, count: v.count, template: v.template }))
+    .sort((a, b) => b.count - a.count);
   // streak: consecutive days ending today(하루 유예 포함) with ≥1 record.
   const streak = countStreak(new Set(records.map((r) => r.dateISO)), today);
-  return { count, km: Math.round(km * 10) / 10, streak };
+  return { count, km: Math.round(km * 10) / 10, streak, composition };
 }
 
 // ---- Stats / 회고 aggregations ----

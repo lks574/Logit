@@ -3,7 +3,7 @@ import { Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Screen } from '../../components/primitives';
 import { Icon } from '../../components/Glyph';
-import { ActivityCard, StatCard } from '../../components/cards';
+import { ActivityCard } from '../../components/cards';
 import { SyncStatusBadge } from '../../components/badges';
 import { useTheme } from '../../theme/ThemeContext';
 import { withAlpha } from '../../theme/tokens';
@@ -108,13 +108,41 @@ export default function HomeScreen() {
           <Text style={{ fontSize: 11, color: c.text3 }}>{weekRangeLabel(today)}</Text>
         </View>
 
-        <StatCard
-          cells={[
-            { value: String(week.count), label: '기록' },
-            { value: String(week.km), unit: 'km', label: '이동 거리', valueColor: c.cardio },
-            { value: `🔥${week.streak}`, label: '연속 일' },
-          ]}
-        />
+        <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14 }}>
+          {/* 기록 수 · 종목 수 / 연속 */}
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
+            <Text style={{ fontSize: 22, fontWeight: '700', color: c.text }}>
+              {week.count}
+              <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}> 기록 · {week.composition.length}종목</Text>
+            </Text>
+            <Text style={{ fontSize: 20, fontWeight: '700', color: c.text }}>
+              🔥{week.streak}
+              <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}> 연속</Text>
+            </Text>
+          </View>
+
+          {week.composition.length ? (
+            <>
+              {/* 활동 구성 바 */}
+              <View style={{ flexDirection: 'row', height: 10, borderRadius: 6, overflow: 'hidden', gap: 2, marginBottom: 10 }}>
+                {week.composition.map((a) => (
+                  <View key={a.activity} style={{ flex: a.count, backgroundColor: colorsFor(a.template, c).color }} />
+                ))}
+              </View>
+              {/* 범례 */}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 6 }}>
+                {week.composition.map((a) => (
+                  <View key={a.activity} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: colorsFor(a.template, c).color }} />
+                    <Text style={{ fontSize: 12, color: c.text2 }}>{a.activity} {a.count}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          ) : (
+            <Text style={{ fontSize: 12, color: c.text3 }}>이번 주 기록이 아직 없어요.</Text>
+          )}
+        </View>
 
         {/* 최근 기록 */}
         <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, letterSpacing: 0.24, marginTop: 2 }}>
