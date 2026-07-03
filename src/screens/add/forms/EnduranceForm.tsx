@@ -26,7 +26,7 @@ const MOODS = [
 export default function EnduranceForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord, today } = useStore();
+  const { addRecord, updateRecord, getRecord, today, records } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
@@ -81,6 +81,24 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
   const pickPhoto = async () => {
     const uri = await choosePhoto();
     if (uri) setPhotos((p) => [...p, uri]);
+  };
+
+  // 최근 같은 활동 기록(현재 편집 중인 것 제외). records는 최신순.
+  const lastRecord = React.useMemo(
+    () => records.find((r) => r.activity === activity && r.id !== recordId),
+    [records, activity, recordId],
+  );
+  const prefillFromLast = () => {
+    if (!lastRecord) return;
+    const f = lastRecord.fields ?? {};
+    if (f.거리) set거리(f.거리);
+    const t = parseMMSS(f.시간);
+    set분(t.mm);
+    set초(t.ss);
+    set고도(stripUnit(f.고도));
+    set칼로리(stripUnit(f.칼로리));
+    set평균심박(stripUnit(f.평균심박));
+    if (f.장소) setPlace(f.장소);
   };
 
 
@@ -141,28 +159,30 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
       />
 
       <View style={{ padding: 16, paddingTop: 14, gap: 14 }}>
-        {/* Prefill button (2.1) — accent-soft, refresh icon */}
-        <Pressable
-          onPress={() => {}}
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 9,
-            width: '100%',
-            backgroundColor: c.accentSoft,
-            borderWidth: 1,
-            borderColor: withAlpha(c.accent, 22),
-            borderRadius: 12,
-            paddingVertical: 11,
-            paddingHorizontal: 13,
-          }}
-        >
-          <Icon.refresh size={17} color={c.accent} />
-          <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: c.accent }}>
-            어제 {activity} 불러와서 수정
-          </Text>
-          <Icon.chevronRight size={16} color={c.accent} strokeWidth={2} />
-        </Pressable>
+        {/* 최근 같은 활동 기록 프리필 — 신규 작성이고 이전 기록이 있을 때만 */}
+        {!editing && lastRecord ? (
+          <Pressable
+            onPress={prefillFromLast}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 9,
+              width: '100%',
+              backgroundColor: c.accentSoft,
+              borderWidth: 1,
+              borderColor: withAlpha(c.accent, 22),
+              borderRadius: 12,
+              paddingVertical: 11,
+              paddingHorizontal: 13,
+            }}
+          >
+            <Icon.refresh size={17} color={c.accent} />
+            <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: c.accent }}>
+              최근 {activity} 기록 불러오기
+            </Text>
+            <Icon.chevronRight size={16} color={c.accent} strokeWidth={2} />
+          </Pressable>
+        ) : null}
 
         {/* HealthKit / Health Connect — disabled placeholder (3.1) */}
         <View
@@ -374,7 +394,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
         <DisclosureButton
           title="세부 입력"
           badge="선택"
-          subtitle="장소 · 동행 · 사진 · 메모 · 평점 · 기분 · 비용"
+          subtitle="장소 · 동행 · 사진 · 메모 · 평점 · 기분"
           open={open}
           onPress={() => setOpen((v) => !v)}
           icon={<Icon.plus size={17} color={c.text2} strokeWidth={2.2} />}
@@ -512,7 +532,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                         gap: 2,
                       }}
                     >
-                      <Text style={{ fontSize: 24, opacity: on ? 1 : 0.45 }}>{m.emoji}</Text>
+                      <Text style={{ fontSize: 24, opacity: on ? 1 : 0.65 }}>{m.emoji}</Text>
                     </Pressable>
                   );
                 })}

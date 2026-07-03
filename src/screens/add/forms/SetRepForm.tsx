@@ -337,7 +337,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
         <DisclosureButton
           title="세부 입력"
           badge="선택"
-          subtitle="장소 · 동행 · 사진 · 메모 · 평점 · 기분 · 비용"
+          subtitle="장소 · 동행 · 사진 · 메모 · 평점 · 기분"
           icon={<Icon.plus size={17} color={c.text2} strokeWidth={2.2} />}
           open={open}
           onPress={() => setOpen((o) => !o)}
