@@ -3,18 +3,33 @@ import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { Glyph, Path } from './Glyph';
 
-// Stars — filled ★ in --star, empty ★ in --text3. Read-only display.
-export function Stars({ filled, total = 5, size = 12 }: { filled: number; total?: number; size?: number }) {
+// 별 하나를 fill(0..1)만큼 채워 그린다: 빈 별 위에 채운 별을 width로 클립.
+// 0.5 단위 평점을 표현하려고 반쪽 채움을 지원한다.
+function Star({ fill, size }: { fill: number; size: number }) {
   const { c } = useTheme();
+  const w = Math.max(0, Math.min(1, fill)) * size;
   return (
-    <Text style={{ fontSize: size, letterSpacing: 1 }}>
-      <Text style={{ color: c.star }}>{'★'.repeat(Math.max(0, Math.min(total, filled)))}</Text>
-      <Text style={{ color: c.text3 }}>{'★'.repeat(Math.max(0, total - filled))}</Text>
-    </Text>
+    <View style={{ width: size, height: size }}>
+      <Text style={{ position: 'absolute', fontSize: size, lineHeight: size, color: c.text3 }}>★</Text>
+      <View style={{ position: 'absolute', width: w, height: size, overflow: 'hidden' }}>
+        <Text style={{ fontSize: size, lineHeight: size, color: c.star }}>★</Text>
+      </View>
+    </View>
   );
 }
 
-// RatingInput — tappable 5-star selector.
+// Stars — 읽기 전용 표시. 0.5 단위 반영.
+export function Stars({ filled, total = 5, size = 12 }: { filled: number; total?: number; size?: number }) {
+  return (
+    <View style={{ flexDirection: 'row', gap: 1 }}>
+      {Array.from({ length: total }, (_, i) => (
+        <Star key={i} fill={filled - i} size={size} />
+      ))}
+    </View>
+  );
+}
+
+// RatingInput — 별 하나를 좌/우 반으로 나눠 탭 → 0.5 단위 선택.
 export function RatingInput({
   value,
   onChange,
@@ -24,27 +39,43 @@ export function RatingInput({
   onChange: (v: number) => void;
   size?: number;
 }) {
-  const { c } = useTheme();
   return (
     <View style={{ flexDirection: 'row', gap: 4 }}>
       {[1, 2, 3, 4, 5].map((n) => (
-        <Pressable
-          key={n}
-          onPress={() => onChange(n)}
-          hitSlop={4}
-          accessibilityRole="button"
-          accessibilityLabel={`${n}점`}
-          accessibilityState={{ selected: n <= value }}
-        >
-          <Text style={{ fontSize: size, color: n <= value ? c.star : c.text3 }}>★</Text>
-        </Pressable>
+        <View key={n} style={{ width: size, height: size }}>
+          <Star fill={value - (n - 1)} size={size} />
+          <Pressable
+            onPress={() => onChange(n - 0.5)}
+            hitSlop={{ top: 6, bottom: 6 }}
+            accessibilityRole="button"
+            accessibilityLabel={`${n - 0.5}점`}
+            style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: size / 2 }}
+          />
+          <Pressable
+            onPress={() => onChange(n)}
+            hitSlop={{ top: 6, bottom: 6, right: 4 }}
+            accessibilityRole="button"
+            accessibilityLabel={`${n}점`}
+            style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: size / 2 }}
+          />
+        </View>
       ))}
     </View>
   );
 }
 
-// CompanionChip — avatar initial + name. dashed=add.
-export function CompanionChip({ name, dashed, onPress }: { name: string; dashed?: boolean; onPress?: () => void }) {
+// CompanionChip — avatar initial + name. dashed=add. onRemove가 있으면 × 노출.
+export function CompanionChip({
+  name,
+  dashed,
+  onPress,
+  onRemove,
+}: {
+  name: string;
+  dashed?: boolean;
+  onPress?: () => void;
+  onRemove?: () => void;
+}) {
   const { c } = useTheme();
   if (dashed) {
     return (
@@ -70,10 +101,8 @@ export function CompanionChip({ name, dashed, onPress }: { name: string; dashed?
       </Pressable>
     );
   }
-  const Wrap: any = onPress ? Pressable : View;
   return (
-    <Wrap
-      onPress={onPress}
+    <View
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -84,7 +113,7 @@ export function CompanionChip({ name, dashed, onPress }: { name: string; dashed?
         borderRadius: 999,
         paddingVertical: 4,
         paddingLeft: 5,
-        paddingRight: 10,
+        paddingRight: onRemove ? 5 : 10,
       }}
     >
       <View
@@ -100,6 +129,19 @@ export function CompanionChip({ name, dashed, onPress }: { name: string; dashed?
         <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>{name.slice(0, 1)}</Text>
       </View>
       <Text style={{ fontSize: 12, color: c.text2 }}>{name}</Text>
-    </Wrap>
+      {onRemove ? (
+        <Pressable
+          onPress={onRemove}
+          hitSlop={6}
+          accessibilityRole="button"
+          accessibilityLabel={`${name} 삭제`}
+          style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Glyph size={9} color={c.text2} strokeWidth={2.6}>
+            <Path d="M6 6l12 12M18 6l-12 12" />
+          </Glyph>
+        </Pressable>
+      ) : null}
+    </View>
   );
 }
