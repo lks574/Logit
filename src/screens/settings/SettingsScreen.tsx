@@ -7,6 +7,7 @@ import { Segmented } from '../../components/controls';
 import { SettingsRow } from '../../components/Field';
 import { ActionSheet } from '../../components/ActionSheet';
 import { useStore } from '../../store/StoreContext';
+import { useAuth } from '../../auth/AuthContext';
 import { exportData, importData } from '../../lib/dataTransfer';
 import type { StoreState } from '../../store/types';
 import { useTheme } from '../../theme/ThemeContext';
@@ -17,6 +18,7 @@ type SheetState =
   | { kind: 'export' }
   | { kind: 'confirmImport'; incoming: StoreState; summary: string }
   | { kind: 'confirmReset' }
+  | { kind: 'confirmLogout' }
   | { kind: 'message'; title: string; message?: string };
 
 // 4.8 설정 — profile card, grouped surface cards with rows + dividers.
@@ -24,6 +26,7 @@ export default function SettingsScreen() {
   const { c, mode, setMode } = useTheme();
   const nav = useNavigation<any>();
   const { profile, records, plans, customActivities, replaceAll } = useStore();
+  const { user, logout } = useAuth();
   const initial = (profile.name.trim()[0] ?? '?').toUpperCase();
   const [sheet, setSheet] = React.useState<SheetState>({ kind: 'none' });
 
@@ -102,6 +105,13 @@ export default function SettingsScreen() {
           message: '모든 기록·약속·활동을 삭제합니다. 이 작업은 되돌릴 수 없습니다.',
           cancelLabel: '취소',
           actions: [{ label: '전체 삭제', destructive: true, onPress: confirmReset }],
+        };
+      case 'confirmLogout':
+        return {
+          title: '로그아웃',
+          message: '이 기기에서 로그아웃합니다. 기록 데이터는 기기에 그대로 남아요.',
+          cancelLabel: '취소',
+          actions: [{ label: '로그아웃', destructive: true, onPress: () => logout() }],
         };
       case 'message':
         return { title: sheet.title, message: sheet.message, cancelLabel: '확인', actions: [] };
@@ -288,6 +298,23 @@ export default function SettingsScreen() {
                 onChange={setMode}
               />
             </ControlRow>
+          </Card>
+        </View>
+
+        {/* 계정 */}
+        <View>
+          <SectionLabel text="계정" />
+          <Card>
+            <SettingsRow
+              icon={
+                <Glyph size={18} color={c.text2} strokeWidth={1.8}>
+                  <Path d="M16 17l5-5-5-5M21 12H9M12 19a7 7 0 1 1 0-14" />
+                </Glyph>
+              }
+              label="로그아웃"
+              value={user?.email ?? undefined}
+              onPress={() => setSheet({ kind: 'confirmLogout' })}
+            />
           </Card>
         </View>
 

@@ -5,6 +5,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { StoreProvider, useStore } from './src/store/StoreContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { AuthProvider, useAuth } from './src/auth/AuthContext';
 
 // 저장 실패(저장 공간 부족 등) 시 전역 배너 — 무음 유실을 사용자에게 알린다.
 function PersistErrorBanner() {
@@ -43,13 +44,31 @@ function Root() {
   );
 }
 
+// 로그인 사용자 정보를 로컬 프로필에 반영(향후 동기화의 신원 소스). 이름은 사용자가 편집했을 수 있어
+// displayName이 있을 때만 시드하고, 이메일은 계정 이메일을 따른다.
+function AuthProfileSync() {
+  const { user } = useAuth();
+  const { profile, updateProfile } = useStore();
+  React.useEffect(() => {
+    if (!user) return;
+    const patch: { name?: string; email?: string } = {};
+    if (user.displayName && !profile.name) patch.name = user.displayName;
+    if (user.email && user.email !== profile.email) patch.email = user.email;
+    if (Object.keys(patch).length) updateProfile(patch);
+  }, [user, profile.name, profile.email, updateProfile]);
+  return null;
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <StoreProvider>
-          <Root />
-        </StoreProvider>
+        <AuthProvider>
+          <StoreProvider>
+            <AuthProfileSync />
+            <Root />
+          </StoreProvider>
+        </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

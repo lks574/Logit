@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sro.logit"
+      "bundleIdentifier": "com.sro.logit",
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.sro.logit",
@@ -33,7 +34,9 @@
           "microphonePermission": false
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      "@react-native-google-signin/google-signin",
+      "expo-apple-authentication"
     ]
   }
 }

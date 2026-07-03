@@ -12,6 +12,13 @@ export type RootStackParamList = {
   ProfileEdit: undefined;
 };
 
+export type AuthStackParamList = {
+  Welcome: undefined;
+  SignIn: undefined;
+  SignUp: undefined;
+  PasswordReset: undefined;
+};
+
 export type TabParamList = {
   Home: undefined;
   Calendar: undefined;
