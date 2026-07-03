@@ -9,10 +9,10 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.Logit"
+      "bundleIdentifier": "com.sro.logit"
     },
     "android": {
-      "package": "com.anonymous.Logit",
+      "package": "com.sro.logit",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",

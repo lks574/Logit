@@ -16,10 +16,18 @@
 ## 1. dev 빌드 설치 (최초 1회)
 
 ```bash
-npx expo run:ios --device <UDID>
+LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 npx expo run:ios --device <UDID>
 ```
 
-연결된 기기 UDID 확인: `xcrun xctrace list devices`.
+연결된 기기 UDID 확인: `xcrun xctrace list devices` (케이블 연결 시 `== Devices ==`에 표시).
+
+> ⚠️ **`expo-dev-client` 필수.** 이게 없으면 `expo run:ios`가 dev 런처 없는 일반 debug 빌드를 만든다.
+> 그 빌드는 URL 입력 화면(런처)이 아예 안 뜨고, 셀룰러/재실행 시 패키저를 못 찾아
+> **null URL 네이티브 크래시**(`No script URL provided … (null)`, `RCTFatal`)로 죽는다. `--dev-client`/`--tunnel`도 무의미.
+> `npx expo install expo-dev-client` 후 재빌드할 것. (설치 여부: `ls node_modules/expo-dev-client`)
+
+> ⚠️ **UTF-8 로케일 필수.** 터미널 로케일이 ASCII면 `pod install`이 `Unicode Normalization not appropriate for ASCII-8BIT`로 실패하고,
+> CocoaPods가 진짜 에러를 출력하려다 또 죽어 원인이 가려진다. 명령 앞에 `LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8`를 붙일 것.
 
 ### 서명 (실기기 필수)
 1. **Xcode → Settings → Accounts** 에 Apple ID 로그인. (키체인 인증서만으론 부족 — 로그인 안 되어 있으면 `error: No Account for Team "<team>"`)
@@ -80,7 +88,9 @@ npx expo run:ios --device <UDID> --configuration Release
 | 증상 | 원인 / 해결 |
 |---|---|
 | "incompatible with this version of Expo Go" | Expo Go로 실기기 실행 시도. → dev 빌드 사용 |
-| "No script URL provided (null)" | dev 앱에 Metro URL 미전달. → "Enter URL manually"에 https 수동 입력 |
+| "No script URL provided (null)" + 런처 안 뜸/크래시 | `expo-dev-client` 미설치(§1). → `expo install expo-dev-client` 후 재빌드 |
+| "No script URL provided (null)" (런처는 뜸) | dev 앱에 Metro URL 미전달. → "Enter URL manually"에 https 수동 입력 |
+| `pod install` "Unicode Normalization … ASCII-8BIT" | 터미널 로케일 비UTF-8. → `LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8` 붙여 실행 |
 | "No Account for Team" | Xcode Accounts에 Apple ID 미로그인 |
 | "ngrok tunnel took too long" | 네트워크가 ngrok 차단. → 다른 망/핫스팟 |
 | "remote gone away" / "failed to start tunnel" | ngrok 일시 오류. → 기존 ngrok/expo 프로세스 정리 후 재시도 |
