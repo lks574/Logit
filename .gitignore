@@ -128,3 +128,6 @@ GoogleService-Info.plist
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Obsidian vault config (per-user workspace state)
+.obsidian/
