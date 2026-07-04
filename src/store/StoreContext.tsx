@@ -25,6 +25,9 @@ type StoreValue = {
   plans: StoredPlan[];
   customActivities: CustomActivity[];
   profile: Profile;
+  onboardingComplete: boolean;
+  preferredActivities: string[];
+  completeOnboarding: (selected: string[]) => void;
   updateProfile: (patch: Partial<Profile>) => void;
   replaceAll: (next: StoreState) => Promise<void>;
   addRecord: (r: Omit<StoredRecord, 'id' | 'sync'>) => StoredRecord;
@@ -103,6 +106,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       plans: state.plans,
       customActivities: state.customActivities,
       profile: state.profile,
+      onboardingComplete: state.onboardingComplete,
+      preferredActivities: state.preferredActivities,
+      completeOnboarding: (selected) => {
+        setState((s) => ({ ...s, onboardingComplete: true, preferredActivities: selected }));
+      },
       updateProfile: (patch) => {
         setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
       },

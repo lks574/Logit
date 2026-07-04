@@ -121,4 +121,6 @@ export const seed: StoreState = {
   ],
   customActivities: [],
   profile: { name: '현우', email: 'hyunwoo@flitto.com' },
+  onboardingComplete: false,
+  preferredActivities: [],
 };

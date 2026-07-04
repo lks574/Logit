@@ -25,7 +25,8 @@ type SheetState =
 export default function SettingsScreen() {
   const { c, mode, setMode } = useTheme();
   const nav = useNavigation<any>();
-  const { profile, records, plans, customActivities, replaceAll } = useStore();
+  const { profile, records, plans, customActivities, onboardingComplete, preferredActivities, replaceAll } =
+    useStore();
   const { user, logout } = useAuth();
   const initial = (profile.name.trim()[0] ?? '?').toUpperCase();
   const [sheet, setSheet] = React.useState<SheetState>({ kind: 'none' });
@@ -37,7 +38,10 @@ export default function SettingsScreen() {
     // 시트를 먼저 none으로 닫지 않는다 — 단일 Modal이 dismiss→재present되는 race를 피하고,
     // 결과 message로 콘텐츠만 교체한다.
     try {
-      const msg = await exportData({ records, plans, customActivities, profile }, format);
+      const msg = await exportData(
+        { records, plans, customActivities, profile, onboardingComplete, preferredActivities },
+        format,
+      );
       setSheet({ kind: 'message', title: '내보내기', message: msg });
     } catch (e) {
       setSheet({ kind: 'message', title: '내보내기 실패', message: errMessage(e) });
@@ -67,7 +71,14 @@ export default function SettingsScreen() {
   // 데이터 리셋: 기록·약속·활동을 전부 비운다(프로필은 유지). replaceAll이 사진 고아까지 정리.
   const confirmReset = async () => {
     try {
-      await replaceAll({ records: [], plans: [], customActivities: [], profile });
+      await replaceAll({
+        records: [],
+        plans: [],
+        customActivities: [],
+        profile,
+        onboardingComplete: true, // 리셋해도 온보딩을 다시 띄우지 않음
+        preferredActivities: [],
+      });
       setSheet({ kind: 'message', title: '초기화 완료', message: '모든 기록과 약속을 삭제했습니다.' });
     } catch (e) {
       setSheet({ kind: 'message', title: '초기화 실패', message: '삭제에 실패했습니다. 다시 시도해 주세요.' });

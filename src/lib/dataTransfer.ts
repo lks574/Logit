@@ -230,6 +230,9 @@ function normalize(parsed: any): StoreState {
       d.profile && typeof d.profile === 'object'
         ? { name: String(d.profile.name ?? ''), email: String(d.profile.email ?? '') }
         : { name: '', email: '' },
+    // 복원은 이미 사용 중인 앱에 들어오므로 온보딩을 다시 띄우지 않는다(누락 시 true).
+    onboardingComplete: d.onboardingComplete ?? true,
+    preferredActivities: Array.isArray(d.preferredActivities) ? d.preferredActivities : [],
   };
 }
 

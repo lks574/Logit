@@ -144,9 +144,9 @@ export function PrimaryButton({
       disabled={off}
       style={{
         width: '100%',
+        height: 52, // 고정 — 라벨 스크립트(라틴/한글)에 따라 라인박스 높이가 달라지는 것 방지
         backgroundColor: c.accent,
         borderRadius: 14,
-        paddingVertical: 15,
         alignItems: 'center',
         justifyContent: 'center',
         opacity: off ? 0.5 : 1,

@@ -48,4 +48,6 @@ export type StoreState = {
   plans: StoredPlan[];
   customActivities: CustomActivity[];
   profile: Profile;
+  onboardingComplete: boolean; // 가입 직후 온보딩 1회 노출 게이팅
+  preferredActivities: string[]; // 온보딩에서 고른 활동 → 홈 우선 노출(후속)
 };

@@ -5,8 +5,10 @@ import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { useAuth } from '../auth/AuthContext';
+import { useStore } from '../store/StoreContext';
 import { BottomTabBar } from './BottomTabBar';
 import { AuthNavigator } from './AuthNavigator';
+import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import { RootStackParamList, TabParamList } from './types';
 
 import HomeScreen from '../screens/home/HomeScreen';
@@ -60,6 +62,7 @@ function AppStack() {
 export function RootNavigator() {
   const { c, scheme } = useTheme();
   const { status, user } = useAuth();
+  const { ready, onboardingComplete } = useStore();
   const navTheme = {
     ...(scheme === 'dark' ? DarkTheme : DefaultTheme),
     colors: {
@@ -72,16 +75,18 @@ export function RootNavigator() {
     },
   };
 
+  const splash = (
+    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.bg }}>
+      <ActivityIndicator color={c.accent} />
+    </View>
+  );
+
   const content = () => {
-    if (status === 'loading') {
-      return (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.bg }}>
-          <ActivityIndicator color={c.accent} />
-        </View>
-      );
-    }
+    if (status === 'loading') return splash;
     if (!user) return <AuthNavigator />;
     if (!user.emailVerified) return <VerifyEmailScreen />; // authed + 미인증 → 인증 대기 게이트
+    if (!ready) return splash; // 스토어 하이드레이션 대기(온보딩 깜빡임 방지)
+    if (!onboardingComplete) return <OnboardingScreen />; // 가입 직후 1회
     return <AppStack />;
   };
 
