@@ -57,6 +57,13 @@ dev 앱을 열면 같은 네트워크의 Metro를 자동으로 찾아 붙는다.
 
 ## 3. 원격 / 돌아다니며 + 라이브 반영 (터널)
 
+> **간편 실행: `npm run tunnel`** — Cloudflare 터널 + Metro를 한 번에 띄우고 접속 URL·딥링크를
+> 출력한다. **ngrok 차단망(사무실 등)에서도 동작**한다(아래 기본 `--tunnel`은 ngrok이라 차단되면 실패).
+> `cloudflared` 최초 1회 설치 필요: `brew install cloudflared`. Ctrl-C 로 종료하면 터널도 닫힘.
+> 원리: 터널 URL을 `EXPO_PACKAGER_PROXY_URL`로 물려 매니페스트·번들이 터널 호스트로 나가게 함.
+
+기본 방식(ngrok, 차단 없는 망에서만):
+
 ```bash
 npx expo start --dev-client --tunnel
 ```

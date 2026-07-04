@@ -14,6 +14,7 @@ npm install
 npm start          # Metro (Expo Go / dev client 선택)
 npm run ios        # 네이티브 dev 빌드(expo run:ios) → 독립 Logit.app, Expo Go 오버레이 없음
 npm run web        # 브라우저 프리뷰(react-native-web) — 빠른 UI 확인용
+npm run tunnel     # 실기기 원격 접속: Cloudflare 터널 + Metro 한 방(ngrok 차단망 우회). cloudflared 필요
 ```
 - **웹 프리뷰**가 UI/인터랙션 확인에 가장 빠름(대부분 검증을 여기서 수행).
 - **iOS 시뮬레이터 자동 조작**: `idb`(~/Library/Python/3.9/bin/idb) + companion 사용. 임시 드라이버는 세션마다 재작성했음(`/tmp/simdrive.py` — tap/tapxy/shot/labels). 스크린샷은 idb가 불안정해 `xcrun simctl io booted screenshot`로 대체.
