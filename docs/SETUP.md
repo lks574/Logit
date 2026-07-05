@@ -24,6 +24,12 @@ npm install
 
 > `node_modules/`, `ios/`, `android/`는 `.gitignore`라 clone에 없다(정상). `npm install` + 아래 실행 시 자동 복원(네이티브는 prebuild로 재생성).
 
+### Firebase config
+
+`src/lib/firebaseConfig.ts`에 웹 config가 들어있다(레포에 커밋됨). 웹 `apiKey`는 비밀이 아니라(앱 번들에 어차피 포함, 보안은 Security Rules·API 키 제한·App Check로) 편의상 커밋해 둔다.
+- 값이 채워져 있으면 실제 Firebase Auth 사용(`isFirebaseConfigured`), placeholder면 로컬 mock 인증으로 폴백.
+- ⚠️ **서비스 계정 JSON·GoogleService-Info.plist는 절대 커밋 금지**(이건 진짜 비밀).
+
 ## 실행
 
 ```bash
