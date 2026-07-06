@@ -22,7 +22,7 @@ export type AuthStackParamList = {
 
 export type TabParamList = {
   Home: undefined;
-  Calendar: undefined;
+  Calendar: { dateISO?: string } | undefined;
   Stats: undefined;
   Settings: undefined;
 };

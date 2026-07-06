@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Screen } from '../../components/primitives';
 import { ActivityCard, PlanCard } from '../../components/cards';
 import { Tag } from '../../components/badges';
@@ -19,12 +19,22 @@ export default function CalendarScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const { today, records, plans, completePlanAsRecord } = useStore();
-  const [selected, setSelected] = useState<string>(today); // 선택일 (dateISO)
-  // Displayed month. Init to today's month; prev/next buttons move it.
-  const [view, setView] = useState<{ year: number; month: number }>(() => ({
-    year: parseInt(today.slice(0, 4), 10),
-    month: parseInt(today.slice(5, 7), 10), // 1–12
-  }));
+  const route = useRoute<any>();
+  const paramDate: string | undefined = route.params?.dateISO;
+  const [selected, setSelected] = useState<string>(paramDate ?? today); // 선택일 (dateISO)
+  // Displayed month. Init to selected/today's month; prev/next buttons move it.
+  const [view, setView] = useState<{ year: number; month: number }>(() => {
+    const base = paramDate ?? today;
+    return { year: parseInt(base.slice(0, 4), 10), month: parseInt(base.slice(5, 7), 10) };
+  });
+
+  // 히트맵 등에서 특정 날짜로 진입 시(param 변경) 선택일·표시월 동기화.
+  React.useEffect(() => {
+    if (paramDate) {
+      setSelected(paramDate);
+      setView({ year: parseInt(paramDate.slice(0, 4), 10), month: parseInt(paramDate.slice(5, 7), 10) });
+    }
+  }, [paramDate]);
 
   const iso = (y: number, m: number, d: number) =>
     `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;

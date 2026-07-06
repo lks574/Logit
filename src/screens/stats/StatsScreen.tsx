@@ -123,8 +123,10 @@ export default function StatsScreen() {
           </View>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5 }}>
             {hub.heatmap.map((cell) => (
-              <View
+              <Pressable
                 key={cell.date}
+                disabled={cell.future}
+                onPress={() => nav.navigate('Calendar', { dateISO: cell.date })}
                 style={{ width: `${(100 - 5 * 6) / 7}%`, height: 11, borderRadius: 3, backgroundColor: cell.future ? 'transparent' : heatColor(cell.level) }}
               />
             ))}

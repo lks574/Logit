@@ -11,6 +11,7 @@ import { Glyph, Path, Rect, Icon } from '../../../components/Glyph';
 import { SPORTS, ACTIVITY_TO_SPORT, sportFor } from '../../../data/sports';
 import { useStore } from '../../../store/StoreContext';
 import { resetToHome } from '../../../navigation/nav';
+import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
 import { useTheme } from '../../../theme/ThemeContext';
 
 // 3.3 MatchForm — 대전·경기형 (team color). Sport-agnostic: the 종목 chip drives
@@ -20,9 +21,12 @@ import { useTheme } from '../../../theme/ThemeContext';
 export default function MatchForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord, today } = useStore();
+  const { addRecord, updateRecord, getRecord } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
+
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? nowDateISO());
+  const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? nowTimeLabel());
 
   // 종목: 편집 시 저장된 fields.종목 우선(칩을 바꿔 저장한 값 보존), 없으면 활동명 기준.
   const [sportKey, setSportKey] = React.useState(
@@ -130,8 +134,8 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
     const payload = {
       activity,
       template: 'match' as const,
-      dateISO: editing ? record!.dateISO : today,
-      timeLabel: editing ? record!.timeLabel : '방금',
+      dateISO,
+      timeLabel,
       meta,
       rating,
       memo,
@@ -160,6 +164,9 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
       />
 
       <View style={{ padding: 16, gap: 13 }}>
+        {/* 날짜 · 시간 */}
+        <DateTimeField dateISO={dateISO} timeLabel={timeLabel} onChangeDate={setDateISO} onChangeTime={setTimeLabel} color={c.team} />
+
         {/* 종목 chips — selecting one swaps the key-record slots below */}
         <View>
           {sectionLabel('종목')}

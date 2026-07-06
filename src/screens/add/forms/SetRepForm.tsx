@@ -10,6 +10,7 @@ import { CompanionField, RatingInput } from '../../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
 import { useStore } from '../../../store/StoreContext';
 import { resetToHome } from '../../../navigation/nav';
+import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
 
@@ -50,10 +51,12 @@ function parseRows(saved?: string): SetRow[] {
 export default function SetRepForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord, today } = useStore();
+  const { addRecord, updateRecord, getRecord } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? nowDateISO());
+  const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? nowTimeLabel());
   const [part, setPart] = React.useState(record?.fields?.부위 ?? '');
   const [open, setOpen] = React.useState(editing);
   const [rating, setRating] = React.useState(record?.rating ?? 0);
@@ -114,8 +117,8 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
     const payload = {
       activity,
       template: 'setrep' as const,
-      dateISO: editing && record ? record.dateISO : today,
-      timeLabel: editing && record ? record.timeLabel : '방금',
+      dateISO,
+      timeLabel,
       meta,
       rating,
       memo,
@@ -144,6 +147,9 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
       />
 
       <View style={{ padding: 16, gap: 14 }}>
+        {/* 날짜 · 시간 */}
+        <DateTimeField dateISO={dateISO} timeLabel={timeLabel} onChangeDate={setDateISO} onChangeTime={setTimeLabel} color={c.strength} />
+
         {/* 운동 부위 */}
         <View>
           <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 8 }}>운동 부위</Text>

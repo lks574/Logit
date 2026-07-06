@@ -10,6 +10,7 @@ import { Screen } from '../../../components/primitives';
 import { activities, colorsFor } from '../../../data/activities';
 import { useStore } from '../../../store/StoreContext';
 import { resetToHome } from '../../../navigation/nav';
+import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
 
@@ -27,10 +28,12 @@ const MOODS = [
 export default function EnduranceForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord, today, records } = useStore();
+  const { addRecord, updateRecord, getRecord, records } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? nowDateISO());
+  const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? nowTimeLabel());
   const [open, setOpen] = React.useState(editing); // 세부 입력 disclosure (open when editing)
   const [rating, setRating] = React.useState(record?.rating ?? 0);
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
@@ -130,8 +133,8 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
     const payload = {
       activity,
       template: 'endurance' as const,
-      dateISO: editing ? record!.dateISO : today,
-      timeLabel: editing ? record!.timeLabel : '방금',
+      dateISO,
+      timeLabel,
       meta,
       rating,
       memo,
@@ -160,6 +163,9 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
       />
 
       <View style={{ padding: 16, paddingTop: 14, gap: 14 }}>
+        {/* 날짜 · 시간 */}
+        <DateTimeField dateISO={dateISO} timeLabel={timeLabel} onChangeDate={setDateISO} onChangeTime={setTimeLabel} color={c.cardio} />
+
         {/* 최근 같은 활동 기록 프리필 — 신규 작성이고 이전 기록이 있을 때만 */}
         {!editing && lastRecord ? (
           <Pressable
