@@ -9,8 +9,7 @@ export type RootStackParamList = {
     category: 'cardio' | 'strength' | 'match' | 'performance' | 'free';
     period?: 'month' | 'quarter' | 'year' | 'all';
   };
-  AddChooser: undefined;
-  AddPlan: { planId?: string; dateISO?: string } | undefined;
+  AddPlan: { planId?: string; dateISO?: string; activity?: string } | undefined;
   AddActivity: undefined;
   Plans: undefined;
   ProfileEdit: undefined;

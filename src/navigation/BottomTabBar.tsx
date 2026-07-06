@@ -9,7 +9,7 @@ import { useTheme } from '../theme/ThemeContext';
 import { tr, Msg } from '../i18n/i18n';
 
 // BottomTabBar — 홈 · 캘린더 · [＋추가 FAB] · 통계 · 설정. Center FAB (accent,
-// 46/r16, floats -14) opens AddChooser. HTML lines 167–176.
+// 46/r16, floats -14) opens ActivitySelect. HTML lines 167–176.
 const TABS: { key: string; label: Msg; icon: IconName }[] = [
   { key: 'Home', label: { en: 'Home', ko: '홈' }, icon: 'home' },
   { key: 'Calendar', label: { en: 'Calendar', ko: '캘린더' }, icon: 'calendar' },
@@ -59,7 +59,7 @@ export function BottomTabBar({ state, navigation }: BottomTabBarProps) {
         {item(TABS[0])}
         {item(TABS[1])}
         <View style={{ flex: 0, alignItems: 'center', gap: 3, minWidth: 50 }}>
-          <Fab onPress={() => root.navigate('AddChooser')} label={tr({ en: 'Add', ko: '추가' })}>
+          <Fab onPress={() => root.navigate('ActivitySelect')} label={tr({ en: 'Add', ko: '추가' })}>
             <Icon.plus size={24} color="#fff" strokeWidth={2.4} />
           </Fab>
           <Text style={{ fontSize: 10, fontWeight: '600', color: c.text2 }}>{tr({ en: 'Add', ko: '추가' })}</Text>

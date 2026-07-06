@@ -60,7 +60,7 @@ export default function AddPlanScreen() {
     activities[name]?.template ?? customActivities.find((a) => a.name === name)?.template ?? 'free';
 
   // ---- state (prefilled in edit mode) ----
-  const [act, setAct] = React.useState<string>(plan?.activity ?? FAVORITES[0]);
+  const [act, setAct] = React.useState<string>(plan?.activity ?? params?.activity ?? FAVORITES[0]);
   const [showAll, setShowAll] = React.useState(false);
   const [dateISO, setDateISO] = React.useState<string>(plan?.dateISO ?? params?.dateISO ?? today);
   // 시간 초기값: 편집이면 저장된 시간, 신규면 현재 시각. 시간은 옵셔널(미정 가능).

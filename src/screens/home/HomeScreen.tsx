@@ -182,7 +182,7 @@ export default function HomeScreen() {
               </Text>
             </View>
             <Pressable
-              onPress={() => nav.navigate('AddChooser')}
+              onPress={() => nav.navigate('ActivitySelect')}
               style={{ backgroundColor: c.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 2 }}
             >
               <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{tr({ en: 'Add record', ko: '기록 추가하기' })}</Text>

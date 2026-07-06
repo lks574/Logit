@@ -68,7 +68,7 @@ export default function StatsScreen() {
             </Text>
           </View>
           <View style={{ width: '100%', maxWidth: 240 }}>
-            <PrimaryButton label={tr({ en: 'Add a record', ko: '기록 추가하기' })} onPress={() => nav.navigate('AddChooser')} />
+            <PrimaryButton label={tr({ en: 'Add a record', ko: '기록 추가하기' })} onPress={() => nav.navigate('ActivitySelect')} />
           </View>
         </View>
       </Screen>
