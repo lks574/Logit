@@ -71,7 +71,9 @@ export default function StatsScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Text style={{ fontSize: 25, fontWeight: '700', letterSpacing: -0.75, color: c.text }}>통계</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 999, paddingVertical: 5, paddingHorizontal: 11 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>{today.slice(0, 4)}</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>
+              {period === 'all' ? '전체' : period === 'year' ? today.slice(0, 4) : `${today.slice(0, 4)} ${hub.tag}`}
+            </Text>
           </View>
         </View>
         <View style={{ marginTop: 12 }}>
@@ -80,6 +82,7 @@ export default function StatsScreen() {
               { key: 'month', label: '월간' },
               { key: 'quarter', label: '분기' },
               { key: 'year', label: '연간' },
+              { key: 'all', label: '전체' },
             ]}
             value={period}
             onChange={setPeriod}
@@ -92,7 +95,7 @@ export default function StatsScreen() {
         <View style={{ backgroundColor: c.accent, borderRadius: 16, padding: 14 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>
-              {period === 'month' ? '이번 달 활동' : period === 'quarter' ? '이번 분기 활동' : '올해 활동'}
+              {period === 'month' ? '이번 달 활동' : period === 'quarter' ? '이번 분기 활동' : period === 'year' ? '올해 활동' : '전체 활동'}
             </Text>
             <Text style={{ fontSize: 11, color: '#fff', backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 6, paddingVertical: 3, paddingHorizontal: 8, overflow: 'hidden' }}>{hub.tag}</Text>
           </View>

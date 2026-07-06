@@ -65,6 +65,7 @@ export default function CategoryStatsScreen() {
             { key: 'month', label: '월간' },
             { key: 'quarter', label: '분기' },
             { key: 'year', label: '연간' },
+            { key: 'all', label: '전체' },
           ]}
           value={period}
           onChange={setPeriod}

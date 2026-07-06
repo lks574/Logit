@@ -187,7 +187,7 @@ export function statsSummary(records: StoredRecord[], filter: StatsFilter, today
 
 // ==== 통계 개편 (허브 + 카테고리 세부) ====
 
-export type StatsPeriod = 'month' | 'quarter' | 'year';
+export type StatsPeriod = 'month' | 'quarter' | 'year' | 'all';
 export type StatsCategory = 'cardio' | 'strength' | 'performance';
 const CATEGORY_TEMPLATE: Record<StatsCategory, TemplateType> = {
   cardio: 'endurance',
@@ -210,6 +210,7 @@ export function periodRange(period: StatsPeriod, today: string): { start: string
   const m = +today.slice(5, 7);
   const p = (n: number) => String(n).padStart(2, '0');
   const lastDay = (yy: number, mm: number) => new Date(Date.UTC(yy, mm, 0)).getUTCDate();
+  if (period === 'all') return { start: '0000-01-01', end: '9999-12-31', tag: '전체' };
   if (period === 'year') return { start: `${y}-01-01`, end: `${y}-12-31`, tag: '올해' };
   if (period === 'quarter') {
     const q = Math.floor((m - 1) / 3);
