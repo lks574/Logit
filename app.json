@@ -9,8 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sro.logit",
-      "usesAppleSignIn": true
+      "bundleIdentifier": "com.sro.logit"
     },
     "android": {
       "package": "com.sro.logit",
@@ -41,7 +40,14 @@
           "iosUrlScheme": "com.googleusercontent.apps.471118776644-fpuobd9pt7t54infcp0tle3uovu9i5be"
         }
       ],
-      "expo-apple-authentication"
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ]
     ]
   }
 }
