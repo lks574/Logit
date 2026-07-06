@@ -1,17 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { Icon } from './Glyph';
 import { tr } from '../i18n/i18n';
 
 const MONTH_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const monthName = (month: number) => MONTH_EN[month - 1];
+const monthLabel = (month: number) => tr({ en: MONTH_EN[month - 1], ko: `${month}월` });
 
 // Compact month-grid date picker (pure Views → works on every platform incl.
 // web preview). Value/onChange are 'YYYY-MM-DD'.
 export function MiniMonthPicker({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
   const { c } = useTheme();
   const [view, setView] = useState(() => ({ year: +value.slice(0, 4), month: +value.slice(5, 7) }));
+  const [picking, setPicking] = useState(false); // 연/월 직접 선택 모드
+  const [yearText, setYearText] = useState('');
 
   // value의 연/월이 바뀌면 표시 월도 그 달로 동기화(선택 날짜와 달력 월 불일치 방지).
   const ym = value.slice(0, 7);
@@ -60,14 +63,72 @@ export function MiniMonthPicker({ value, onChange }: { value: string; onChange: 
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, marginBottom: 6 }}>
-        <Pressable onPress={() => shift(-1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={tr({ en: 'Previous month', ko: '이전 달' })} style={{ padding: 4 }}>
+        <Pressable onPress={() => shift(-1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={tr({ en: 'Previous month', ko: '이전 달' })} style={{ padding: 4, opacity: picking ? 0.25 : 1 }} disabled={picking}>
           <Icon.chevronLeft size={16} color={c.text2} strokeWidth={2.4} />
         </Pressable>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: c.text }}>{tr({ en: `${monthName(month)} ${year}`, ko: `${year}년 ${month}월` })}</Text>
-        <Pressable onPress={() => shift(1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={tr({ en: 'Next month', ko: '다음 달' })} style={{ padding: 4 }}>
+        {/* 제목 탭 → 연/월 직접 선택 모드 (먼 과거로 빠르게 이동) */}
+        <Pressable
+          onPress={() => {
+            setYearText(String(year));
+            setPicking((p) => !p);
+          }}
+          hitSlop={6}
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}
+        >
+          <Text style={{ fontSize: 13, fontWeight: '700', color: picking ? c.accent : c.text }}>
+            {tr({ en: `${monthName(month)} ${year}`, ko: `${year}년 ${month}월` })}
+          </Text>
+          <Icon.chevronDown size={13} color={picking ? c.accent : c.text3} strokeWidth={2.4} />
+        </Pressable>
+        <Pressable onPress={() => shift(1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={tr({ en: 'Next month', ko: '다음 달' })} style={{ padding: 4, opacity: picking ? 0.25 : 1 }} disabled={picking}>
           <Icon.chevronRight size={16} color={c.text2} strokeWidth={2.4} />
         </Pressable>
       </View>
+      {picking ? (
+        <View style={{ gap: 10, paddingTop: 2 }}>
+          {/* 연도 직접 입력 + ± */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+            <Pressable onPress={() => { const y = (parseInt(yearText, 10) || year) - 1; setYearText(String(y)); setView((v) => ({ ...v, year: y })); }} hitSlop={8} style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 16, color: c.text2 }}>−</Text>
+            </Pressable>
+            <TextInput
+              value={yearText}
+              onChangeText={(t) => {
+                const digits = t.replace(/[^\d]/g, '').slice(0, 4);
+                setYearText(digits);
+                if (digits.length === 4) setView((v) => ({ ...v, year: parseInt(digits, 10) }));
+              }}
+              keyboardType="number-pad"
+              maxLength={4}
+              style={{ fontSize: 18, fontWeight: '700', color: c.text, minWidth: 66, textAlign: 'center', borderBottomWidth: 1.5, borderBottomColor: c.accent, paddingVertical: 2 }}
+            />
+            <Pressable onPress={() => { const y = (parseInt(yearText, 10) || year) + 1; setYearText(String(y)); setView((v) => ({ ...v, year: y })); }} hitSlop={8} style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+              <Text style={{ fontSize: 15, color: c.text2 }}>＋</Text>
+            </Pressable>
+          </View>
+          {/* 월 그리드 — 탭하면 그 달로 이동 + 일 그리드 복귀 */}
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+            {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => {
+              const sel = m === month;
+              return (
+                <View key={m} style={{ width: '25%', padding: 4 }}>
+                  <Pressable
+                    onPress={() => {
+                      const y = parseInt(yearText, 10) || year;
+                      setView({ year: y, month: m });
+                      setPicking(false);
+                    }}
+                    style={{ paddingVertical: 10, borderRadius: 9, alignItems: 'center', backgroundColor: sel ? c.accent : c.surfaceAlt }}
+                  >
+                    <Text style={{ fontSize: 13, fontWeight: sel ? '700' : '500', color: sel ? '#fff' : c.text }}>{monthLabel(m)}</Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      ) : (
+      <>
       <View style={{ flexDirection: 'row' }}>
         {weekdays.map((w, i) => (
           <Text
@@ -115,6 +176,8 @@ export function MiniMonthPicker({ value, onChange }: { value: string; onChange: 
           })}
         </View>
       ))}
+      </>
+      )}
     </View>
   );
 }
