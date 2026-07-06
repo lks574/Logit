@@ -10,8 +10,10 @@ export const firebaseConfig = {
   appId: '1:471118776644:web:7b88bf047ff422d309af11',
 };
 
-// Phase 2(Google) — Firebase 콘솔 Google provider 설정 시 발급되는 "웹 클라이언트 ID"(…apps.googleusercontent.com).
-// GoogleSignin.configure({ webClientId })에 사용. iOS는 별도 iOS 클라이언트 ID/URL scheme도 필요.
-export const googleWebClientId = 'REPLACE_ME.apps.googleusercontent.com';
+// Google 로그인 — GoogleSignin.configure에 사용.
+// webClientId: idToken audience(Firebase 연동용, Firebase 콘솔 Google provider "웹 SDK 구성").
+// iosClientId: iOS OAuth 클라이언트(GoogleService-Info.plist의 CLIENT_ID). iOS URL scheme은 app.json plugin에.
+export const googleWebClientId = '471118776644-a1cd687prh5gfub2749j5qo4k1afkto2.apps.googleusercontent.com';
+export const googleIosClientId = '471118776644-fpuobd9pt7t54infcp0tle3uovu9i5be.apps.googleusercontent.com';
 
 export const isFirebaseConfigured = firebaseConfig.apiKey !== 'REPLACE_ME';

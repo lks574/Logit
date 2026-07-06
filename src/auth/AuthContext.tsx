@@ -14,7 +14,7 @@ import {
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../lib/firebase';
-import { googleWebClientId, isFirebaseConfigured } from '../lib/firebaseConfig';
+import { googleWebClientId, googleIosClientId, isFirebaseConfigured } from '../lib/firebaseConfig';
 
 type Status = 'loading' | 'authed' | 'unauthed';
 
@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signInWithGoogle: async () => {
       if (!isFirebaseConfigured) return mockSignIn('google.user@logit.dev', 'Google 사용자');
       const { GoogleSignin } = await loadGoogleSignin();
-      GoogleSignin.configure({ webClientId: googleWebClientId });
+      GoogleSignin.configure({ webClientId: googleWebClientId, iosClientId: googleIosClientId });
       await GoogleSignin.hasPlayServices();
       const res: any = await GoogleSignin.signIn();
       const idToken = res?.data?.idToken ?? res?.idToken;
