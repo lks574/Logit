@@ -3,13 +3,16 @@ import { Pressable, Text, View } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Screen } from '../../components/primitives';
 import { ActivityCard, PlanCard } from '../../components/cards';
+import { Segmented } from '../../components/controls';
 import { Tag } from '../../components/badges';
 import { Icon } from '../../components/Glyph';
 import { useTheme } from '../../theme/ThemeContext';
 import { withAlpha } from '../../theme/tokens';
 import { useStore } from '../../store/StoreContext';
 import { recordsOn, plansOn } from '../../store/selectors';
-import { activities, colorsFor } from '../../data/activities';
+import { activities, colorsFor, activityLabel } from '../../data/activities';
+import { tr } from '../../i18n/i18n';
+import { displayTimeLabel } from '../../lib/date';
 
 // 5.1 월간 캘린더 — 했던 것(채운 점) · 약속한 것(빈 링). Logit.dc.html 1196–1331.
 // June 2026: 1일 = 월요일, 30일. Grid starts Sunday(일). Markers/agenda are now
@@ -22,6 +25,7 @@ export default function CalendarScreen() {
   const route = useRoute<any>();
   const paramDate: string | undefined = route.params?.dateISO;
   const [selected, setSelected] = useState<string>(paramDate ?? today); // 선택일 (dateISO)
+  const [mode, setMode] = useState<'month' | 'year'>('month'); // 월(기본) / 연 그리드
   // Displayed month. Init to selected/today's month; prev/next buttons move it.
   const [view, setView] = useState<{ year: number; month: number }>(() => {
     const base = paramDate ?? today;
@@ -43,6 +47,9 @@ export default function CalendarScreen() {
       const m0 = v.month - 1 + delta; // 0-based
       return { year: v.year + Math.floor(m0 / 12), month: ((m0 % 12) + 12) % 12 + 1 };
     });
+  // 헤더 이전/다음: 월 모드는 달을, 연 모드는 해를 이동.
+  const shift = (delta: number) =>
+    mode === 'year' ? setView((v) => ({ ...v, year: v.year + delta })) : shiftMonth(delta);
   const goToday = () => {
     setSelected(today);
     setView({ year: parseInt(today.slice(0, 4), 10), month: parseInt(today.slice(5, 7), 10) });
@@ -72,13 +79,13 @@ export default function CalendarScreen() {
   }
 
   const weekdays = [
-    { label: '일', color: c.error },
-    { label: '월', color: c.text3 },
-    { label: '화', color: c.text3 },
-    { label: '수', color: c.text3 },
-    { label: '목', color: c.text3 },
-    { label: '금', color: c.text3 },
-    { label: '토', color: c.team },
+    { label: tr({ en: 'Sun', ko: '일' }), color: c.error },
+    { label: tr({ en: 'Mon', ko: '월' }), color: c.text3 },
+    { label: tr({ en: 'Tue', ko: '화' }), color: c.text3 },
+    { label: tr({ en: 'Wed', ko: '수' }), color: c.text3 },
+    { label: tr({ en: 'Thu', ko: '목' }), color: c.text3 },
+    { label: tr({ en: 'Fri', ko: '금' }), color: c.text3 },
+    { label: tr({ en: 'Sat', ko: '토' }), color: c.team },
   ];
 
   // Resolve an activity name → { color, soft, IconCmp } (registry, else record/plan template).
@@ -89,6 +96,20 @@ export default function CalendarScreen() {
     const IconCmp = Icon[reg?.icon ?? 'yoga'];
     return { color, soft, IconCmp };
   };
+
+  // 연간 뷰용 날짜 인덱스: dateISO → { 기록 색상들, 미완 약속 여부 }. 12개월×수십 셀의
+  // 반복 조회를 한 번의 순회로 대체(성능).
+  const dayIndex = useMemo(() => {
+    const m: Record<string, { colors: string[]; hasPlan: boolean }> = {};
+    records.forEach((r) => {
+      (m[r.dateISO] ??= { colors: [], hasPlan: false }).colors.push(resolve(r.activity, r.template).color);
+    });
+    plans.forEach((p) => {
+      if (!p.done) (m[p.dateISO] ??= { colors: [], hasPlan: false }).hasPlan = true;
+    });
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [records, plans, c]);
 
   // Selected-day agenda (live from store).
   const dayRecords = recordsOn(records, selected);
@@ -110,11 +131,17 @@ export default function CalendarScreen() {
         }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 7 }}>
-          <Text style={{ fontSize: 22, fontWeight: '700', letterSpacing: -0.44, color: c.text }}>{month}월</Text>
-          <Text style={{ fontSize: 13, fontWeight: '500', color: c.text3 }}>{year}</Text>
+          {mode === 'month' ? (
+            <>
+              <Text style={{ fontSize: 22, fontWeight: '700', letterSpacing: -0.44, color: c.text }}>{monthLabel(month)}</Text>
+              <Text style={{ fontSize: 13, fontWeight: '500', color: c.text3 }}>{year}</Text>
+            </>
+          ) : (
+            <Text style={{ fontSize: 22, fontWeight: '700', letterSpacing: -0.44, color: c.text }}>{year}</Text>
+          )}
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <RoundBtn onPress={() => shiftMonth(-1)}>
+          <RoundBtn onPress={() => shift(-1)}>
             <Icon.chevronLeft size={15} color={c.text2} strokeWidth={2.4} />
           </RoundBtn>
           <Pressable
@@ -129,14 +156,43 @@ export default function CalendarScreen() {
               justifyContent: 'center',
             }}
           >
-            <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>오늘</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>{tr({ en: 'Today', ko: '오늘' })}</Text>
           </Pressable>
-          <RoundBtn onPress={() => shiftMonth(1)}>
+          <RoundBtn onPress={() => shift(1)}>
             <Icon.chevronRight size={15} color={c.text2} strokeWidth={2.4} />
           </RoundBtn>
         </View>
       </View>
 
+      {/* 월/연 토글 */}
+      <View style={{ paddingHorizontal: 14, paddingBottom: 10 }}>
+        <Segmented<'month' | 'year'>
+          options={[
+            { key: 'month', label: tr({ en: 'Month', ko: '월' }) },
+            { key: 'year', label: tr({ en: 'Year', ko: '연' }) },
+          ]}
+          value={mode}
+          onChange={setMode}
+        />
+      </View>
+
+      {mode === 'year' ? (
+        <View style={{ paddingHorizontal: 10, flexDirection: 'row', flexWrap: 'wrap' }}>
+          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+            <MiniMonth
+              key={m}
+              year={year}
+              month={m}
+              today={today}
+              dayIndex={dayIndex}
+              onPress={() => {
+                setView({ year, month: m });
+                setMode('month');
+              }}
+            />
+          ))}
+        </View>
+      ) : (
       <View style={{ paddingHorizontal: 14 }}>
         {/* weekday row */}
         <View style={{ flexDirection: 'row', marginBottom: 2 }}>
@@ -235,11 +291,11 @@ export default function CalendarScreen() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 4, paddingTop: 10, paddingBottom: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: c.text2 }} />
-            <Text style={{ fontSize: 11, fontWeight: '500', color: c.text2 }}>했던 것</Text>
+            <Text style={{ fontSize: 11, fontWeight: '500', color: c.text2 }}>{tr({ en: 'Done', ko: '했던 것' })}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             <View style={{ width: 8, height: 8, borderRadius: 4, borderWidth: 1.5, borderColor: c.accent }} />
-            <Text style={{ fontSize: 11, fontWeight: '500', color: c.text2 }}>약속한 것</Text>
+            <Text style={{ fontSize: 11, fontWeight: '500', color: c.text2 }}>{tr({ en: 'Planned', ko: '약속한 것' })}</Text>
           </View>
         </View>
 
@@ -248,7 +304,7 @@ export default function CalendarScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' }}>
             <Text style={{ fontSize: 13, fontWeight: '700', color: c.text }}>{agendaTitle(selected, today)}</Text>
             <Text style={{ fontSize: 11, color: c.text3 }}>
-              기록 {recordCount} · 약속 {planCount}
+              {tr({ en: `Records ${recordCount} · Plans ${planCount}`, ko: `기록 ${recordCount} · 약속 ${planCount}` })}
             </Text>
           </View>
 
@@ -262,8 +318,8 @@ export default function CalendarScreen() {
                     color={color}
                     soft={soft}
                     icon={<IconCmp size={18} color={color} />}
-                    title={r.activity}
-                    time={r.timeLabel}
+                    title={activityLabel(r.activity)}
+                    time={displayTimeLabel(r.timeLabel)}
                     meta={r.meta}
                     ratingFilled={r.rating}
                     onPress={() => nav.navigate('Detail', { activity: r.activity, recordId: r.id })}
@@ -272,14 +328,14 @@ export default function CalendarScreen() {
               })}
               {dayPlans.map((p) => {
                 const { color, IconCmp } = resolve(p.activity, p.template);
-                const meta = [p.timeLabel, p.place].filter(Boolean).join(' · ');
+                const meta = [displayTimeLabel(p.timeLabel), p.place].filter(Boolean).join(' · ');
                 return (
                   <PlanCard
                     key={p.id}
                     icon={<IconCmp size={18} color={color} />}
-                    title={p.activity}
+                    title={activityLabel(p.activity)}
                     meta={meta}
-                    tag={<Tag label="예정" color={c.accent} outline />}
+                    tag={<Tag label={tr({ en: 'Upcoming', ko: '예정' })} color={c.accent} outline />}
                     onCheck={() => {
                       const rec = completePlanAsRecord(p.id);
                       if (rec) nav.navigate('Detail', { activity: rec.activity, recordId: rec.id });
@@ -291,7 +347,7 @@ export default function CalendarScreen() {
             </>
           ) : (
             <Text style={{ fontSize: 12, color: c.text3, paddingVertical: 8 }}>
-              이 날의 기록이나 약속이 없어요.
+              {tr({ en: 'No records or plans for this day.', ko: '이 날의 기록이나 약속이 없어요.' })}
             </Text>
           )}
 
@@ -312,10 +368,11 @@ export default function CalendarScreen() {
             }}
           >
             <Icon.plus size={16} color={c.accent} strokeWidth={2.4} />
-            <Text style={{ fontSize: 13, fontWeight: '600', color: c.accent }}>이 날 약속 추가</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: c.accent }}>{tr({ en: 'Add plan for this day', ko: '이 날 약속 추가' })}</Text>
           </Pressable>
         </View>
       </View>
+      )}
     </Screen>
   );
 }
@@ -340,13 +397,81 @@ function RoundBtn({ children, onPress }: { children: React.ReactNode; onPress?: 
   );
 }
 
+// 연간 뷰의 미니 월 그리드. 3열 배치, 기록 있는 날은 채운 점 / 미완 약속만 있는 날은 링.
+// 탭하면 해당 월의 월 뷰로 진입.
+function MiniMonth({
+  year,
+  month,
+  today,
+  dayIndex,
+  onPress,
+}: {
+  year: number;
+  month: number;
+  today: string;
+  dayIndex: Record<string, { colors: string[]; hasPlan: boolean }>;
+  onPress: () => void;
+}) {
+  const { c } = useTheme();
+  const firstWeekday = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+  const daysInMonth = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstWeekday; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  return (
+    <Pressable onPress={onPress} style={{ width: '33.33%', padding: 6 }}>
+      <Text style={{ fontSize: 13, fontWeight: '700', color: c.text, marginBottom: 4, marginLeft: 2 }}>
+        {monthLabel(month)}
+      </Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+        {cells.map((d, i) => {
+          if (d === null) return <View key={i} style={{ width: `${100 / 7}%`, height: 15 }} />;
+          const dateISO = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+          const hit = dayIndex[dateISO];
+          const isToday = dateISO === today;
+          const dot = hit?.colors[0];
+          return (
+            <View key={i} style={{ width: `${100 / 7}%`, height: 15, alignItems: 'center', justifyContent: 'center' }}>
+              {dot ? (
+                <View style={{ width: 11, height: 11, borderRadius: 5.5, backgroundColor: dot, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 7.5, fontWeight: '700', color: '#fff', lineHeight: 9 }}>{d}</Text>
+                </View>
+              ) : hit?.hasPlan ? (
+                <View style={{ width: 11, height: 11, borderRadius: 5.5, borderWidth: 1, borderColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 7.5, fontWeight: '600', color: c.accent, lineHeight: 9 }}>{d}</Text>
+                </View>
+              ) : (
+                <Text style={{ fontSize: 8.5, color: isToday ? c.accent : c.text3, fontWeight: isToday ? '800' : '400', lineHeight: 11 }}>{d}</Text>
+              )}
+            </View>
+          );
+        })}
+      </View>
+    </Pressable>
+  );
+}
+
+// 월 표시 라벨: 한국어는 "6월", 영어는 짧은 월 이름.
+function monthLabel(month: number) {
+  const en = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1];
+  return tr({ en, ko: `${month}월` });
+}
+
 // "오늘 · 6월 30일 (월)" for today, else "6월 D일 (요일)". dateISO in June 2026.
 function agendaTitle(dateISO: string, today: string) {
   const day = parseInt(dateISO.slice(8, 10), 10);
   const month = parseInt(dateISO.slice(5, 7), 10);
-  const weekday = ['일', '월', '화', '수', '목', '금', '토'][
-    new Date(dateISO + 'T00:00:00Z').getUTCDay()
-  ];
-  const label = `${month}월 ${day}일 (${weekday})`;
-  return dateISO === today ? `오늘 · ${label}` : label;
+  const weekday = [
+    tr({ en: 'Sun', ko: '일' }),
+    tr({ en: 'Mon', ko: '월' }),
+    tr({ en: 'Tue', ko: '화' }),
+    tr({ en: 'Wed', ko: '수' }),
+    tr({ en: 'Thu', ko: '목' }),
+    tr({ en: 'Fri', ko: '금' }),
+    tr({ en: 'Sat', ko: '토' }),
+  ][new Date(dateISO + 'T00:00:00Z').getUTCDay()];
+  const label = tr({ en: `${month}/${day} (${weekday})`, ko: `${month}월 ${day}일 (${weekday})` });
+  return dateISO === today ? tr({ en: `Today · ${label}`, ko: `오늘 · ${label}` }) : label;
 }
