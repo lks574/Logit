@@ -23,6 +23,7 @@ import StatsScreen from '../screens/stats/StatsScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
 import ProfileEditScreen from '../screens/settings/ProfileEditScreen';
 import DetailScreen from '../screens/shared/DetailScreen';
+import CategoryStatsScreen from '../screens/stats/CategoryStatsScreen';
 import VerifyEmailScreen from '../screens/auth/VerifyEmailScreen';
 
 const Tab = createBottomTabNavigator<TabParamList>();
@@ -54,6 +55,7 @@ function AppStack() {
         <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
       </Stack.Group>
       <Stack.Screen name="Detail" component={DetailScreen} />
+      <Stack.Screen name="CategoryStats" component={CategoryStatsScreen} />
       <Stack.Screen name="Plans" component={PlansScreen} />
     </Stack.Navigator>
   );
