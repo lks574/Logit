@@ -8,6 +8,8 @@ import { DisclosureButton, Field } from '../../../components/Field';
 import { Segmented } from '../../../components/controls';
 import { RatingInput, CompanionField } from '../../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
+import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
+import { activities } from '../../../data/activities';
 import { useStore } from '../../../store/StoreContext';
 import { useTheme } from '../../../theme/ThemeContext';
 
@@ -26,12 +28,19 @@ const LABEL_INTENSITY: Record<string, Intensity> = { 낮음: 'low', 보통: 'mid
 export default function FreeForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord, today } = useStore();
+  const { addRecord, updateRecord, getRecord } = useStore();
 
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
+  // 독서는 자유 템플릿을 공유하지만 필드가 다르다: 책 제목 + 메모만(강도·세부 없음).
+  const isBook = activity === '독서';
+
   // PREFILL controlled state from the record when editing; start BLANK on create.
+  // 날짜·시간: 편집이면 저장값, 신규면 현재 날짜/시각.
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? nowDateISO());
+  const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? nowTimeLabel());
+  const [title, setTitle] = React.useState(record?.fields?.['제목'] ?? '');
   const [duration, setDuration] = React.useState(record?.fields?.['시간']?.replace(/[^0-9]/g, '') ?? '');
   const [intensity, setIntensity] = React.useState<Intensity>(
     (record?.fields?.['강도'] && LABEL_INTENSITY[record.fields['강도']]) || 'mid',
@@ -53,29 +62,42 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
   };
 
   const handleSave = () => {
-    if (duration.trim() === '' && memo.trim() === '') {
+    if (isBook) {
+      if (title.trim() === '' && memo.trim() === '') {
+        Alert.alert('필수 항목', '책 제목이나 메모를 입력해 주세요.');
+        return;
+      }
+    } else if (duration.trim() === '' && memo.trim() === '') {
       Alert.alert('필수 항목', '시간이나 메모를 입력해 주세요.');
       return;
     }
     const durTrim = duration.trim();
     const 시간 = durTrim ? `${durTrim}분` : '';
     const 강도 = INTENSITY_LABEL[intensity];
-    const meta = [시간, `강도 ${강도}`].filter(Boolean).join(' · ');
+    const titleTrim = title.trim();
+    const meta = isBook
+      ? [titleTrim, 시간].filter(Boolean).join(' · ')
+      : [시간, `강도 ${강도}`].filter(Boolean).join(' · ');
     const payload = {
       activity,
       template: 'free' as const,
-      dateISO: editing ? record!.dateISO : today,
-      timeLabel: editing ? record!.timeLabel : '방금',
+      dateISO,
+      timeLabel,
       meta,
       rating,
       memo,
       companions,
       photos,
-      fields: {
-        ...(시간 ? { 시간 } : {}),
-        강도,
-        ...(place ? { 장소: place } : {}),
-      },
+      fields: isBook
+        ? {
+            ...(titleTrim ? { 제목: titleTrim } : {}),
+            ...(시간 ? { 시간 } : {}),
+          }
+        : {
+            ...(시간 ? { 시간 } : {}),
+            강도,
+            ...(place ? { 장소: place } : {}),
+          },
     };
     if (editing) {
       updateRecord(recordId!, payload);
@@ -90,41 +112,34 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
     <Screen edges={['top', 'bottom']}>
       <FormHeader
         title={activity}
-        icon={<Icon.yoga size={13} color={c.accent} strokeWidth={2.2} />}
+        icon={(() => {
+          const Ico = activities[activity] ? Icon[activities[activity].icon] : Icon.yoga;
+          return <Ico size={13} color={c.accent} strokeWidth={2.2} />;
+        })()}
         color={c.accent}
         soft={c.accentSoft}
         onSave={handleSave}
       />
 
       <View style={{ padding: 16, gap: 14 }}>
-        {/* 필수 — 날짜 · 시간 */}
+        {/* 필수 — 날짜 · 시간 (편집 가능) */}
         <View>
           <Text style={{ fontSize: 11, fontWeight: '700', color: c.text3, letterSpacing: 0.4, marginBottom: 7 }}>
             필수
           </Text>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              backgroundColor: c.surface,
-              borderWidth: 1,
-              borderColor: c.border,
-              borderRadius: 14,
-              paddingVertical: 13,
-              paddingHorizontal: 14,
-            }}
-          >
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-              <Glyph size={18} color={c.text2} strokeWidth={1.8}>
-                <Path d="M3 4.5h18v16H3z" />
-                <Path d="M3 9h18M8 2.5v4M16 2.5v4" />
-              </Glyph>
-              <Text style={{ fontSize: 14, color: c.text }}>날짜 · 시간</Text>
-            </View>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>오늘 · 오후 6:30</Text>
-          </View>
+          <DateTimeField
+            dateISO={dateISO}
+            timeLabel={timeLabel}
+            onChangeDate={setDateISO}
+            onChangeTime={setTimeLabel}
+            color={c.accent}
+          />
         </View>
+
+        {/* 독서 — 책 제목 */}
+        {isBook ? (
+          <Field label="책 제목" value={title} onChangeText={setTitle} placeholder="예: 데미안" />
+        ) : null}
 
         {/* core — 시간 (duration) */}
         <View>
@@ -154,20 +169,22 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
           </Pressable>
         </View>
 
-        {/* core — 강도 (segmented) */}
-        <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>강도</Text>
-          <Segmented<Intensity>
-            options={[
-              { key: 'low', label: '낮음' },
-              { key: 'mid', label: '보통' },
-              { key: 'high', label: '높음' },
-            ]}
-            value={intensity}
-            onChange={setIntensity}
-            color={c.accent}
-          />
-        </View>
+        {/* core — 강도 (segmented) — 독서 제외 */}
+        {!isBook ? (
+          <View>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>강도</Text>
+            <Segmented<Intensity>
+              options={[
+                { key: 'low', label: '낮음' },
+                { key: 'mid', label: '보통' },
+                { key: 'high', label: '높음' },
+              ]}
+              value={intensity}
+              onChange={setIntensity}
+              color={c.accent}
+            />
+          </View>
+        ) : null}
 
         {/* core — 평점 */}
         <View>
@@ -175,17 +192,19 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
           <RatingInput value={rating} onChange={setRating} size={22} />
         </View>
 
-        {/* 공통 세부 입력 (collapsed default) */}
-        <DisclosureButton
-          title="세부 입력"
-          badge="선택"
-          subtitle="장소 · 동행 · 사진 · 메모"
-          icon={<Icon.plus size={17} color={c.text2} strokeWidth={2.2} />}
-          open={open}
-          onPress={() => setOpen((o) => !o)}
-        />
+        {/* 공통 세부 입력 (collapsed default) — 독서 제외 */}
+        {!isBook ? (
+          <DisclosureButton
+            title="세부 입력"
+            badge="선택"
+            subtitle="장소 · 동행 · 사진 · 메모"
+            icon={<Icon.plus size={17} color={c.text2} strokeWidth={2.2} />}
+            open={open}
+            onPress={() => setOpen((o) => !o)}
+          />
+        ) : null}
 
-        {open ? (
+        {!isBook && open ? (
           <>
             {/* 장소 */}
             <Field label="장소" value={place} onChangeText={setPlace} placeholder="장소" />

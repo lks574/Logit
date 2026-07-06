@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { Icon } from './Glyph';
@@ -8,6 +8,12 @@ import { Icon } from './Glyph';
 export function MiniMonthPicker({ value, onChange }: { value: string; onChange: (iso: string) => void }) {
   const { c } = useTheme();
   const [view, setView] = useState(() => ({ year: +value.slice(0, 4), month: +value.slice(5, 7) }));
+
+  // value의 연/월이 바뀌면 표시 월도 그 달로 동기화(선택 날짜와 달력 월 불일치 방지).
+  const ym = value.slice(0, 7);
+  useEffect(() => {
+    setView({ year: +ym.slice(0, 4), month: +ym.slice(5, 7) });
+  }, [ym]);
 
   const iso = (y: number, m: number, d: number) =>
     `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -23,6 +29,10 @@ export function MiniMonthPicker({ value, onChange }: { value: string; onChange: 
   const cells: (number | null)[] = [];
   for (let i = 0; i < firstWeekday; i++) cells.push(null);
   for (let d = 1; d <= days; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null); // 마지막 주를 7칸으로 패딩
+  // 주 단위로 끊는다 — 줄마다 flex:1 7칸(퍼센트+wrap의 서브픽셀 반올림으로 토요일이 밀리는 것 방지).
+  const weeks: (number | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
   const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -56,42 +66,43 @@ export function MiniMonthPicker({ value, onChange }: { value: string; onChange: 
           </Text>
         ))}
       </View>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-        {cells.map((d, i) => {
-          if (d == null) return <View key={`b${i}`} style={{ width: `${100 / 7}%`, height: 34 }} />;
-          const cellISO = iso(year, month, d);
-          const selected = cellISO === value;
-          const col = i % 7;
-          return (
-            <Pressable
-              key={cellISO}
-              onPress={() => onChange(cellISO)}
-              style={{ width: `${100 / 7}%`, height: 34, alignItems: 'center', justifyContent: 'center' }}
-            >
-              <View
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: 13,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: selected ? c.accent : 'transparent',
-                }}
+      {weeks.map((week, wi) => (
+        <View key={wi} style={{ flexDirection: 'row' }}>
+          {week.map((d, col) => {
+            if (d == null) return <View key={`b${wi}-${col}`} style={{ flex: 1, height: 34 }} />;
+            const cellISO = iso(year, month, d);
+            const selected = cellISO === value;
+            return (
+              <Pressable
+                key={cellISO}
+                onPress={() => onChange(cellISO)}
+                style={{ flex: 1, height: 34, alignItems: 'center', justifyContent: 'center' }}
               >
-                <Text
+                <View
                   style={{
-                    fontSize: 12.5,
-                    fontWeight: selected ? '700' : '500',
-                    color: selected ? '#fff' : col === 0 ? c.error : col === 6 ? c.team : c.text,
+                    width: 26,
+                    height: 26,
+                    borderRadius: 13,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: selected ? c.accent : 'transparent',
                   }}
                 >
-                  {d}
-                </Text>
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
+                  <Text
+                    style={{
+                      fontSize: 12.5,
+                      fontWeight: selected ? '700' : '500',
+                      color: selected ? '#fff' : col === 0 ? c.error : col === 6 ? c.team : c.text,
+                    }}
+                  >
+                    {d}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      ))}
     </View>
   );
 }
