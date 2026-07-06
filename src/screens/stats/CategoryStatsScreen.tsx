@@ -21,7 +21,9 @@ function mix(a: string, b: string, pct: number): string {
 const META: Record<StatsCategory, { label: string; sub: string }> = {
   cardio: { label: '유산소', sub: '러닝 · 사이클 · 수영' },
   strength: { label: '근력', sub: '웨이트 · 맨몸' },
+  match: { label: '대전', sub: '축구 · 야구 · 라켓' },
   performance: { label: '공연', sub: '뮤지컬 · 연극 · 콘서트' },
+  free: { label: '자유', sub: '요가 · 독서 · 메모' },
 };
 
 export default function CategoryStatsScreen() {
@@ -32,8 +34,14 @@ export default function CategoryStatsScreen() {
   const [period, setPeriod] = useState<StatsPeriod>('month');
   const s = categoryStats(records, category, period, today) as any;
 
-  const col = category === 'cardio' ? c.cardio : category === 'strength' ? c.strength : c.perf;
-  const soft = category === 'cardio' ? c.cardioSoft : category === 'strength' ? c.strengthSoft : c.perfSoft;
+  const palette: Record<StatsCategory, { col: string; soft: string }> = {
+    cardio: { col: c.cardio, soft: c.cardioSoft },
+    strength: { col: c.strength, soft: c.strengthSoft },
+    match: { col: c.team, soft: c.teamSoft },
+    performance: { col: c.perf, soft: c.perfSoft },
+    free: { col: c.accent, soft: c.accentSoft },
+  };
+  const { col, soft } = palette[category];
   const meta = META[category];
 
   const card = { backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 13, paddingVertical: 11, paddingHorizontal: 12 } as const;
@@ -138,6 +146,67 @@ export default function CategoryStatsScreen() {
                 </View>
               )}
             </View>
+          </>
+        ) : null}
+
+        {/* ── 대전 ── */}
+        {category === 'match' ? (
+          <>
+            <View style={{ flexDirection: 'row', gap: 9 }}>
+              {metric('총 경기', <>{s.count}{unit('회')}</>)}
+              {metric('승률', s.resultRecorded > 0 ? <>{s.winRate}{unit('%')}</> : '—')}
+            </View>
+            <View style={{ backgroundColor: soft, borderRadius: 14, padding: 14 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 10 }}>전적</Text>
+              {s.resultRecorded > 0 ? (
+                <View style={{ flexDirection: 'row', gap: 10 }}>
+                  {[
+                    { label: '승', v: s.wins, color: c.success },
+                    { label: '무', v: s.draws, color: c.text2 },
+                    { label: '패', v: s.losses, color: c.error },
+                  ].map((x) => (
+                    <View key={x.label} style={{ flex: 1, alignItems: 'center', backgroundColor: c.surface, borderRadius: 10, paddingVertical: 10 }}>
+                      <Text style={{ fontSize: 22, fontWeight: '800', color: x.color }}>{x.v}</Text>
+                      <Text style={{ fontSize: 12, color: c.text2, marginTop: 2 }}>{x.label}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : (
+                <Text style={{ fontSize: 12.5, color: c.text3 }}>결과(승/무/패)가 기록된 경기가 없어요. 기록 시 결과를 선택하면 전적이 쌓여요.</Text>
+              )}
+            </View>
+            {s.bySport.length > 0 ? (
+              <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14, gap: 10 }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>종목별</Text>
+                {s.bySport.map((b: any) => (
+                  <View key={b.activity} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 12.5, color: c.text2 }}>{b.activity}</Text>
+                    <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.text }}>{b.count}회</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </>
+        ) : null}
+
+        {/* ── 자유 ── */}
+        {category === 'free' ? (
+          <>
+            <View style={{ flexDirection: 'row', gap: 9 }}>
+              {metric('총 기록', <>{s.count}{unit('회')}</>)}
+              {metric('읽은 책', <>{s.bookCount}{unit('권')}</>)}
+            </View>
+            {s.byActivity.length > 0 ? (
+              <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14, gap: 10 }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>활동별</Text>
+                {s.byActivity.map((b: any) => (
+                  <View key={b.activity} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 12.5, color: c.text2 }}>{b.activity}</Text>
+                    <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.text }}>{b.count}회</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
           </>
         ) : null}
 

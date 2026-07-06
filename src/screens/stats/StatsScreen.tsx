@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Screen } from '../../components/primitives';
-import { Glyph, Path, Icon } from '../../components/Glyph';
+import { Glyph, Path, Circle, Icon } from '../../components/Glyph';
 import { Segmented } from '../../components/controls';
 import { PrimaryButton } from '../../components/auth-ui';
 import { useTheme } from '../../theme/ThemeContext';
@@ -22,7 +22,9 @@ function mix(a: string, b: string, pct: number): string {
 const CAT_META: { key: StatsCategory; label: string; sub: string; icon: React.ReactNode }[] = [
   { key: 'cardio', label: '유산소', sub: '러닝 · 사이클 · 수영', icon: <Path d="M3 18l5-9 4 5 3-4 6 8" /> },
   { key: 'strength', label: '근력', sub: '웨이트 · 맨몸', icon: <Path d="M6.5 6.5l11 11M4 8l-2 2 4 4M16 4l4 4-2 2M8 16l-4-4M16 8l4 4" /> },
+  { key: 'match', label: '대전', sub: '축구 · 야구 · 라켓', icon: (<><Circle cx="12" cy="12" r="8" /><Circle cx="12" cy="12" r="3" /></>) },
   { key: 'performance', label: '공연', sub: '뮤지컬 · 연극 · 콘서트', icon: <Path d="M5 4h14v6a7 7 0 0 1-14 0z" /> },
+  { key: 'free', label: '자유', sub: '요가 · 독서 · 메모', icon: <Path d="M4 20h4L18 10l-4-4L4 16v4zM13 5l4 4" /> },
 ];
 
 export default function StatsScreen() {
@@ -33,7 +35,15 @@ export default function StatsScreen() {
   const hub = statsHub(records, period, today);
 
   const catColor = (k: StatsCategory) =>
-    k === 'cardio' ? { c: c.cardio, s: c.cardioSoft } : k === 'strength' ? { c: c.strength, s: c.strengthSoft } : { c: c.perf, s: c.perfSoft };
+    k === 'cardio'
+      ? { c: c.cardio, s: c.cardioSoft }
+      : k === 'strength'
+        ? { c: c.strength, s: c.strengthSoft }
+        : k === 'match'
+          ? { c: c.team, s: c.teamSoft }
+          : k === 'performance'
+            ? { c: c.perf, s: c.perfSoft }
+            : { c: c.accent, s: c.accentSoft };
   const heatColor = (level: number) =>
     level === 0 ? c.surfaceAlt : level === 1 ? mix(c.accent, c.surfaceAlt, 30) : level === 2 ? mix(c.accent, c.surfaceAlt, 55) : c.accent;
 

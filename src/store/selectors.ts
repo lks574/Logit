@@ -188,12 +188,16 @@ export function statsSummary(records: StoredRecord[], filter: StatsFilter, today
 // ==== 통계 개편 (허브 + 카테고리 세부) ====
 
 export type StatsPeriod = 'month' | 'quarter' | 'year' | 'all';
-export type StatsCategory = 'cardio' | 'strength' | 'performance';
+export type StatsCategory = 'cardio' | 'strength' | 'match' | 'performance' | 'free';
 const CATEGORY_TEMPLATE: Record<StatsCategory, TemplateType> = {
   cardio: 'endurance',
   strength: 'setrep',
+  match: 'match',
   performance: 'spectate',
+  free: 'free',
 };
+// 허브 표시 순서.
+export const STATS_CATEGORIES: StatsCategory[] = ['cardio', 'strength', 'match', 'performance', 'free'];
 
 const isoPlusDays = (fromISO: string, i: number) => isoMinusDays(fromISO, -i);
 const parseVolumeKg = (s?: string) => (s ? parseFloat(s.replace(/[^0-9.]/g, '')) || 0 : 0); // "4,250kg" → 4250
@@ -262,7 +266,7 @@ export function statsHub(records: StoredRecord[], period: StatsPeriod, today: st
   const activeDays = new Set(inRange.map((r) => r.dateISO)).size;
   const streak = countStreak(new Set(records.map((r) => r.dateISO)), today);
 
-  const cats = (Object.keys(CATEGORY_TEMPLATE) as StatsCategory[]).map((key) => {
+  const cats = STATS_CATEGORIES.map((key) => {
     const tpl = CATEGORY_TEMPLATE[key];
     const rs = inRange.filter((r) => r.template === tpl);
     let subtitle: string;
@@ -272,10 +276,17 @@ export function statsHub(records: StoredRecord[], period: StatsPeriod, today: st
     } else if (key === 'strength') {
       const t = Math.round((rs.reduce((a, r) => a + parseVolumeKg(r.fields?.총볼륨), 0) / 1000) * 10) / 10;
       subtitle = `${rs.length}회 · ${t}t`;
-    } else {
+    } else if (key === 'match') {
+      const rec = rs.filter((r) => r.fields?.결과).length;
+      const w = rs.filter((r) => r.fields?.결과 === '승').length;
+      subtitle = rec > 0 ? `${rs.length}회 · 승률 ${Math.round((w / rec) * 100)}%` : `${rs.length}회`;
+    } else if (key === 'performance') {
       const rated = rs.map((r) => r.rating).filter((x): x is number => !!x);
       const avgR = rated.length ? Math.round(avg(rated) * 10) / 10 : 0;
       subtitle = `${rs.length}편${avgR ? ` · 평점 ${avgR}` : ''}`;
+    } else {
+      const bookN = new Set(rs.filter((r) => r.activity === '독서').map((r) => r.fields?.제목).filter(Boolean)).size;
+      subtitle = `${rs.length}회${bookN ? ` · 책 ${bookN}권` : ''}`;
     }
     const spark = monthlyCounts(records.filter((r) => r.template === tpl), today).map((x) => x.value);
     return { key, template: tpl, count: rs.length, subtitle, spark };
@@ -342,6 +353,27 @@ export function categoryStats(records: StoredRecord[], category: StatsCategory, 
       .slice(0, 6)
       .map(([part, n]) => ({ part, count: n, pct: Math.round((n / maxPart) * 100) }));
     return { category, count: workouts, totalT, workouts, bodyParts };
+  }
+
+  if (category === 'match') {
+    const wins = inRange.filter((r) => r.fields?.결과 === '승').length;
+    const draws = inRange.filter((r) => r.fields?.결과 === '무').length;
+    const losses = inRange.filter((r) => r.fields?.결과 === '패').length;
+    const resultRecorded = wins + draws + losses;
+    const winRate = resultRecorded ? Math.round((wins / resultRecorded) * 100) : 0;
+    const bySportMap = new Map<string, number>();
+    for (const r of inRange) bySportMap.set(r.activity, (bySportMap.get(r.activity) ?? 0) + 1);
+    const bySport = [...bySportMap.entries()].sort((a, b) => b[1] - a[1]).map(([activity, count]) => ({ activity, count }));
+    return { category, count: inRange.length, wins, draws, losses, resultRecorded, winRate, bySport };
+  }
+
+  if (category === 'free') {
+    const books = inRange.filter((r) => r.activity === '독서');
+    const bookCount = new Set(books.map((r) => r.fields?.제목).filter(Boolean)).size;
+    const byActMap = new Map<string, number>();
+    for (const r of inRange) byActMap.set(r.activity, (byActMap.get(r.activity) ?? 0) + 1);
+    const byActivity = [...byActMap.entries()].sort((a, b) => b[1] - a[1]).map(([activity, count]) => ({ activity, count }));
+    return { category, count: inRange.length, bookCount, byActivity };
   }
 
   // performance
