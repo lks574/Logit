@@ -33,6 +33,8 @@ function InputCard({
   flex,
   keyboardType,
   center,
+  onFocus,
+  onBlur,
 }: {
   label: string;
   value: string;
@@ -41,6 +43,8 @@ function InputCard({
   flex: number;
   keyboardType?: 'default' | 'numeric';
   center?: boolean;
+  onFocus?: () => void;
+  onBlur?: () => void;
 }) {
   const { c } = useTheme();
   const ref = React.useRef<TextInput>(null);
@@ -63,6 +67,8 @@ function InputCard({
         ref={ref}
         value={value}
         onChangeText={onChangeText}
+        onFocus={onFocus}
+        onBlur={onBlur}
         placeholder={placeholder}
         placeholderTextColor={c.text3}
         keyboardType={keyboardType}
@@ -75,9 +81,24 @@ function InputCard({
 export default function SpectateForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord } = useStore();
+  const { addRecord, updateRecord, getRecord, records } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
+
+  // 공연장 자동완성: 과거 기록의 공연장 값만(최근순·중복 제거) 모아 추천.
+  const [venueFocused, setVenueFocused] = React.useState(false);
+  const pastVenues = React.useMemo(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const r of records) {
+      const v = r.fields?.공연장?.trim();
+      if (v && !seen.has(v)) {
+        seen.add(v);
+        out.push(v);
+      }
+    }
+    return out;
+  }, [records]);
 
   // Prefill controlled state from the record when editing.
   // 날짜·시간: 편집이면 저장값, 신규면 현재 날짜/시각.
@@ -196,9 +217,45 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
         />
 
         {/* 공연장 / 좌석 */}
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <InputCard label={tr({ en: 'Venue', ko: '공연장' })} value={venue} onChangeText={setVenue} placeholder={tr({ en: 'Venue', ko: '공연장' })} flex={1.4} />
-          <InputCard label={tr({ en: 'Seat', ko: '좌석' })} value={seat} onChangeText={setSeat} placeholder={tr({ en: 'Seat', ko: '좌석' })} flex={1} />
+        <View>
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <InputCard
+              label={tr({ en: 'Venue', ko: '공연장' })}
+              value={venue}
+              onChangeText={setVenue}
+              placeholder={tr({ en: 'Venue', ko: '공연장' })}
+              flex={1.4}
+              onFocus={() => setVenueFocused(true)}
+              onBlur={() => setTimeout(() => setVenueFocused(false), 150)}
+            />
+            <InputCard label={tr({ en: 'Seat', ko: '좌석' })} value={seat} onChangeText={setSeat} placeholder={tr({ en: 'Seat', ko: '좌석' })} flex={1} />
+          </View>
+          {/* 공연장 자동완성 추천 (포커스 시) */}
+          {venueFocused &&
+            (() => {
+              const q = venue.trim().toLowerCase();
+              const sugg = pastVenues
+                .filter((v) => v.toLowerCase() !== q && (q === '' || v.toLowerCase().includes(q)))
+                .slice(0, 6);
+              if (!sugg.length) return null;
+              return (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7, marginTop: 8 }}>
+                  {sugg.map((v) => (
+                    <Pressable
+                      key={v}
+                      onPress={() => {
+                        setVenue(v);
+                        setVenueFocused(false);
+                      }}
+                      style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: c.perfSoft, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 }}
+                    >
+                      <Icon.performance size={11} color={c.perf} strokeWidth={2.2} />
+                      <Text style={{ fontSize: 13, fontWeight: '600', color: c.perf }}>{v}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              );
+            })()}
         </View>
 
         {/* 관람 회차 / 티켓 가격 — 한 줄 */}
