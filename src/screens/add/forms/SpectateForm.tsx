@@ -187,6 +187,7 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
           onChangeDate={setDateISO}
           onChangeTime={setTimeLabel}
           color={c.perf}
+          allowNoTime
         />
 
         {/* 공연장 / 좌석 */}

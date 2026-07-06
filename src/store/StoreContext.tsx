@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { seed, TODAY } from './seed';
+import { seed } from './seed';
 import { deletePhoto } from '../lib/photos';
+import { nowDateISO } from '../lib/date';
 import { CustomActivity, Profile, StoredPlan, StoredRecord, StoreState } from './types';
 
 // Offline-first store: single source of truth in memory, persisted to
@@ -101,7 +102,8 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     return {
       ready,
       persistError,
-      today: TODAY,
+      today: nowDateISO(), // 실제 현재 날짜(과거 mock TODAY 대체) — 홈·통계·캘린더 일관
+
       records: state.records,
       plans: state.plans,
       customActivities: state.customActivities,

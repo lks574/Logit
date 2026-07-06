@@ -20,19 +20,9 @@ const parseTime = (label?: string) => {
 export const timeLabelOf = (ampm: string, h12: number, minute: number) =>
   `${ampm} ${h12}:${String(minute).padStart(2, '0')}`;
 
-// 현재 시각 → 'YYYY-MM-DD' / '오전·오후 H:MM' (신규 기록 기본값).
-export function nowDateISO(): string {
-  const d = new Date();
-  const p = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-}
-export function nowTimeLabel(): string {
-  const d = new Date();
-  const h = d.getHours();
-  const ampm = h < 12 ? '오전' : '오후';
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  return timeLabelOf(ampm, h12, d.getMinutes());
-}
+// 신규 기록 기본값 — 실제 현재 날짜/시각(lib/date). 기존 import 경로 유지 위해 re-export.
+export { nowDateISO, nowTimeLabel } from '../lib/date';
+import { nowTimeLabel as _nowTimeLabel } from '../lib/date';
 
 export function DateTimeField({
   dateISO,
@@ -40,17 +30,20 @@ export function DateTimeField({
   onChangeDate,
   onChangeTime,
   color,
+  allowNoTime,
 }: {
   dateISO: string;
   timeLabel: string;
   onChangeDate: (iso: string) => void;
   onChangeTime: (label: string) => void;
   color?: string;
+  allowNoTime?: boolean; // true면 시간을 비울 수 있음("시간 미정")
 }) {
   const { c } = useTheme();
   const accent = color ?? c.accent;
   const [showDate, setShowDate] = React.useState(false);
   const [showTime, setShowTime] = React.useState(false);
+  const hasTime = timeLabel.trim() !== '';
   const { ampm, h12, minute } = parseTime(timeLabel);
 
   const setTime = (next: { ampm?: '오전' | '오후'; h12?: number; minute?: number }) =>
@@ -90,12 +83,37 @@ export function DateTimeField({
           </Glyph>
           <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{dateLabel(dateISO)}</Text>
         </Pressable>
-        <Pressable style={[box, { flex: 1 }]} onPress={() => { setShowTime((s) => !s); setShowDate(false); }}>
-          <Glyph size={17} color={accent}>
+        <Pressable
+          style={[box, { flex: 1 }]}
+          onPress={() => {
+            if (allowNoTime && !hasTime) {
+              onChangeTime(_nowTimeLabel()); // 미정 → 현재 시각으로 켜기
+              setShowTime(true);
+            } else {
+              setShowTime((s) => !s);
+            }
+            setShowDate(false);
+          }}
+        >
+          <Glyph size={17} color={hasTime ? accent : c.text3}>
             <Circle cx="12" cy="12" r="9" />
             <Path d="M12 7v5l3.5 2" />
           </Glyph>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{timeLabelOf(ampm, h12, minute)}</Text>
+          <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: hasTime ? c.text : c.text3 }}>
+            {hasTime ? timeLabelOf(ampm, h12, minute) : '시간 미정'}
+          </Text>
+          {allowNoTime && hasTime ? (
+            <Pressable
+              onPress={() => { onChangeTime(''); setShowTime(false); }}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="시간 지우기"
+            >
+              <Glyph size={15} color={c.text3} strokeWidth={2.4}>
+                <Path d="M6 6l12 12M18 6l-12 12" />
+              </Glyph>
+            </Pressable>
+          ) : null}
         </Pressable>
       </View>
 
@@ -103,7 +121,7 @@ export function DateTimeField({
         <MiniMonthPicker value={dateISO} onChange={(iso) => { onChangeDate(iso); setShowDate(false); }} />
       ) : null}
 
-      {showTime ? (
+      {showTime && hasTime ? (
         <View style={{ gap: 12, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 12 }}>
           <Segmented
             options={[{ key: '오전', label: '오전' }, { key: '오후', label: '오후' }]}
