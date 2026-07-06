@@ -25,6 +25,7 @@ const META: Record<StatsCategory, { label: Msg; sub: Msg }> = {
   strength: { label: { en: 'Strength', ko: '근력' }, sub: { en: 'Weights · Bodyweight', ko: '웨이트 · 맨몸' } },
   match: { label: { en: 'Match', ko: '대전' }, sub: { en: 'Soccer · Baseball · Racket', ko: '축구 · 야구 · 라켓' } },
   performance: { label: { en: 'Shows', ko: '공연' }, sub: { en: 'Musical · Play · Concert', ko: '뮤지컬 · 연극 · 콘서트' } },
+  outing: { label: { en: 'Leisure', ko: '여가' }, sub: { en: 'Camping · Travel · Dining', ko: '캠핑 · 여행 · 맛집' } },
   free: { label: { en: 'Free', ko: '자유' }, sub: { en: 'Yoga · Reading · Notes', ko: '요가 · 독서 · 메모' } },
 };
 
@@ -45,6 +46,7 @@ export default function CategoryStatsScreen() {
     strength: { col: c.strength, soft: c.strengthSoft },
     match: { col: c.team, soft: c.teamSoft },
     performance: { col: c.perf, soft: c.perfSoft },
+    outing: { col: c.outing, soft: c.outingSoft },
     free: { col: c.accent, soft: c.accentSoft },
   };
   const { col, soft } = palette[category];
@@ -196,6 +198,27 @@ export default function CategoryStatsScreen() {
         ) : null}
 
         {/* ── 자유 ── */}
+        {category === 'outing' ? (
+          <>
+            <View style={{ flexDirection: 'row', gap: 9 }}>
+              {metric(tr({ en: 'Records', ko: '총 기록' }), <>{s.count}{unit(tr({ en: '×', ko: '회' }))}</>)}
+              {metric(tr({ en: 'Nights', ko: '숙박' }), <>{s.totalNights}{unit(tr({ en: 'nights', ko: '박' }))}</>)}
+              {metric(tr({ en: 'Places', ko: '장소' }), <>{s.placeCount}{unit(tr({ en: 'places', ko: '곳' }))}</>)}
+            </View>
+            {s.byActivity.length > 0 ? (
+              <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14, gap: 10 }}>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'By activity', ko: '활동별' })}</Text>
+                {s.byActivity.map((b: any) => (
+                  <View key={b.activity} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 12.5, color: c.text2 }}>{activityLabel(b.activity)}</Text>
+                    <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.text }}>{tr({ en: `${b.count}×`, ko: `${b.count}회` })}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </>
+        ) : null}
+
         {category === 'free' ? (
           <>
             <View style={{ flexDirection: 'row', gap: 9 }}>

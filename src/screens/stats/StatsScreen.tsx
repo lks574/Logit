@@ -25,6 +25,7 @@ const CAT_META: { key: StatsCategory; label: Msg; sub: Msg; icon: React.ReactNod
   { key: 'strength', label: { en: 'Strength', ko: '근력' }, sub: { en: 'Weights · Bodyweight', ko: '웨이트 · 맨몸' }, icon: <Path d="M6.5 6.5l11 11M4 8l-2 2 4 4M16 4l4 4-2 2M8 16l-4-4M16 8l4 4" /> },
   { key: 'match', label: { en: 'Match', ko: '대전' }, sub: { en: 'Soccer · Baseball · Racket', ko: '축구 · 야구 · 라켓' }, icon: (<><Circle cx="12" cy="12" r="8" /><Circle cx="12" cy="12" r="3" /></>) },
   { key: 'performance', label: { en: 'Shows', ko: '공연' }, sub: { en: 'Musical · Play · Concert', ko: '뮤지컬 · 연극 · 콘서트' }, icon: <Path d="M5 4h14v6a7 7 0 0 1-14 0z" /> },
+  { key: 'outing', label: { en: 'Leisure', ko: '여가' }, sub: { en: 'Camping · Travel · Dining', ko: '캠핑 · 여행 · 맛집' }, icon: <><Path d="M12 4 4 19h16z" /><Path d="M12 4v15" /></> },
   { key: 'free', label: { en: 'Free', ko: '자유' }, sub: { en: 'Yoga · Reading · Notes', ko: '요가 · 독서 · 메모' }, icon: <Path d="M4 20h4L18 10l-4-4L4 16v4zM13 5l4 4" /> },
 ];
 
@@ -44,7 +45,9 @@ export default function StatsScreen() {
           ? { c: c.team, s: c.teamSoft }
           : k === 'performance'
             ? { c: c.perf, s: c.perfSoft }
-            : { c: c.accent, s: c.accentSoft };
+            : k === 'outing'
+              ? { c: c.outing, s: c.outingSoft }
+              : { c: c.accent, s: c.accentSoft };
   const heatColor = (level: number) =>
     level === 0 ? c.surfaceAlt : level === 1 ? mix(c.accent, c.surfaceAlt, 30) : level === 2 ? mix(c.accent, c.surfaceAlt, 55) : c.accent;
 

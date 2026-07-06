@@ -189,16 +189,27 @@ export function statsSummary(records: StoredRecord[], filter: StatsFilter, today
 // ==== 통계 개편 (허브 + 카테고리 세부) ====
 
 export type StatsPeriod = 'month' | 'quarter' | 'year' | 'all';
-export type StatsCategory = 'cardio' | 'strength' | 'match' | 'performance' | 'free';
+export type StatsCategory = 'cardio' | 'strength' | 'match' | 'performance' | 'outing' | 'free';
 const CATEGORY_TEMPLATE: Record<StatsCategory, TemplateType> = {
   cardio: 'endurance',
   strength: 'setrep',
   match: 'match',
   performance: 'spectate',
+  outing: 'outing',
   free: 'free',
 };
 // 허브 표시 순서.
-export const STATS_CATEGORIES: StatsCategory[] = ['cardio', 'strength', 'match', 'performance', 'free'];
+export const STATS_CATEGORIES: StatsCategory[] = ['cardio', 'strength', 'match', 'performance', 'outing', 'free'];
+
+// 캠핑 등 기간 기록의 박 수(dateISO ~ fields.마지막일).
+const nightsOf = (r: StoredRecord) => {
+  const end = r.fields?.마지막일;
+  if (!end) return 0;
+  const s = Date.parse(r.dateISO + 'T00:00:00Z');
+  const e = Date.parse(end + 'T00:00:00Z');
+  if (Number.isNaN(s) || Number.isNaN(e)) return 0;
+  return Math.max(0, Math.round((e - s) / 86400000));
+};
 
 const isoPlusDays = (fromISO: string, i: number) => isoMinusDays(fromISO, -i);
 const parseVolumeKg = (s?: string) => (s ? parseFloat(s.replace(/[^0-9.]/g, '')) || 0 : 0); // "4,250kg" → 4250
@@ -291,6 +302,12 @@ export function statsHub(records: StoredRecord[], period: StatsPeriod, today: st
         en: `${rs.length}${avgR ? ` · ★ ${avgR}` : ''}`,
         ko: `${rs.length}편${avgR ? ` · 평점 ${avgR}` : ''}`,
       });
+    } else if (key === 'outing') {
+      const placeN = new Set(rs.map((r) => r.fields?.장소).filter(Boolean)).size;
+      subtitle = tr({
+        en: `${rs.length}×${placeN ? ` · ${placeN} places` : ''}`,
+        ko: `${rs.length}회${placeN ? ` · ${placeN}곳` : ''}`,
+      });
     } else {
       const bookN = new Set(rs.filter((r) => r.activity === '독서').map((r) => r.fields?.제목).filter(Boolean)).size;
       subtitle = tr({
@@ -375,6 +392,15 @@ export function categoryStats(records: StoredRecord[], category: StatsCategory, 
     for (const r of inRange) bySportMap.set(r.activity, (bySportMap.get(r.activity) ?? 0) + 1);
     const bySport = [...bySportMap.entries()].sort((a, b) => b[1] - a[1]).map(([activity, count]) => ({ activity, count }));
     return { category, count: inRange.length, wins, draws, losses, resultRecorded, winRate, bySport };
+  }
+
+  if (category === 'outing') {
+    const placeCount = new Set(inRange.map((r) => r.fields?.장소).filter(Boolean)).size;
+    const totalNights = inRange.reduce((a, r) => a + nightsOf(r), 0);
+    const byActMap = new Map<string, number>();
+    for (const r of inRange) byActMap.set(r.activity, (byActMap.get(r.activity) ?? 0) + 1);
+    const byActivity = [...byActMap.entries()].sort((a, b) => b[1] - a[1]).map(([activity, count]) => ({ activity, count }));
+    return { category, count: inRange.length, placeCount, totalNights, byActivity };
   }
 
   if (category === 'free') {
