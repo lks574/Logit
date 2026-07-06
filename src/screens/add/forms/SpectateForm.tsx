@@ -7,6 +7,7 @@ import { FormHeader } from '../../../components/FormHeader';
 import { RatingInput, CompanionField } from '../../../components/Rating';
 import { Stepper, Chip } from '../../../components/controls';
 import { Glyph, Path, Rect, Icon } from '../../../components/Glyph';
+import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
 import { useStore } from '../../../store/StoreContext';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
@@ -71,11 +72,14 @@ function InputCard({
 export default function SpectateForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord, today } = useStore();
+  const { addRecord, updateRecord, getRecord } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
   // Prefill controlled state from the record when editing.
+  // 날짜·시간: 편집이면 저장값, 신규면 현재 날짜/시각.
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? nowDateISO());
+  const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? nowTimeLabel());
   const [title, setTitle] = React.useState(record?.fields?.작품 ?? '');
   const [venue, setVenue] = React.useState(record?.fields?.공연장 ?? '');
   const [seat, setSeat] = React.useState(record?.fields?.좌석 ?? '');
@@ -127,8 +131,8 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
     const payload = {
       activity,
       template: 'spectate' as const,
-      dateISO: editing && record ? record.dateISO : today,
-      timeLabel: editing && record ? record.timeLabel : '방금',
+      dateISO,
+      timeLabel,
       meta: title ? `〈${title}〉${venue ? ' · ' + venue : ''}` : venue || '',
       rating,
       memo,
@@ -174,6 +178,15 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
             />
           </Pressable>
         </View>
+
+        {/* 날짜 · 시간 (편집 가능) */}
+        <DateTimeField
+          dateISO={dateISO}
+          timeLabel={timeLabel}
+          onChangeDate={setDateISO}
+          onChangeTime={setTimeLabel}
+          color={c.perf}
+        />
 
         {/* 공연장 / 좌석 */}
         <View style={{ flexDirection: 'row', gap: 10 }}>
