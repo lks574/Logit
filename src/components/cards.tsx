@@ -74,6 +74,9 @@ export function ActivityCard({
           {ratingFilled != null || memo ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 7 }}>
               {ratingFilled != null ? <Stars filled={ratingFilled} size={11} /> : null}
+              {ratingFilled != null && ratingFilled > 0 ? (
+                <Text style={{ fontSize: 11, fontWeight: '700', color: c.text2, marginLeft: 2 }}>{ratingFilled.toFixed(1)}</Text>
+              ) : null}
               {memo ? (
                 <Text numberOfLines={1} style={{ fontSize: 11, color: c.text2, marginLeft: 4, flex: 1 }}>
                   · {memo}

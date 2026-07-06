@@ -30,37 +30,70 @@ export function Stars({ filled, total = 5, size = 12 }: { filled: number; total?
   );
 }
 
-// RatingInput — 별 하나를 좌/우 반으로 나눠 탭 → 0.5 단위 선택.
+// 평점을 0.0~5.0, 0.1 단위로 정규화.
+const clampRating = (n: number) => Math.max(0, Math.min(5, Math.round(n * 10) / 10));
+
+// RatingInput — 별 위를 탭/드래그하면 위치에 비례해 평점(0.0~5.0, 0.1 단위)이 매겨진다.
+// 별은 연속 채움이라 4.7 같은 값도 시각적으로 표현된다.
+const STAR_GAP = 4;
 export function RatingInput({
   value,
   onChange,
-  size = 24,
+  size = 30,
 }: {
   value: number;
   onChange: (v: number) => void;
   size?: number;
 }) {
+  const { c } = useTheme();
+  const [w, setW] = React.useState(0);
+  // 드래그/탭 x좌표 → 평점. 전체 폭(별+간격)을 0~5로 매핑.
+  const fromX = (x: number) => {
+    if (w <= 0) return value;
+    return clampRating((Math.max(0, Math.min(w, x)) / w) * 5);
+  };
   return (
-    <View style={{ flexDirection: 'row', gap: 4 }}>
-      {[1, 2, 3, 4, 5].map((n) => (
-        <View key={n} style={{ width: size, height: size }}>
-          <Star fill={value - (n - 1)} size={size} />
-          <Pressable
-            onPress={() => onChange(n - 0.5)}
-            hitSlop={{ top: 6, bottom: 6 }}
-            accessibilityRole="button"
-            accessibilityLabel={tr({ en: `${n - 0.5} stars`, ko: `${n - 0.5}점` })}
-            style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: size / 2 }}
-          />
-          <Pressable
-            onPress={() => onChange(n)}
-            hitSlop={{ top: 6, bottom: 6, right: 4 }}
-            accessibilityRole="button"
-            accessibilityLabel={tr({ en: `${n} stars`, ko: `${n}점` })}
-            style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: size / 2 }}
-          />
-        </View>
-      ))}
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+      <View
+        onLayout={(e) => setW(e.nativeEvent.layout.width)}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderGrant={(e) => onChange(fromX(e.nativeEvent.locationX))}
+        onResponderMove={(e) => onChange(fromX(e.nativeEvent.locationX))}
+        accessibilityRole="adjustable"
+        accessibilityLabel={tr({ en: `Rating ${value.toFixed(1)} of 5`, ko: `평점 5점 만점에 ${value.toFixed(1)}점` })}
+        style={{ flexDirection: 'row', gap: STAR_GAP, paddingVertical: 4 }}
+      >
+        {[1, 2, 3, 4, 5].map((n) => (
+          <View key={n} pointerEvents="none" style={{ width: size, height: size }}>
+            <Star fill={value - (n - 1)} size={size} />
+          </View>
+        ))}
+      </View>
+      {/* 현재 평점 좌우 ±0.1 (드래그가 잘 안 될 때 대비) */}
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <Pressable
+          onPress={() => onChange(clampRating(value - 0.1))}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={tr({ en: 'Decrease 0.1', ko: '0.1 낮추기' })}
+          style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Text style={{ fontSize: 17, color: c.text2 }}>−</Text>
+        </Pressable>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: value > 0 ? c.text : c.text3, minWidth: 30, textAlign: 'center' }}>
+          {value.toFixed(1)}
+        </Text>
+        <Pressable
+          onPress={() => onChange(clampRating(value + 0.1))}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={tr({ en: 'Increase 0.1', ko: '0.1 높이기' })}
+          style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Text style={{ fontSize: 15, color: c.text2 }}>＋</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }

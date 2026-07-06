@@ -178,7 +178,12 @@ export default function DetailScreen() {
 
         {/* Rating + companion */}
         <Row gap={8} center style={{ flexWrap: 'wrap' }}>
-          <Stars filled={v.rating} size={14} />
+          {v.rating > 0 ? (
+            <Row gap={5} center>
+              <Stars filled={v.rating} size={14} />
+              <Text style={{ fontSize: 13, fontWeight: '700', color: c.text2 }}>{v.rating.toFixed(1)}</Text>
+            </Row>
+          ) : null}
           {v.companion.name ? (
             <View
               style={{
