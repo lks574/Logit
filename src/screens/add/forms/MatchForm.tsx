@@ -10,6 +10,7 @@ import { RatingInput, CompanionField } from '../../../components/Rating';
 import { Glyph, Path, Rect, Icon } from '../../../components/Glyph';
 import { SPORTS, ACTIVITY_TO_SPORT, sportFor } from '../../../data/sports';
 import { useStore } from '../../../store/StoreContext';
+import { resetToHome } from '../../../navigation/nav';
 import { useTheme } from '../../../theme/ThemeContext';
 
 // 3.3 MatchForm — 대전·경기형 (team color). Sport-agnostic: the 종목 chip drives
@@ -143,7 +144,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
       nav.goBack();
     } else {
       addRecord(payload);
-      nav.navigate('MainTabs');
+      resetToHome(nav);
     }
   };
 

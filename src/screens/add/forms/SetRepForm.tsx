@@ -9,6 +9,7 @@ import { Chip } from '../../../components/controls';
 import { CompanionField, RatingInput } from '../../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
 import { useStore } from '../../../store/StoreContext';
+import { resetToHome } from '../../../navigation/nav';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
 
@@ -127,7 +128,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
       nav.goBack();
     } else {
       addRecord(payload);
-      nav.navigate('MainTabs');
+      resetToHome(nav);
     }
   };
 

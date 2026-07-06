@@ -8,6 +8,7 @@ import { RatingInput, CompanionField } from '../../../components/Rating';
 import { Stepper, Chip } from '../../../components/controls';
 import { Glyph, Path, Rect, Icon } from '../../../components/Glyph';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
+import { resetToHome } from '../../../navigation/nav';
 import { useStore } from '../../../store/StoreContext';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
@@ -145,7 +146,7 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
       nav.goBack();
     } else {
       addRecord(payload);
-      nav.navigate('MainTabs');
+      resetToHome(nav);
     }
   };
 

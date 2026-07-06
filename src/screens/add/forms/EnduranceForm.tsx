@@ -9,6 +9,7 @@ import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
 import { Screen } from '../../../components/primitives';
 import { activities, colorsFor } from '../../../data/activities';
 import { useStore } from '../../../store/StoreContext';
+import { resetToHome } from '../../../navigation/nav';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
 
@@ -143,7 +144,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
       nav.goBack();
     } else {
       addRecord(payload);
-      nav.navigate('MainTabs');
+      resetToHome(nav);
     }
   };
 

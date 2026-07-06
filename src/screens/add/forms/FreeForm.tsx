@@ -10,6 +10,7 @@ import { RatingInput, CompanionField } from '../../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
 import { activities } from '../../../data/activities';
+import { resetToHome } from '../../../navigation/nav';
 import { useStore } from '../../../store/StoreContext';
 import { useTheme } from '../../../theme/ThemeContext';
 
@@ -104,7 +105,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
       nav.goBack();
     } else {
       addRecord(payload);
-      nav.navigate('MainTabs');
+      resetToHome(nav);
     }
   };
 
