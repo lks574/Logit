@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { Glyph, Path } from './Glyph';
+import { tr } from '../i18n/i18n';
 
 // 별 하나를 fill(0..1)만큼 채워 그린다: 빈 별 위에 채운 별을 width로 클립.
 // 0.5 단위 평점을 표현하려고 반쪽 채움을 지원한다.
@@ -48,14 +49,14 @@ export function RatingInput({
             onPress={() => onChange(n - 0.5)}
             hitSlop={{ top: 6, bottom: 6 }}
             accessibilityRole="button"
-            accessibilityLabel={`${n - 0.5}점`}
+            accessibilityLabel={tr({ en: `${n - 0.5} stars`, ko: `${n - 0.5}점` })}
             style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: size / 2 }}
           />
           <Pressable
             onPress={() => onChange(n)}
             hitSlop={{ top: 6, bottom: 6, right: 4 }}
             accessibilityRole="button"
-            accessibilityLabel={`${n}점`}
+            accessibilityLabel={tr({ en: `${n} stars`, ko: `${n}점` })}
             style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: size / 2 }}
           />
         </View>
@@ -134,7 +135,7 @@ export function CompanionChip({
           onPress={onRemove}
           hitSlop={6}
           accessibilityRole="button"
-          accessibilityLabel={`${name} 삭제`}
+          accessibilityLabel={tr({ en: `Remove ${name}`, ko: `${name} 삭제` })}
           style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}
         >
           <Glyph size={9} color={c.text2} strokeWidth={2.6}>
@@ -188,7 +189,7 @@ export function CompanionField({
           <TextInput
             value={draft}
             onChangeText={setDraft}
-            placeholder="이름"
+            placeholder={tr({ en: 'Name', ko: '이름' })}
             placeholderTextColor={c.text3}
             autoFocus
             returnKeyType="done"
@@ -198,7 +199,7 @@ export function CompanionField({
           />
         </View>
       ) : (
-        <CompanionChip name="추가" dashed onPress={() => setAdding(true)} />
+        <CompanionChip name={tr({ en: 'Add', ko: '추가' })} dashed onPress={() => setAdding(true)} />
       )}
     </View>
   );

@@ -5,6 +5,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { StoreProvider, useStore } from './src/store/StoreContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
+import { LanguageProvider, useLang, tr } from './src/i18n/i18n';
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
 import { seed } from './src/store/seed';
 
@@ -28,7 +29,10 @@ function PersistErrorBanner() {
       }}
     >
       <Text style={{ color: '#fff', fontSize: 12, fontWeight: '600', textAlign: 'center' }}>
-        저장 공간이 부족해 변경사항이 저장되지 않았습니다. 공간을 확보해 주세요.
+        {tr({
+          en: 'Changes could not be saved — storage is full. Please free up space.',
+          ko: '저장 공간이 부족해 변경사항이 저장되지 않았습니다. 공간을 확보해 주세요.',
+        })}
       </Text>
     </View>
   );
@@ -36,10 +40,13 @@ function PersistErrorBanner() {
 
 function Root() {
   const { scheme } = useTheme();
+  const { lang } = useLang();
   return (
     <>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      <RootNavigator />
+      {/* ponytail: 언어 변경 시 key로 네비게이터를 remount해 tr() 텍스트 전체를 갱신한다.
+          (위치 초기화 감수 — 드문 액션). 위치 유지가 필요해지면 useLang() 구독 훅으로 전환. */}
+      <RootNavigator key={lang} />
       <PersistErrorBanner />
     </>
   );
@@ -55,7 +62,7 @@ function AuthProfileSync() {
     if (!user) return;
     const email = user.email ?? '';
     if (!email) return;
-    const desired = user.displayName?.trim() || email.split('@')[0] || '사용자';
+    const desired = user.displayName?.trim() || email.split('@')[0] || tr({ en: 'User', ko: '사용자' });
     const accountChanged = email !== profile.email;
     const nameIsSeedDefault = profile.name === seed.profile.name; // 시드 기본값 = 사용자가 정한 게 아님
     if (accountChanged) {
@@ -70,14 +77,16 @@ function AuthProfileSync() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <StoreProvider>
-            <AuthProfileSync />
-            <Root />
-          </StoreProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <LanguageProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <StoreProvider>
+              <AuthProfileSync />
+              <Root />
+            </StoreProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </LanguageProvider>
     </SafeAreaProvider>
   );
 }

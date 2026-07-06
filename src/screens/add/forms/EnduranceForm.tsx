@@ -13,16 +13,19 @@ import { resetToHome } from '../../../navigation/nav';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
+import { tr } from '../../../i18n/i18n';
+import { activityLabel } from '../../../data/activities';
 
 // §03 3.1 거리·시간형 — EnduranceForm (cardio). Embeds §02 common skeleton.
 // HTML source of truth: Logit.dc.html 2.1 (296–358), 2.2 (359–437), 3.1 (444–502).
 
 // 기분 4단계 — 이모지 + 저장 라벨(fields.기분). 이모지라 표정 구분이 확실.
+// label은 저장·비교용(번역 금지), name은 표시용(a11y) 번역.
 const MOODS = [
-  { emoji: '🙁', label: '별로' },
-  { emoji: '😐', label: '보통' },
-  { emoji: '🙂', label: '좋음' },
-  { emoji: '😄', label: '최고' },
+  { emoji: '🙁', label: '별로', name: { en: 'Bad', ko: '별로' } },
+  { emoji: '😐', label: '보통', name: { en: 'Okay', ko: '보통' } },
+  { emoji: '🙂', label: '좋음', name: { en: 'Good', ko: '좋음' } },
+  { emoji: '😄', label: '최고', name: { en: 'Great', ko: '최고' } },
 ];
 
 export default function EnduranceForm({ activity, recordId }: { activity: string; recordId?: string }) {
@@ -110,7 +113,10 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
 
   const handleSave = () => {
     if (거리.trim() === '' && !시간val) {
-      Alert.alert('필수 항목', '거리 또는 시간을 입력해 주세요.');
+      Alert.alert(
+        tr({ en: 'Required', ko: '필수 항목' }),
+        tr({ en: 'Enter a distance or time.', ko: '거리 또는 시간을 입력해 주세요.' }),
+      );
       return;
     }
     // Build fields with only non-empty values so blank inputs are omitted.
@@ -154,7 +160,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
   return (
     <Screen edges={['top', 'bottom']}>
       <FormHeader
-        title={activity}
+        title={activityLabel(activity)}
         icon={<ActIcon size={13} color={color} strokeWidth={2.2} />}
         color={color}
         soft={soft}
@@ -185,7 +191,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
           >
             <Icon.refresh size={17} color={c.accent} />
             <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: c.accent }}>
-              최근 {activity} 기록 불러오기
+              {tr({ en: `Load last ${activityLabel(activity)} record`, ko: `최근 ${activityLabel(activity)} 기록 불러오기` })}
             </Text>
             <Icon.chevronRight size={16} color={c.accent} strokeWidth={2} />
           </Pressable>
@@ -221,13 +227,13 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
             </Glyph>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>건강 앱에서 불러오기</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'Import from health app', ko: '건강 앱에서 불러오기' })}</Text>
             <Text style={{ fontSize: 11, color: c.text3, marginTop: 1 }}>
-              HealthKit · Health Connect · 후속 지원
+              {tr({ en: 'HealthKit · Health Connect · coming later', ko: 'HealthKit · Health Connect · 후속 지원' })}
             </Text>
           </View>
           <View style={{ backgroundColor: c.surfaceAlt, borderRadius: 6, paddingVertical: 4, paddingHorizontal: 9 }}>
-            <Text style={{ fontSize: 11, fontWeight: '600', color: c.text3 }}>준비 중</Text>
+            <Text style={{ fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Coming soon', ko: '준비 중' })}</Text>
           </View>
         </View>
 
@@ -242,7 +248,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
               marginBottom: 7,
             }}
           >
-            핵심 수치 · 필수
+            {tr({ en: 'Key metrics · required', ko: '핵심 수치 · 필수' })}
           </Text>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Pressable
@@ -257,12 +263,12 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                 paddingHorizontal: 13,
               }}
             >
-              <Text style={{ fontSize: 12, color: c.text2 }}>거리</Text>
+              <Text style={{ fontSize: 12, color: c.text2 }}>{tr({ en: 'Distance', ko: '거리' })}</Text>
               <TextInput
                 ref={거리Ref}
                 value={거리}
                 onChangeText={set거리}
-                placeholder="예: 5.2km"
+                placeholder={tr({ en: 'e.g. 5.2km', ko: '예: 5.2km' })}
                 placeholderTextColor={c.text3}
                 style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 4, padding: 0 }}
               />
@@ -279,7 +285,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                 paddingHorizontal: 13,
               }}
             >
-              <Text style={{ fontSize: 12, color: c.text2 }}>시간</Text>
+              <Text style={{ fontSize: 12, color: c.text2 }}>{tr({ en: 'Time', ko: '시간' })}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 4 }}>
                 <TextInput
                   ref={분Ref}
@@ -291,7 +297,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                   maxLength={3}
                   style={{ fontSize: 24, fontWeight: '700', color: c.text, padding: 0, minWidth: 30 }}
                 />
-                <Text style={{ fontSize: 14, color: c.text2, marginHorizontal: 3, marginBottom: 3 }}>분</Text>
+                <Text style={{ fontSize: 14, color: c.text2, marginHorizontal: 3, marginBottom: 3 }}>{tr({ en: 'min', ko: '분' })}</Text>
                 <TextInput
                   value={초}
                   onChangeText={(v) => set초(v.replace(/[^\d]/g, '').slice(0, 2))}
@@ -301,7 +307,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                   maxLength={2}
                   style={{ fontSize: 24, fontWeight: '700', color: c.text, padding: 0, minWidth: 28 }}
                 />
-                <Text style={{ fontSize: 14, color: c.text2, marginLeft: 3, marginBottom: 3 }}>초</Text>
+                <Text style={{ fontSize: 14, color: c.text2, marginLeft: 3, marginBottom: 3 }}>{tr({ en: 'sec', ko: '초' })}</Text>
               </View>
             </Pressable>
           </View>
@@ -318,7 +324,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
               marginBottom: 7,
             }}
           >
-            상세 수치
+            {tr({ en: 'Detailed metrics', ko: '상세 수치' })}
           </Text>
           <View
             style={{
@@ -330,20 +336,20 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
             }}
           >
             <DetailRow>
-              <Text style={{ fontSize: 14, color: c.text }}>평균 페이스</Text>
+              <Text style={{ fontSize: 14, color: c.text }}>{tr({ en: 'Avg pace', ko: '평균 페이스' })}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
                 <Text style={{ fontSize: 15, fontWeight: '600', color: autoPace ? c.text : c.text3, textAlign: 'right', minWidth: 52 }}>
-                  {autoPace || '자동'}
+                  {autoPace || tr({ en: 'Auto', ko: '자동' })}
                 </Text>
                 <Text style={{ fontSize: 13, color: c.text3 }}>/km</Text>
                 <View style={{ backgroundColor: soft, borderRadius: 5, paddingVertical: 2, paddingHorizontal: 6 }}>
-                  <Text style={{ fontSize: 10, fontWeight: '600', color }}>자동</Text>
+                  <Text style={{ fontSize: 10, fontWeight: '600', color }}>{tr({ en: 'Auto', ko: '자동' })}</Text>
                 </View>
               </View>
             </DetailRow>
             <View style={{ height: 1, backgroundColor: c.border }} />
             <DetailRow onPress={() => 고도Ref.current?.focus()}>
-              <Text style={{ fontSize: 14, color: c.text }}>고도 상승</Text>
+              <Text style={{ fontSize: 14, color: c.text }}>{tr({ en: 'Elevation gain', ko: '고도 상승' })}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <TextInput
                   ref={고도Ref}
@@ -359,7 +365,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
             </DetailRow>
             <View style={{ height: 1, backgroundColor: c.border }} />
             <DetailRow onPress={() => 칼로리Ref.current?.focus()}>
-              <Text style={{ fontSize: 14, color: c.text }}>칼로리</Text>
+              <Text style={{ fontSize: 14, color: c.text }}>{tr({ en: 'Calories', ko: '칼로리' })}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <TextInput
                   ref={칼로리Ref}
@@ -379,7 +385,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                 <Glyph size={16} color={c.error} strokeWidth={2}>
                   <Path d="M20.8 5.6a5.5 5.5 0 0 0-8.8 1 5.5 5.5 0 0 0-8.8-1c-2.2 2.2-2 5.6.4 8L12 21l8.4-7.4c2.4-2.4 2.6-5.8.4-8z" />
                 </Glyph>
-                <Text style={{ fontSize: 14, color: c.text }}>평균 심박</Text>
+                <Text style={{ fontSize: 14, color: c.text }}>{tr({ en: 'Avg heart rate', ko: '평균 심박' })}</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 <TextInput
@@ -399,9 +405,9 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
 
         {/* 세부 입력 disclosure — collapsed by default (2.1) */}
         <DisclosureButton
-          title="세부 입력"
-          badge="선택"
-          subtitle="장소 · 동행 · 사진 · 메모 · 평점 · 기분"
+          title={tr({ en: 'More details', ko: '세부 입력' })}
+          badge={tr({ en: 'Optional', ko: '선택' })}
+          subtitle={tr({ en: 'Place · Companions · Photos · Memo · Rating · Mood', ko: '장소 · 동행 · 사진 · 메모 · 평점 · 기분' })}
           open={open}
           onPress={() => setOpen((v) => !v)}
           icon={<Icon.plus size={17} color={c.text2} strokeWidth={2.2} />}
@@ -412,7 +418,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
           <View style={{ gap: 15 }}>
             {/* 장소 */}
             <View>
-              <Text style={styleLabel(c)}>장소</Text>
+              <Text style={styleLabel(c)}>{tr({ en: 'Place', ko: '장소' })}</Text>
               <Pressable
                 onPress={() => placeRef.current?.focus()}
                 style={{
@@ -433,16 +439,19 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                   ref={placeRef}
                   value={place}
                   onChangeText={setPlace}
-                  placeholder="장소"
+                  placeholder={tr({ en: 'Place', ko: '장소' })}
                   placeholderTextColor={c.text3}
                   style={{ flex: 1, fontSize: 14, color: c.text, padding: 0 }}
                 />
               </Pressable>
               <View style={{ flexDirection: 'row', gap: 6, marginTop: 7 }}>
-                {['최근 · 올림픽공원', '양재천'].map((t) => (
+                {[
+                  { value: '올림픽공원', label: tr({ en: 'Recent · Olympic Park', ko: '최근 · 올림픽공원' }) },
+                  { value: '양재천', label: tr({ en: 'Yangjaecheon', ko: '양재천' }) },
+                ].map((t) => (
                   <Pressable
-                    key={t}
-                    onPress={() => setPlace(t.replace('최근 · ', ''))}
+                    key={t.value}
+                    onPress={() => setPlace(t.value)}
                     style={{
                       backgroundColor: c.surface,
                       borderWidth: 1,
@@ -452,7 +461,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                       paddingHorizontal: 9,
                     }}
                   >
-                    <Text style={{ fontSize: 12, color: c.text2 }}>{t}</Text>
+                    <Text style={{ fontSize: 12, color: c.text2 }}>{t.label}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -460,13 +469,13 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
 
             {/* 동행 */}
             <View>
-              <Text style={styleLabel(c)}>동행</Text>
+              <Text style={styleLabel(c)}>{tr({ en: 'Companions', ko: '동행' })}</Text>
               <CompanionField companions={companions} onChange={setCompanions} />
             </View>
 
             {/* 사진 */}
             <View>
-              <Text style={styleLabel(c)}>사진</Text>
+              <Text style={styleLabel(c)}>{tr({ en: 'Photos', ko: '사진' })}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {photos.map((uri) => (
                   <View key={uri} style={{ width: 60, height: 60 }}>
@@ -475,7 +484,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                       onPress={() => setPhotos((p) => p.filter((u) => u !== uri))}
                       hitSlop={6}
                       accessibilityRole="button"
-                      accessibilityLabel="사진 삭제"
+                      accessibilityLabel={tr({ en: 'Delete photo', ko: '사진 삭제' })}
                       style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: c.text, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.bg }}
                     >
                       <Glyph size={9} color={c.bg} strokeWidth={2.8}>
@@ -509,13 +518,13 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
 
             {/* 평점 */}
             <View>
-              <Text style={styleLabel(c)}>평점</Text>
+              <Text style={styleLabel(c)}>{tr({ en: 'Rating', ko: '평점' })}</Text>
               <RatingInput value={rating} onChange={setRating} size={20} />
             </View>
 
             {/* 기분 */}
             <View>
-              <Text style={styleLabel(c)}>기분</Text>
+              <Text style={styleLabel(c)}>{tr({ en: 'Mood', ko: '기분' })}</Text>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {MOODS.map((m, i) => {
                   const on = mood === i;
@@ -525,7 +534,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                       key={i}
                       onPress={() => setMood(on ? -1 : i)}
                       accessibilityRole="button"
-                      accessibilityLabel={`기분 ${m.label}`}
+                      accessibilityLabel={tr({ en: `Mood ${tr(m.name)}`, ko: `기분 ${tr(m.name)}` })}
                       accessibilityState={{ selected: on }}
                       style={{
                         flex: 1,
@@ -548,7 +557,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
 
             {/* 메모 */}
             <View>
-              <Text style={styleLabel(c)}>메모</Text>
+              <Text style={styleLabel(c)}>{tr({ en: 'Memo', ko: '메모' })}</Text>
               <Pressable
                 onPress={() => memoRef.current?.focus()}
                 style={{
@@ -564,7 +573,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
                   value={memo}
                   onChangeText={setMemo}
                   multiline
-                  placeholder="메모"
+                  placeholder={tr({ en: 'Memo', ko: '메모' })}
                   placeholderTextColor={c.text3}
                   style={{ fontSize: 13, color: c.text, lineHeight: 20, padding: 0 }}
                 />
@@ -583,7 +592,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
             }}
           >
             <Icon.check size={14} color={c.text3} />
-            <Text style={{ fontSize: 12, color: c.text3 }}>오프라인에서도 즉시 저장됩니다</Text>
+            <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: 'Saved instantly, even offline', ko: '오프라인에서도 즉시 저장됩니다' })}</Text>
           </View>
         )}
       </View>

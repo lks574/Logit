@@ -6,6 +6,7 @@ import { Glyph, Path } from '../../components/Glyph';
 import { PrimaryButton, SocialButton, OrDivider, FooterLink } from '../../components/auth-ui';
 import { useAuth } from '../../auth/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
+import { tr } from '../../i18n/i18n';
 
 // 0.1 시작 — 첫 진입. 인증 방식 선택.
 export default function WelcomeScreen() {
@@ -17,7 +18,7 @@ export default function WelcomeScreen() {
     try {
       await fn();
     } catch (e) {
-      Alert.alert('로그인', e instanceof Error ? e.message : '로그인에 실패했어요.');
+      Alert.alert(tr({ en: 'Sign in', ko: '로그인' }), e instanceof Error ? e.message : tr({ en: 'Sign-in failed.', ko: '로그인에 실패했어요.' }));
     }
   };
 
@@ -45,20 +46,20 @@ export default function WelcomeScreen() {
         <View style={{ alignItems: 'center' }}>
           <Text style={{ fontSize: 28, fontWeight: '700', letterSpacing: -0.84, color: c.text }}>Logit</Text>
           <Text style={{ fontSize: 14.5, color: c.text2, lineHeight: 22, textAlign: 'center', marginTop: 10 }}>
-            운동도, 공연도, 하루의 기록도.{'\n'}흩어진 순간을 한 곳에 쌓아요.
+            {tr({ en: 'Workouts, shows, and everyday notes.\nStack your scattered moments in one place.', ko: '운동도, 공연도, 하루의 기록도.\n흩어진 순간을 한 곳에 쌓아요.' })}
           </Text>
         </View>
       </View>
 
       <View style={{ gap: 10, paddingBottom: 8 }}>
-        <PrimaryButton label="이메일로 시작하기" onPress={() => nav.navigate('SignUp')} />
+        <PrimaryButton label={tr({ en: 'Start with email', ko: '이메일로 시작하기' })} onPress={() => nav.navigate('SignUp')} />
         <View style={{ marginVertical: 4 }}>
           <OrDivider />
         </View>
-        <SocialButton provider="google" label="Google로 계속하기" onPress={social(signInWithGoogle)} />
-        <SocialButton provider="apple" label="Apple로 계속하기" onPress={social(signInWithApple)} />
+        <SocialButton provider="google" label={tr({ en: 'Continue with Google', ko: 'Google로 계속하기' })} onPress={social(signInWithGoogle)} />
+        <SocialButton provider="apple" label={tr({ en: 'Continue with Apple', ko: 'Apple로 계속하기' })} onPress={social(signInWithApple)} />
         <View style={{ marginTop: 6 }}>
-          <FooterLink text="이미 계정이 있으신가요?" linkText="로그인" onPress={() => nav.navigate('SignIn')} />
+          <FooterLink text={tr({ en: 'Already have an account?', ko: '이미 계정이 있으신가요?' })} linkText={tr({ en: 'Sign in', ko: '로그인' })} onPress={() => nav.navigate('SignIn')} />
         </View>
       </View>
     </Screen>

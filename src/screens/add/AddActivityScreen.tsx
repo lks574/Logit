@@ -8,21 +8,22 @@ import { activities } from '../../data/activities';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStore } from '../../store/StoreContext';
 import { templateColor, TemplateType } from '../../theme/tokens';
+import { Msg, tr } from '../../i18n/i18n';
 
 type TemplateDef = {
   id: TemplateType;
-  name: string;
-  example: string;
+  name: Msg;
+  example: Msg;
   icon: (typeof Icon)[keyof typeof Icon];
 };
 
 // The 5 record templates (6.1 활동 직접 추가). name / example sports / icon per prompt.
 const TEMPLATES: TemplateDef[] = [
-  { id: 'endurance', name: '거리·시간형', example: '거리 · 시간 · 페이스', icon: Icon.running },
-  { id: 'setrep', name: '세트·횟수형', example: '종목 · 세트 · 반복 · 난이도', icon: Icon.dumbbell },
-  { id: 'match', name: '대전·경기형', example: '상대 · 스코어 · 승패', icon: Icon.soccer },
-  { id: 'spectate', name: '관람·공연형', example: '장소 · 좌석 · 평점', icon: Icon.performance },
-  { id: 'free', name: '자유 기록형', example: '제목 · 메모 · 사진', icon: Icon.yoga },
+  { id: 'endurance', name: { en: 'Distance · Time', ko: '거리·시간형' }, example: { en: 'Distance · Time · Pace', ko: '거리 · 시간 · 페이스' }, icon: Icon.running },
+  { id: 'setrep', name: { en: 'Sets · Reps', ko: '세트·횟수형' }, example: { en: 'Exercise · Sets · Reps · Level', ko: '종목 · 세트 · 반복 · 난이도' }, icon: Icon.dumbbell },
+  { id: 'match', name: { en: 'Match', ko: '대전·경기형' }, example: { en: 'Opponent · Score · Result', ko: '상대 · 스코어 · 승패' }, icon: Icon.soccer },
+  { id: 'spectate', name: { en: 'Performance', ko: '관람·공연형' }, example: { en: 'Venue · Seat · Rating', ko: '장소 · 좌석 · 평점' }, icon: Icon.performance },
+  { id: 'free', name: { en: 'Free record', ko: '자유 기록형' }, example: { en: 'Title · Memo · Photo', ko: '제목 · 메모 · 사진' }, icon: Icon.yoga },
 ];
 
 export default function AddActivityScreen() {
@@ -39,7 +40,7 @@ export default function AddActivityScreen() {
     if (!trimmed) return; // skip when name empty
     // 중복이면 저장된 척 이동하지 않고 알린다(빌트인·커스텀 모두 검사).
     if (activities[trimmed] || customActivities.some((a) => a.name === trimmed)) {
-      Alert.alert('이미 있는 활동', '같은 이름의 활동이 이미 있어요.');
+      Alert.alert(tr({ en: 'Activity exists', ko: '이미 있는 활동' }), tr({ en: 'An activity with the same name already exists.', ko: '같은 이름의 활동이 이미 있어요.' }));
       return;
     }
     addActivity({ name: trimmed, template: selected });
@@ -50,7 +51,7 @@ export default function AddActivityScreen() {
     <Screen edges={['top', 'bottom']}>
       {/* Header: 뒤로 / 활동 추가 / 저장 */}
       <ScreenHeader
-        title="활동 추가"
+        title={tr({ en: 'Add activity', ko: '활동 추가' })}
         onBack={onCancel}
         style={{ paddingTop: 6 }}
         right={
@@ -59,7 +60,7 @@ export default function AddActivityScreen() {
             hitSlop={8}
             style={{ height: 30, paddingHorizontal: 12, borderRadius: 999, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}
           >
-            <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>저장</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>{tr({ en: 'Save', ko: '저장' })}</Text>
           </Pressable>
         }
       />
@@ -67,7 +68,7 @@ export default function AddActivityScreen() {
       <View style={{ paddingHorizontal: 16, paddingTop: 2, gap: 16, paddingBottom: 24 }}>
         {/* 활동 이름 */}
         <View style={{ gap: 8 }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>활동 이름</Text>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>{tr({ en: 'Activity name', ko: '활동 이름' })}</Text>
           <View
             style={{
               backgroundColor: c.surface,
@@ -81,7 +82,7 @@ export default function AddActivityScreen() {
             <TextInput
               value={name}
               onChangeText={setName}
-              placeholder="클라이밍"
+              placeholder={tr({ en: 'Climbing', ko: '클라이밍' })}
               placeholderTextColor={c.text}
               style={{ fontSize: 19, fontWeight: '700', color: c.text, padding: 0 }}
             />
@@ -90,7 +91,7 @@ export default function AddActivityScreen() {
 
         {/* 기록 템플릿 */}
         <View style={{ gap: 8 }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>기록 템플릿</Text>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>{tr({ en: 'Record template', ko: '기록 템플릿' })}</Text>
           {TEMPLATES.map((t) => {
             const keys = templateColor[t.id];
             const tColor = c[keys.color];
@@ -133,9 +134,9 @@ export default function AddActivityScreen() {
                       color: isSel ? c.text : c.text2,
                     }}
                   >
-                    {t.name}
+                    {tr(t.name)}
                   </Text>
-                  <Text style={{ fontSize: 11, color: c.text2, marginTop: 1 }}>{t.example}</Text>
+                  <Text style={{ fontSize: 11, color: c.text2, marginTop: 1 }}>{tr(t.example)}</Text>
                 </View>
                 {isSel ? (
                   <Glyph size={18} color={tColor} strokeWidth={2.6}>
@@ -167,7 +168,7 @@ export default function AddActivityScreen() {
             </Glyph>
           </View>
           <Text style={{ fontSize: 12.5, color: c.text, lineHeight: 19, flex: 1 }}>
-            템플릿만 고르면 즉시 반영, 앱 업데이트 불필요.
+            {tr({ en: 'Just pick a template — applied instantly, no app update needed.', ko: '템플릿만 고르면 즉시 반영, 앱 업데이트 불필요.' })}
           </Text>
         </View>
       </View>

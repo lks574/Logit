@@ -6,6 +6,7 @@ import { Icon } from '../../components/Glyph';
 import { useStore } from '../../store/StoreContext';
 import { useAuth } from '../../auth/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
+import { tr } from '../../i18n/i18n';
 
 // 회원 프로필 편집. 이름(닉네임)은 로컬 + 계정(Firebase displayName) 양쪽에 저장.
 // 이메일은 계정 식별자라 수정 불가(읽기전용). 아바타 이니셜은 이름 첫 글자에서 파생.
@@ -77,7 +78,7 @@ export default function ProfileEditScreen() {
         }}
       >
         <Text style={{ fontSize: 15, color: c.text3 }}>{value || '—'}</Text>
-        <Text style={{ fontSize: 11, color: c.text3 }}>변경 불가</Text>
+        <Text style={{ fontSize: 11, color: c.text3 }}>{tr({ en: 'Locked', ko: '변경 불가' })}</Text>
       </View>
     </View>
   );
@@ -109,7 +110,7 @@ export default function ProfileEditScreen() {
         >
           <Icon.chevronLeft size={16} color={c.text2} strokeWidth={2.4} />
         </Pressable>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>프로필</Text>
+        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>{tr({ en: 'Profile', ko: '프로필' })}</Text>
         <Pressable
           onPress={onSave}
           hitSlop={8}
@@ -122,7 +123,7 @@ export default function ProfileEditScreen() {
             justifyContent: 'center',
           }}
         >
-          <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>저장</Text>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>{tr({ en: 'Save', ko: '저장' })}</Text>
         </Pressable>
       </View>
 
@@ -143,8 +144,8 @@ export default function ProfileEditScreen() {
           </View>
         </View>
 
-        {editableCard('이름', name, setName, '이름')}
-        {readonlyCard('이메일', email)}
+        {editableCard(tr({ en: 'Name', ko: '이름' }), name, setName, tr({ en: 'Name', ko: '이름' }))}
+        {readonlyCard(tr({ en: 'Email', ko: '이메일' }), email)}
       </View>
     </Screen>
   );

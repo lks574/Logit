@@ -4,14 +4,12 @@ import { Glyph, Path, Rect, Circle } from './Glyph';
 import { Segmented } from './controls';
 import { MiniMonthPicker } from './MiniMonthPicker';
 import { useTheme } from '../theme/ThemeContext';
+import { tr } from '../i18n/i18n';
+import { monthDayWeekday } from '../lib/date';
 
 // 날짜·시간 편집 필드(폼 공용). dateISO='YYYY-MM-DD', timeLabel='오전/오후 H:MM'.
 // 탭하면 인라인 달력 / 시간 피커가 펼쳐진다.
 
-const dateLabel = (iso: string) => {
-  const wd = ['일', '월', '화', '수', '목', '금', '토'][new Date(iso + 'T00:00:00Z').getUTCDay()];
-  return `${+iso.slice(5, 7)}월 ${+iso.slice(8, 10)}일 (${wd})`;
-};
 const parseTime = (label?: string) => {
   const m = label?.match(/(오전|오후)\s*(\d+):(\d+)/);
   if (!m) return { ampm: '오후' as '오전' | '오후', h12: 3, minute: 0 };
@@ -81,7 +79,7 @@ export function DateTimeField({
             <Rect x="3" y="4.5" width="18" height="16" rx="2.5" />
             <Path d="M3 9.5h18M8 2.5v4M16 2.5v4" />
           </Glyph>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{dateLabel(dateISO)}</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{monthDayWeekday(dateISO)}</Text>
         </Pressable>
         <Pressable
           style={[box, { flex: 1 }]}
@@ -100,14 +98,14 @@ export function DateTimeField({
             <Path d="M12 7v5l3.5 2" />
           </Glyph>
           <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: hasTime ? c.text : c.text3 }}>
-            {hasTime ? timeLabelOf(ampm, h12, minute) : '시간 미정'}
+            {hasTime ? timeLabelOf(ampm, h12, minute) : tr({ en: 'No time', ko: '시간 미정' })}
           </Text>
           {allowNoTime && hasTime ? (
             <Pressable
               onPress={() => { onChangeTime(''); setShowTime(false); }}
               hitSlop={8}
               accessibilityRole="button"
-              accessibilityLabel="시간 지우기"
+              accessibilityLabel={tr({ en: 'Clear time', ko: '시간 지우기' })}
             >
               <Glyph size={15} color={c.text3} strokeWidth={2.4}>
                 <Path d="M6 6l12 12M18 6l-12 12" />
@@ -124,14 +122,14 @@ export function DateTimeField({
       {showTime && hasTime ? (
         <View style={{ gap: 12, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 12 }}>
           <Segmented
-            options={[{ key: '오전', label: '오전' }, { key: '오후', label: '오후' }]}
+            options={[{ key: '오전', label: tr({ en: 'AM', ko: '오전' }) }, { key: '오후', label: tr({ en: 'PM', ko: '오후' }) }]}
             value={ampm}
             onChange={(v) => setTime({ ampm: v as '오전' | '오후' })}
             color={accent}
           />
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' }}>
-            <Wheel value={`${h12}시`} onDec={() => setTime({ h12: h12 === 1 ? 12 : h12 - 1 })} onInc={() => setTime({ h12: h12 === 12 ? 1 : h12 + 1 })} />
-            <Wheel value={`${String(minute).padStart(2, '0')}분`} onDec={() => setTime({ minute: (minute + 55) % 60 })} onInc={() => setTime({ minute: (minute + 5) % 60 })} />
+            <Wheel value={tr({ en: `${h12} h`, ko: `${h12}시` })} onDec={() => setTime({ h12: h12 === 1 ? 12 : h12 - 1 })} onInc={() => setTime({ h12: h12 === 12 ? 1 : h12 + 1 })} />
+            <Wheel value={tr({ en: `${String(minute).padStart(2, '0')} m`, ko: `${String(minute).padStart(2, '0')}분` })} onDec={() => setTime({ minute: (minute + 55) % 60 })} onInc={() => setTime({ minute: (minute + 5) % 60 })} />
           </View>
         </View>
       ) : null}

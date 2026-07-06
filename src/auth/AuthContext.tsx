@@ -15,6 +15,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../lib/firebase';
 import { googleWebClientId, googleIosClientId, isFirebaseConfigured } from '../lib/firebaseConfig';
+import { tr } from '../i18n/i18n';
 
 type Status = 'loading' | 'authed' | 'unauthed';
 
@@ -41,7 +42,7 @@ const AuthContext = React.createContext<AuthContextValue | null>(null);
 // AsyncStorage로 세션만 유지한다(검증·네트워크 없음). firebaseConfig를 채우면 자동으로 실제 인증으로 전환.
 const MOCK_KEY = 'logit-mock-auth';
 const credError = () => {
-  const e: any = new Error('이메일과 비밀번호를 입력해주세요.');
+  const e: any = new Error(tr({ en: 'Please enter your email and password.', ko: '이메일과 비밀번호를 입력해주세요.' }));
   e.code = 'auth/invalid-credential';
   return e;
 };
@@ -70,7 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const mockSignIn = async (email: string, displayName?: string) => {
     const u: AppUser = {
       email: email.trim(),
-      displayName: displayName?.trim() || email.trim().split('@')[0] || '기록하는 사람',
+      displayName: displayName?.trim() || email.trim().split('@')[0] || tr({ en: 'Logger', ko: '기록하는 사람' }),
       emailVerified: true, // mock은 인증 게이트를 건너뛴다(메일 발송 불가).
     };
     await AsyncStorage.setItem(MOCK_KEY, JSON.stringify(u));
@@ -130,17 +131,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
     },
     signInWithGoogle: async () => {
-      if (!isFirebaseConfigured) return mockSignIn('google.user@logit.dev', 'Google 사용자');
+      if (!isFirebaseConfigured) return mockSignIn('google.user@logit.dev', tr({ en: 'Google User', ko: 'Google 사용자' }));
       const { GoogleSignin } = await loadGoogleSignin();
       GoogleSignin.configure({ webClientId: googleWebClientId, iosClientId: googleIosClientId });
       await GoogleSignin.hasPlayServices();
       const res: any = await GoogleSignin.signIn();
       const idToken = res?.data?.idToken ?? res?.idToken;
-      if (!idToken) throw new Error('Google 로그인에서 idToken을 받지 못했어요.');
+      if (!idToken) throw new Error(tr({ en: 'Couldn’t get an idToken from Google sign-in.', ko: 'Google 로그인에서 idToken을 받지 못했어요.' }));
       await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
     },
     signInWithApple: async () => {
-      if (!isFirebaseConfigured) return mockSignIn('apple.user@logit.dev', 'Apple 사용자');
+      if (!isFirebaseConfigured) return mockSignIn('apple.user@logit.dev', tr({ en: 'Apple User', ko: 'Apple 사용자' }));
       const AppleAuthentication = await loadAppleAuth();
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
@@ -148,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       });
-      if (!credential.identityToken) throw new Error('Apple 로그인에서 토큰을 받지 못했어요.');
+      if (!credential.identityToken) throw new Error(tr({ en: 'Couldn’t get a token from Apple sign-in.', ko: 'Apple 로그인에서 토큰을 받지 못했어요.' }));
       const provider = new OAuthProvider('apple.com');
       await signInWithCredential(auth, provider.credential({ idToken: credential.identityToken }));
     },
@@ -177,13 +178,13 @@ async function loadGoogleSignin() {
   try {
     return await import('@react-native-google-signin/google-signin');
   } catch {
-    throw new Error('Google 로그인 모듈이 없어요. dev 빌드를 재생성해주세요.');
+    throw new Error(tr({ en: 'Google sign-in module is missing. Please rebuild the dev build.', ko: 'Google 로그인 모듈이 없어요. dev 빌드를 재생성해주세요.' }));
   }
 }
 async function loadAppleAuth() {
   try {
     return await import('expo-apple-authentication');
   } catch {
-    throw new Error('Apple 로그인 모듈이 없어요. dev 빌드를 재생성해주세요.');
+    throw new Error(tr({ en: 'Apple sign-in module is missing. Please rebuild the dev build.', ko: 'Apple 로그인 모듈이 없어요. dev 빌드를 재생성해주세요.' }));
   }
 }

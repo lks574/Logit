@@ -7,6 +7,7 @@ import { AuthInput, AuthIcon, PrimaryButton, BackButton, FooterLink } from '../.
 import { useAuth } from '../../auth/AuthContext';
 import { authErrorMessage } from '../../auth/errors';
 import { useTheme } from '../../theme/ThemeContext';
+import { tr } from '../../i18n/i18n';
 
 const EMAIL_OK = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
 
@@ -22,7 +23,7 @@ export default function PasswordResetScreen() {
 
   const onSend = async () => {
     if (loading) return;
-    if (!EMAIL_OK(email)) return setError('이메일 형식이 올바르지 않아요.');
+    if (!EMAIL_OK(email)) return setError(tr({ en: 'That email address isn’t valid.', ko: '이메일 형식이 올바르지 않아요.' }));
     setError(undefined);
     setLoading(true);
     try {
@@ -58,14 +59,14 @@ export default function PasswordResetScreen() {
         </Glyph>
       </View>
 
-      <Text style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.72, color: c.text }}>비밀번호 재설정</Text>
+      <Text style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.72, color: c.text }}>{tr({ en: 'Reset password', ko: '비밀번호 재설정' })}</Text>
       <Text style={{ fontSize: 14, color: c.text2, lineHeight: 22, marginTop: 8 }}>
-        가입한 이메일을 입력하면 재설정{'\n'}링크를 보내드려요.
+        {tr({ en: 'Enter your email and we’ll send you\na reset link.', ko: '가입한 이메일을 입력하면 재설정\n링크를 보내드려요.' })}
       </Text>
 
       <View style={{ gap: 14, marginTop: 26 }}>
         <AuthInput
-          label="이메일"
+          label={tr({ en: 'Email', ko: '이메일' })}
           icon={<AuthIcon.mail size={17} color={c.text3} />}
           value={email}
           onChangeText={(v) => {
@@ -78,9 +79,9 @@ export default function PasswordResetScreen() {
           onSubmitEditing={onSend}
         />
         {sent ? (
-          <Text style={{ fontSize: 12.5, color: c.success }}>재설정 링크를 보냈어요. 메일함을 확인해주세요.</Text>
+          <Text style={{ fontSize: 12.5, color: c.success }}>{tr({ en: 'Reset link sent. Please check your inbox.', ko: '재설정 링크를 보냈어요. 메일함을 확인해주세요.' })}</Text>
         ) : null}
-        <PrimaryButton label="재설정 링크 보내기" onPress={onSend} loading={loading} disabled={email.trim().length === 0} />
+        <PrimaryButton label={tr({ en: 'Send reset link', ko: '재설정 링크 보내기' })} onPress={onSend} loading={loading} disabled={email.trim().length === 0} />
       </View>
 
       <View
@@ -96,12 +97,12 @@ export default function PasswordResetScreen() {
       >
         <AuthIcon.info size={17} color={c.accent} />
         <Text style={{ flex: 1, fontSize: 12.5, color: c.text2, lineHeight: 18 }}>
-          Google·Apple로 가입했다면 해당 버튼으로 로그인해주세요.
+          {tr({ en: 'If you signed up with Google or Apple, use that button to sign in.', ko: 'Google·Apple로 가입했다면 해당 버튼으로 로그인해주세요.' })}
         </Text>
       </View>
 
       <View style={{ marginTop: 24 }}>
-        <FooterLink text="비밀번호가 기억났어요" linkText="로그인" onPress={() => nav.goBack()} />
+        <FooterLink text={tr({ en: 'Remembered your password?', ko: '비밀번호가 기억났어요' })} linkText={tr({ en: 'Sign in', ko: '로그인' })} onPress={() => nav.goBack()} />
       </View>
     </Screen>
   );

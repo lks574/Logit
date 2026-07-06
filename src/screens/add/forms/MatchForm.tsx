@@ -13,6 +13,8 @@ import { useStore } from '../../../store/StoreContext';
 import { resetToHome } from '../../../navigation/nav';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
 import { useTheme } from '../../../theme/ThemeContext';
+import { tr } from '../../../i18n/i18n';
+import { activityLabel } from '../../../data/activities';
 
 // 3.3 MatchForm — 대전·경기형 (team color). Sport-agnostic: the 종목 chip drives
 // the swappable "종목별 핵심 기록" fields (schema in src/data/sports.ts), the score
@@ -63,13 +65,13 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
 
   const resultOptions = sport.team
     ? [
-        { key: 'win', label: '승' },
-        { key: 'draw', label: '무' },
-        { key: 'loss', label: '패' },
+        { key: 'win', label: tr({ en: 'Win', ko: '승' }), save: '승' },
+        { key: 'draw', label: tr({ en: 'Draw', ko: '무' }), save: '무' },
+        { key: 'loss', label: tr({ en: 'Loss', ko: '패' }), save: '패' },
       ]
     : [
-        { key: 'win', label: '승' },
-        { key: 'loss', label: '패' },
+        { key: 'win', label: tr({ en: 'Win', ko: '승' }), save: '승' },
+        { key: 'loss', label: tr({ en: 'Loss', ko: '패' }), save: '패' },
       ];
   // 결과: record.fields.결과 라벨(승/무/패) → segment key.
   const resultFromLabel = (label?: string) =>
@@ -107,10 +109,13 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
   const handleSave = () => {
     const hasField = sport.fields.some((f) => (fieldValues[f.key] ?? '').trim() !== '');
     if (meScore.trim() === '' && oppScore.trim() === '' && oppName.trim() === '' && !hasField) {
-      Alert.alert('필수 항목', '스코어나 상대, 기록을 입력해 주세요.');
+      Alert.alert(
+        tr({ en: 'Required', ko: '필수 항목' }),
+        tr({ en: 'Enter a score, opponent, or record.', ko: '스코어나 상대, 기록을 입력해 주세요.' }),
+      );
       return;
     }
-    const resultLabel = resultOptions.find((o) => o.key === result)?.label ?? '승';
+    const resultLabel = resultOptions.find((o) => o.key === result)?.save ?? '승';
     const hasScore = meScore.trim() !== '' || oppScore.trim() !== '';
     const score = hasScore ? `${meScore.trim() || '0'}:${oppScore.trim() || '0'}` : '';
     const meNameOut = meName.trim();
@@ -155,7 +160,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
   return (
     <Screen edges={['top', 'bottom']}>
       <FormHeader
-        title={activity}
+        title={activityLabel(activity)}
         icon={iconFor(sportKey)}
         color={c.team}
         soft={c.teamSoft}
@@ -169,19 +174,19 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
 
         {/* 종목 chips — selecting one swaps the key-record slots below */}
         <View>
-          {sectionLabel('종목')}
+          {sectionLabel(tr({ en: 'Sport', ko: '종목' }))}
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
             {SPORTS.map((s) => (
               <Chip
                 key={s.key}
-                label={s.label}
+                label={tr(s.label)}
                 selected={s.key === sportKey}
                 color={c.team}
                 onPress={() => selectSport(s.key)}
               />
             ))}
             <Chip
-              label="변경"
+              label={tr({ en: 'Change', ko: '변경' })}
               dashed
               icon={<Icon.chevronDown size={12} color={c.text3} strokeWidth={2.4} />}
             />
@@ -202,11 +207,11 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
           }}
         >
           <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={{ fontSize: 11, color: c.text3, marginBottom: 5 }}>{sport.meLabel}</Text>
+            <Text style={{ fontSize: 11, color: c.text3, marginBottom: 5 }}>{tr(sport.meLabel)}</Text>
             <TextInput
               value={meName}
               onChangeText={setMeName}
-              placeholder={sport.meLabel}
+              placeholder={tr(sport.meLabel)}
               placeholderTextColor={c.text3}
               style={{ fontSize: 14, fontWeight: '700', color: c.team, textAlign: 'center', padding: 0, alignSelf: 'stretch' }}
             />
@@ -231,11 +236,11 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
             />
           </View>
           <View style={{ flex: 1, alignItems: 'center' }}>
-            <Text style={{ fontSize: 11, color: c.text3, marginBottom: 5 }}>{sport.oppLabel}</Text>
+            <Text style={{ fontSize: 11, color: c.text3, marginBottom: 5 }}>{tr(sport.oppLabel)}</Text>
             <TextInput
               value={oppName}
               onChangeText={setOppName}
-              placeholder={sport.oppLabel}
+              placeholder={tr(sport.oppLabel)}
               placeholderTextColor={c.text3}
               style={{ fontSize: 14, fontWeight: '700', color: c.text, textAlign: 'center', padding: 0, alignSelf: 'stretch' }}
             />
@@ -256,8 +261,8 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
         {/* 종목별 핵심 기록 — 선택된 종목의 필드 스키마(src/data/sports.ts)로 렌더 */}
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 7 }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: c.team, letterSpacing: 0.4 }}>종목별 핵심 기록</Text>
-            <Text style={{ fontSize: 10, color: c.text3 }}>· 종목별 템플릿</Text>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: c.team, letterSpacing: 0.4 }}>{tr({ en: 'Key sport records', ko: '종목별 핵심 기록' })}</Text>
+            <Text style={{ fontSize: 10, color: c.text3 }}>{tr({ en: '· Sport template', ko: '· 종목별 템플릿' })}</Text>
           </View>
 
           {/* text 필드(게임스코어·포지션) — 전체 폭 입력행 */}
@@ -269,12 +274,12 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
                   onPress={() => fieldRefs.current[f.key]?.focus()}
                   style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 13 }}
                 >
-                  <Text style={{ fontSize: 12, color: c.text2 }}>{f.label}</Text>
+                  <Text style={{ fontSize: 12, color: c.text2 }}>{tr(f.label)}</Text>
                   <TextInput
                     ref={(r) => { fieldRefs.current[f.key] = r; }}
                     value={fieldValues[f.key] ?? ''}
                     onChangeText={(t) => setFieldValue(f.key, t)}
-                    placeholder={f.placeholder}
+                    placeholder={f.placeholder ? tr(f.placeholder) : undefined}
                     placeholderTextColor={c.text3}
                     style={{ fontSize: 15, fontWeight: '600', color: c.text, marginTop: 3, padding: 0 }}
                   />
@@ -292,12 +297,12 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
                   onPress={() => fieldRefs.current[f.key]?.focus()}
                   style={{ flexGrow: 1, flexBasis: '45%', backgroundColor: c.teamSoft, borderRadius: 12, paddingVertical: 13, paddingHorizontal: 14 }}
                 >
-                  <Text style={{ fontSize: 12, color: c.text2 }}>{f.label}</Text>
+                  <Text style={{ fontSize: 12, color: c.text2 }}>{tr(f.label)}</Text>
                   <TextInput
                     ref={(r) => { fieldRefs.current[f.key] = r; }}
                     value={fieldValues[f.key] ?? ''}
                     onChangeText={(t) => setFieldValue(f.key, t)}
-                    placeholder={f.placeholder ?? '0'}
+                    placeholder={f.placeholder ? tr(f.placeholder) : '0'}
                     placeholderTextColor={c.text3}
                     keyboardType="number-pad"
                     style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 2, padding: 0 }}
@@ -310,9 +315,9 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
 
         {/* 공통 세부 입력 disclosure (collapsed, badge 선택) */}
         <DisclosureButton
-          title="세부 입력"
-          badge="선택"
-          subtitle="사진 · 함께한 사람 · 평점 · 메모"
+          title={tr({ en: 'More details', ko: '세부 입력' })}
+          badge={tr({ en: 'Optional', ko: '선택' })}
+          subtitle={tr({ en: 'Photos · Companions · Rating · Memo', ko: '사진 · 함께한 사람 · 평점 · 메모' })}
           icon={<Icon.plus size={17} color={c.text2} strokeWidth={2.2} />}
           open={open}
           onPress={() => setOpen((o) => !o)}
@@ -321,7 +326,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
         {/* Expanded — 사진 */}
         {open ? (
           <View>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>사진</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Photos', ko: '사진' })}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {photos.map((uri) => (
                 <View key={uri} style={{ width: 60, height: 60 }}>
@@ -330,7 +335,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
                     onPress={() => setPhotos((p) => p.filter((u) => u !== uri))}
                     hitSlop={6}
                     accessibilityRole="button"
-                    accessibilityLabel="사진 삭제"
+                    accessibilityLabel={tr({ en: 'Delete photo', ko: '사진 삭제' })}
                     style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: c.text, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.bg }}
                   >
                     <Glyph size={9} color={c.bg} strokeWidth={2.8}>
@@ -363,23 +368,23 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
 
             {/* 평점 */}
             <View style={{ marginTop: 14 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>평점</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Rating', ko: '평점' })}</Text>
               <RatingInput value={rating} onChange={setRating} size={20} />
             </View>
 
             {/* 함께한 사람 */}
             <View style={{ marginTop: 14 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>함께한 사람</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Companions', ko: '함께한 사람' })}</Text>
               <CompanionField companions={companions} onChange={setCompanions} />
             </View>
 
             {/* 메모 */}
             <View style={{ marginTop: 14 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>메모</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Memo', ko: '메모' })}</Text>
               <TextInput
                 value={memo}
                 onChangeText={setMemo}
-                placeholder="경기 소감을 남겨보세요"
+                placeholder={tr({ en: 'Leave your thoughts on the match', ko: '경기 소감을 남겨보세요' })}
                 placeholderTextColor={c.text3}
                 multiline
                 style={{
@@ -407,7 +412,10 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
             </Glyph>
           </View>
           <Text style={{ flex: 1, fontSize: 11, lineHeight: 16, color: c.text3 }}>
-            팀/개인 구분 없이 하나의 MatchForm. 축구는 골·포지션, 배드민턴은 게임 스코어 — 종목 필드만 교체.
+            {tr({
+              en: 'One MatchForm for team or solo. Soccer tracks goals & position, badminton game scores — only the sport fields swap.',
+              ko: '팀/개인 구분 없이 하나의 MatchForm. 축구는 골·포지션, 배드민턴은 게임 스코어 — 종목 필드만 교체.',
+            })}
           </Text>
         </View>
       </View>

@@ -12,13 +12,25 @@ import { useStore } from '../../store/StoreContext';
 import { activities, colorsFor, iconFor } from '../../data/activities';
 import { RootStackParamList } from '../../navigation/types';
 import { TemplateType, withAlpha } from '../../theme/tokens';
+import { tr } from '../../i18n/i18n';
+import { activityLabel } from '../../data/activities';
 
 const FAVORITES = ['헬스', '런닝', '축구']; // quick chips; "…" reveals all
 
 // "2026-07-02" → "7월 2일 (수)".
 const dateLabel = (iso: string) => {
-  const wd = ['일', '월', '화', '수', '목', '금', '토'][new Date(iso + 'T00:00:00Z').getUTCDay()];
-  return `${+iso.slice(5, 7)}월 ${+iso.slice(8, 10)}일 (${wd})`;
+  const wd = [
+    tr({ en: 'Sun', ko: '일' }),
+    tr({ en: 'Mon', ko: '월' }),
+    tr({ en: 'Tue', ko: '화' }),
+    tr({ en: 'Wed', ko: '수' }),
+    tr({ en: 'Thu', ko: '목' }),
+    tr({ en: 'Fri', ko: '금' }),
+    tr({ en: 'Sat', ko: '토' }),
+  ][new Date(iso + 'T00:00:00Z').getUTCDay()];
+  const mo = +iso.slice(5, 7);
+  const day = +iso.slice(8, 10);
+  return tr({ en: `${mo}/${day} (${wd})`, ko: `${mo}월 ${day}일 (${wd})` });
 };
 // "오후 8:00" → { ampm, h12, minute }.
 const parseTime = (label?: string) => {
@@ -28,6 +40,12 @@ const parseTime = (label?: string) => {
 };
 const timeLabelOf = (ampm: string, h12: number, minute: number) =>
   `${ampm} ${h12}:${String(minute).padStart(2, '0')}`;
+// 표시용: 저장 포맷(오전/오후)의 시간 라벨을 현재 언어로 렌더.
+const timeLabelDisplay = (ampm: '오전' | '오후', h12: number, minute: number) => {
+  const mm = String(minute).padStart(2, '0');
+  const period = ampm === '오전' ? tr({ en: 'AM', ko: '오전' }) : tr({ en: 'PM', ko: '오후' });
+  return tr({ en: `${period} ${h12}:${mm}`, ko: `${period} ${h12}:${mm}` });
+};
 
 export default function AddPlanScreen() {
   const { c } = useTheme();
@@ -88,10 +106,10 @@ export default function AddPlanScreen() {
       nav.goBack();
       return;
     }
-    Alert.alert('약속 삭제', '이 약속을 삭제할까요?', [
-      { text: '취소', style: 'cancel' },
+    Alert.alert(tr({ en: 'Delete plan', ko: '약속 삭제' }), tr({ en: 'Delete this plan?', ko: '이 약속을 삭제할까요?' }), [
+      { text: tr({ en: 'Cancel', ko: '취소' }), style: 'cancel' },
       {
-        text: '삭제',
+        text: tr({ en: 'Delete', ko: '삭제' }),
         style: 'destructive',
         onPress: () => {
           deletePlan(planId);
@@ -131,7 +149,7 @@ export default function AddPlanScreen() {
         <View style={{ width: 26, height: 26, borderRadius: 8, backgroundColor: active ? c.surface : soft, alignItems: 'center', justifyContent: 'center' }}>
           <IconCmp size={15} color={color} />
         </View>
-        <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '600', color: active ? c.text : c.text2 }}>{name}</Text>
+        <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '600', color: active ? c.text : c.text2 }}>{activityLabel(name)}</Text>
       </Pressable>
     );
   };
@@ -165,21 +183,21 @@ export default function AddPlanScreen() {
     <Screen edges={['top', 'bottom']} scroll>
       {/* header */}
       <ScreenHeader
-        title={editing ? '약속' : '약속 추가'}
+        title={editing ? tr({ en: 'Plan', ko: '약속' }) : tr({ en: 'Add plan', ko: '약속 추가' })}
         style={{ paddingTop: 6 }}
         right={
           editing ? (
             <>
-              <IconButton size={30} bg={c.accentSoft} label="저장" onPress={onSave}>
+              <IconButton size={30} bg={c.accentSoft} label={tr({ en: 'Save', ko: '저장' })} onPress={onSave}>
                 <Icon.check size={16} color={c.accent} strokeWidth={2.4} />
               </IconButton>
-              <IconButton size={30} bg={withAlpha(c.error, 12)} label="삭제" onPress={onDelete}>
+              <IconButton size={30} bg={withAlpha(c.error, 12)} label={tr({ en: 'Delete', ko: '삭제' })} onPress={onDelete}>
                 <Icon.trash size={16} color={c.error} strokeWidth={2} />
               </IconButton>
             </>
           ) : (
             <Pressable onPress={onSave} hitSlop={8} style={{ height: 30, paddingHorizontal: 12, borderRadius: 999, backgroundColor: c.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>저장</Text>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>{tr({ en: 'Save', ko: '저장' })}</Text>
             </Pressable>
           )
         }
@@ -188,7 +206,7 @@ export default function AddPlanScreen() {
       <View style={{ paddingHorizontal: 18, paddingTop: 2, gap: 16, paddingBottom: 24 }}>
         {/* 활동 */}
         <View style={{ gap: 8 }}>
-          <SectionLabel>활동</SectionLabel>
+          <SectionLabel>{tr({ en: 'Activity', ko: '활동' })}</SectionLabel>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {FAVORITES.map((n) => (
               <ActTile key={n} name={n} wide />
@@ -216,7 +234,7 @@ export default function AddPlanScreen() {
 
         {/* 날짜 · 시간 */}
         <View style={{ gap: 8 }}>
-          <SectionLabel>날짜 · 시간</SectionLabel>
+          <SectionLabel>{tr({ en: 'Date · Time', ko: '날짜 · 시간' })}</SectionLabel>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <Pressable style={[fieldBox, { flex: 1.4 }]} onPress={() => { setShowDate((s) => !s); setShowTime(false); }}>
               <Glyph size={17} color={c.accent}>
@@ -243,14 +261,14 @@ export default function AddPlanScreen() {
                 <Path d="M12 7v5l3.5 2" />
               </Glyph>
               <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: hasTime ? c.text : c.text3 }}>
-                {hasTime ? timeLabelOf(ampm, h12, minute) : '시간 미정'}
+                {hasTime ? timeLabelDisplay(ampm, h12, minute) : tr({ en: 'No time', ko: '시간 미정' })}
               </Text>
               {hasTime ? (
                 <Pressable
                   onPress={() => { setHasTime(false); setShowTime(false); }}
                   hitSlop={8}
                   accessibilityRole="button"
-                  accessibilityLabel="시간 지우기"
+                  accessibilityLabel={tr({ en: 'Clear time', ko: '시간 지우기' })}
                 >
                   <Glyph size={15} color={c.text3} strokeWidth={2.4}>
                     <Path d="M6 6l12 12M18 6l-12 12" />
@@ -267,13 +285,13 @@ export default function AddPlanScreen() {
           {showTime && hasTime ? (
             <View style={{ gap: 12, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, padding: 12, marginTop: 8 }}>
               <Segmented
-                options={[{ key: '오전', label: '오전' }, { key: '오후', label: '오후' }]}
+                options={[{ key: '오전', label: tr({ en: 'AM', ko: '오전' }) }, { key: '오후', label: tr({ en: 'PM', ko: '오후' }) }]}
                 value={ampm}
                 onChange={(v) => setAmpm(v as '오전' | '오후')}
               />
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' }}>
-                <Wheel value={`${h12}시`} onDec={() => setH12((h) => (h === 1 ? 12 : h - 1))} onInc={() => setH12((h) => (h === 12 ? 1 : h + 1))} />
-                <Wheel value={`${String(minute).padStart(2, '0')}분`} onDec={() => setMinute((m) => (m + 55) % 60)} onInc={() => setMinute((m) => (m + 5) % 60)} />
+                <Wheel value={tr({ en: `${h12}h`, ko: `${h12}시` })} onDec={() => setH12((h) => (h === 1 ? 12 : h - 1))} onInc={() => setH12((h) => (h === 12 ? 1 : h + 1))} />
+                <Wheel value={tr({ en: `${String(minute).padStart(2, '0')}m`, ko: `${String(minute).padStart(2, '0')}분` })} onDec={() => setMinute((m) => (m + 55) % 60)} onInc={() => setMinute((m) => (m + 5) % 60)} />
               </View>
             </View>
           ) : null}
@@ -281,7 +299,7 @@ export default function AddPlanScreen() {
 
         {/* 장소 */}
         <View style={{ gap: 8 }}>
-          <SectionLabel>장소</SectionLabel>
+          <SectionLabel>{tr({ en: 'Place', ko: '장소' })}</SectionLabel>
           <View style={fieldBox}>
             <Glyph size={17} color={c.text3}>
               <Path d="M12 21s7-6.2 7-11a7 7 0 0 0-14 0c0 4.8 7 11 7 11z" />
@@ -290,7 +308,7 @@ export default function AddPlanScreen() {
             <TextInput
               value={place}
               onChangeText={setPlace}
-              placeholder="장소 입력"
+              placeholder={tr({ en: 'Enter place', ko: '장소 입력' })}
               placeholderTextColor={c.text3}
               style={{ flex: 1, fontSize: 14, color: c.text, padding: 0 }}
             />
@@ -300,13 +318,13 @@ export default function AddPlanScreen() {
         {/* 메모 */}
         <View style={{ gap: 8 }}>
           <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>
-            메모 <Text style={{ color: c.text3, fontWeight: '500' }}>· 선택</Text>
+            {tr({ en: 'Memo', ko: '메모' })} <Text style={{ color: c.text3, fontWeight: '500' }}>{tr({ en: '· optional', ko: '· 선택' })}</Text>
           </Text>
           <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 13, minHeight: 52 }}>
             <TextInput
               value={memo}
               onChangeText={setMemo}
-              placeholder="풋살화 챙기기, 물 2병"
+              placeholder={tr({ en: 'Bring futsal shoes, 2 water bottles', ko: '풋살화 챙기기, 물 2병' })}
               placeholderTextColor={c.text3}
               multiline
               style={{ fontSize: 13.5, color: c.text, padding: 0, textAlignVertical: 'top' }}
@@ -321,8 +339,8 @@ export default function AddPlanScreen() {
               <Path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.5 21a1.7 1.7 0 0 1-3 0" />
             </Glyph>
             <View>
-              <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>알림</Text>
-              <Text style={{ fontSize: 11, color: c.text3, marginTop: 1 }}>{hasTime ? '1시간 전' : '시간 미정 시 알림 없음'}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{tr({ en: 'Reminder', ko: '알림' })}</Text>
+              <Text style={{ fontSize: 11, color: c.text3, marginTop: 1 }}>{hasTime ? tr({ en: '1 hour before', ko: '1시간 전' }) : tr({ en: 'No reminder without a time', ko: '시간 미정 시 알림 없음' })}</Text>
             </View>
           </View>
           <Toggle value={hasTime && alarm} onChange={hasTime ? setAlarm : undefined} />
@@ -338,7 +356,7 @@ export default function AddPlanScreen() {
               <Rect x="3" y="4.5" width="18" height="16" rx="2.5" />
               <Path d="M3 9.5h18M8 2.5v4M16 2.5v4M9 14l2 2 4-4" />
             </Glyph>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>약속 저장</Text>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: '#fff' }}>{tr({ en: 'Save plan', ko: '약속 저장' })}</Text>
           </Pressable>
         ) : null}
       </View>

@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Screen } from '../../components/primitives';
 import { Icon, Glyph, Path, Circle, Rect } from '../../components/Glyph';
 import { useTheme } from '../../theme/ThemeContext';
+import { tr } from '../../i18n/i18n';
 
 // FAB(추가) → 무엇을 추가할지 선택. 기록(한 일) / 약속(예정). 전역 진입점.
 export default function AddChooserScreen() {
@@ -53,7 +54,7 @@ export default function AddChooserScreen() {
   return (
     <Screen edges={['top', 'bottom']} scroll={false}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingTop: 6, paddingBottom: 16 }}>
-        <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.4, color: c.text }}>무엇을 추가할까요?</Text>
+        <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.4, color: c.text }}>{tr({ en: 'What do you want to add?', ko: '무엇을 추가할까요?' })}</Text>
         <Pressable
           onPress={() => nav.goBack()}
           style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}
@@ -64,8 +65,8 @@ export default function AddChooserScreen() {
 
       <View style={{ paddingHorizontal: 18, gap: 12 }}>
         <Option
-          title="기록"
-          subtitle="오늘 한 운동·공연을 남깁니다"
+          title={tr({ en: 'Record', ko: '기록' })}
+          subtitle={tr({ en: 'Log a workout or performance from today', ko: '오늘 한 운동·공연을 남깁니다' })}
           color={c.accent}
           soft={c.accentSoft}
           icon={
@@ -76,8 +77,8 @@ export default function AddChooserScreen() {
           onPress={() => nav.replace('ActivitySelect')}
         />
         <Option
-          title="약속"
-          subtitle="앞으로의 예정을 잡아둡니다"
+          title={tr({ en: 'Plan', ko: '약속' })}
+          subtitle={tr({ en: 'Set an upcoming schedule', ko: '앞으로의 예정을 잡아둡니다' })}
           color={c.accent}
           soft={c.accentSoft}
           icon={

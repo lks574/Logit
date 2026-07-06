@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import type { StoreState, StoredRecord } from '../store/types';
+import { tr } from '../i18n/i18n';
 
 // 데이터 내보내기 / 가져오기 (수동 백업·기기 이전).
 // 설계: docs/superpowers/specs/2026-07-01-data-export-import-design.md
@@ -111,7 +112,7 @@ export async function exportData(state: StoreState, format: ExportFormat): Promi
 
   if (Platform.OS === 'web') {
     downloadWeb(content, filename, mimeType);
-    return `${filename} 다운로드를 시작했습니다.`;
+    return tr({ en: `Started downloading ${filename}.`, ko: `${filename} 다운로드를 시작했습니다.` });
   }
 
   const { File, Paths } = require('expo-file-system');
@@ -125,11 +126,11 @@ export async function exportData(state: StoreState, format: ExportFormat): Promi
     await Sharing.shareAsync(file.uri, {
       mimeType,
       UTI: isJSON ? 'public.json' : 'public.comma-separated-values-text',
-      dialogTitle: 'Logit 데이터 내보내기',
+      dialogTitle: tr({ en: 'Export Logit data', ko: 'Logit 데이터 내보내기' }),
     });
-    return '내보내기를 완료했습니다.';
+    return tr({ en: 'Export complete.', ko: '내보내기를 완료했습니다.' });
   }
-  return `파일이 저장되었습니다:\n${file.uri}`;
+  return tr({ en: `File saved:\n${file.uri}`, ko: `파일이 저장되었습니다:\n${file.uri}` });
 }
 
 // ── 가져오기 (JSON 전용) ────────────────────────────────────────────
@@ -161,7 +162,7 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const isStrArr = (v: unknown): boolean => Array.isArray(v) && v.every((x) => typeof x === 'string');
 const isStrMap = (v: unknown): boolean =>
   !!v && typeof v === 'object' && !Array.isArray(v) && Object.values(v as object).every((x) => typeof x === 'string');
-const badFormat = () => new Error('백업 파일의 형식이 올바르지 않습니다.');
+const badFormat = () => new Error(tr({ en: 'The backup file format is invalid.', ko: '백업 파일의 형식이 올바르지 않습니다.' }));
 
 // 전체 교체(replaceAll)로 영구 저장하므로, 필수 필드뿐 아니라 optional 필드의 타입·형식도
 // 검증한다(types.ts 기준). 하나라도 어긋나면 거부 — 손상 파일이 앱 상태를 덮어써
@@ -202,10 +203,10 @@ function validPlan(p: any): boolean {
 
 function normalize(parsed: any): StoreState {
   if (!parsed || parsed.app !== APP || typeof parsed.version !== 'number') {
-    throw new Error('올바른 Logit 백업 파일이 아닙니다.');
+    throw new Error(tr({ en: 'This is not a valid Logit backup file.', ko: '올바른 Logit 백업 파일이 아닙니다.' }));
   }
   if (parsed.version > VERSION) {
-    throw new Error('더 새로운 버전의 백업 파일입니다. 앱을 업데이트해 주세요.');
+    throw new Error(tr({ en: 'This backup is from a newer version. Please update the app.', ko: '더 새로운 버전의 백업 파일입니다. 앱을 업데이트해 주세요.' }));
   }
   const d = parsed.data;
   if (!d || !Array.isArray(d.records) || !Array.isArray(d.plans)) {
@@ -260,7 +261,7 @@ export async function importData(): Promise<StoreState | null> {
   try {
     parsed = JSON.parse(text);
   } catch {
-    throw new Error('파일을 읽을 수 없습니다(JSON 파싱 실패).');
+    throw new Error(tr({ en: 'Could not read the file (JSON parse failed).', ko: '파일을 읽을 수 없습니다(JSON 파싱 실패).' }));
   }
   return normalize(parsed);
 }

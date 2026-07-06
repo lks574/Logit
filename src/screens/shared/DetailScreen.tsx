@@ -6,7 +6,9 @@ import { ScreenHeader } from '../../components/ScreenHeader';
 import { IconButton } from '../../components/Button';
 import { Stars } from '../../components/Rating';
 import { Glyph, Icon, Path } from '../../components/Glyph';
-import { activities, colorsFor } from '../../data/activities';
+import { activities, activityLabel, colorsFor } from '../../data/activities';
+import { tr } from '../../i18n/i18n';
+import { monthDay, displayTimeLabel } from '../../lib/date';
 import { RootStackParamList } from '../../navigation/types';
 import { photoUri } from '../../lib/photos';
 import { useStore } from '../../store/StoreContext';
@@ -30,20 +32,13 @@ type Variant = {
 };
 
 
-// Korean date label from an ISO calendar day (e.g. "2026-06-30" → "6월 30일").
-function krDate(dateISO: string): string {
-  const m = /^\d{4}-(\d{2})-(\d{2})/.exec(dateISO);
-  if (!m) return dateISO;
-  return `${Number(m[1])}월 ${Number(m[2])}일`;
-}
-
 // Build a Variant-shaped view model from a real stored record so the existing
 // JSX (which renders a Variant) can display it unchanged.
 function variantFromRecord(r: StoredRecord, c: Palette): Variant {
   // place: fields.장소에서 가져온다(모든 폼이 여기 저장). meta 첫 세그먼트 파싱은
   // endurance에만 맞아 다른 종목에선 작품명/상대명을 장소로 오인했다.
   const place = r.fields?.장소 ?? '';
-  const metaParts = [krDate(r.dateISO), r.timeLabel].filter(Boolean);
+  const metaParts = [monthDay(r.dateISO), displayTimeLabel(r.timeLabel)].filter(Boolean);
   const meta = place ? `${metaParts.join(' ')} · ${place}` : metaParts.join(' ');
 
   const companionName = r.companions && r.companions.length ? r.companions.join(', ') : '';
@@ -99,7 +94,7 @@ export default function DetailScreen() {
           </IconButton>
         </Row>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
-          <Text style={{ fontSize: 15, color: c.text2 }}>기록을 찾을 수 없어요.</Text>
+          <Text style={{ fontSize: 15, color: c.text2 }}>{tr({ en: 'Record not found.', ko: '기록을 찾을 수 없어요.' })}</Text>
         </View>
       </Screen>
     );
@@ -127,7 +122,7 @@ export default function DetailScreen() {
             <IconButton
               size={34}
               bg={c.surface}
-              label="수정"
+              label={tr({ en: 'Edit', ko: '수정' })}
               onPress={() => nav.navigate('RecordForm', { activity: v.activity, template, recordId })}
             >
               <Icon.edit size={17} color={c.text2} strokeWidth={2} />
@@ -135,16 +130,16 @@ export default function DetailScreen() {
             <IconButton
               size={34}
               bg={c.surface}
-              label="삭제"
+              label={tr({ en: 'Delete', ko: '삭제' })}
               onPress={() => {
                 if (!recordId) {
                   nav.goBack();
                   return;
                 }
-                Alert.alert('기록 삭제', '이 기록을 삭제할까요?', [
-                  { text: '취소', style: 'cancel' },
+                Alert.alert(tr({ en: 'Delete record', ko: '기록 삭제' }), tr({ en: 'Delete this record?', ko: '이 기록을 삭제할까요?' }), [
+                  { text: tr({ en: 'Cancel', ko: '취소' }), style: 'cancel' },
                   {
-                    text: '삭제',
+                    text: tr({ en: 'Delete', ko: '삭제' }),
                     style: 'destructive',
                     onPress: () => {
                       deleteRecord(recordId);
@@ -176,7 +171,7 @@ export default function DetailScreen() {
             <ActivityIcon size={26} color={color} strokeWidth={2} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ fontSize: 21, fontWeight: '700', color: c.text, letterSpacing: -0.42 }}>{v.title}</Text>
+            <Text style={{ fontSize: 21, fontWeight: '700', color: c.text, letterSpacing: -0.42 }}>{activityLabel(v.title)}</Text>
             <Text style={{ fontSize: 13, color: c.text2, marginTop: 2 }}>{v.meta}</Text>
           </View>
         </Row>
@@ -233,7 +228,7 @@ export default function DetailScreen() {
         {/* 상세 수치 table (cardio / match) */}
         {v.detail ? (
           <View>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, marginBottom: 6 }}>상세 수치</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, marginBottom: 6 }}>{tr({ en: 'Details', ko: '상세 수치' })}</Text>
             <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 13, overflow: 'hidden' }}>
               {v.detail.map((d, i) => (
                 <View key={d.label}>
@@ -251,7 +246,7 @@ export default function DetailScreen() {
         {/* Memo block */}
         {v.memo ? (
           <View style={{ backgroundColor: c.surfaceAlt, borderRadius: 13, paddingVertical: 13, paddingHorizontal: 14 }}>
-            <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, marginBottom: 5 }}>메모</Text>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, marginBottom: 5 }}>{tr({ en: 'Memo', ko: '메모' })}</Text>
             <Text style={{ fontSize: 14, color: c.text, lineHeight: 22 }}>{v.memo}</Text>
           </View>
         ) : null}

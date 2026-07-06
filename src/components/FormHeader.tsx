@@ -2,6 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import { tr } from '../i18n/i18n';
 
 // FormHeader — modal record form header: 취소 / icon+title / 저장(template color).
 // HTML 2.1 lines 311–315 (저장 uses the template color, not accent).
@@ -36,7 +37,7 @@ export function FormHeader({
       }}
     >
       <Pressable onPress={onCancel ?? (() => nav.goBack())} hitSlop={8}>
-        <Text style={{ color: c.text2, fontSize: 15 }}>취소</Text>
+        <Text style={{ color: c.text2, fontSize: 15 }}>{tr({ en: 'Cancel', ko: '취소' })}</Text>
       </Pressable>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
         <View style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
@@ -48,7 +49,7 @@ export function FormHeader({
         onPress={onSave ?? (() => nav.navigate('MainTabs'))}
         style={{ backgroundColor: color, paddingVertical: 7, paddingHorizontal: 14, borderRadius: 9 }}
       >
-        <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>저장</Text>
+        <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{tr({ en: 'Save', ko: '저장' })}</Text>
       </Pressable>
     </View>
   );

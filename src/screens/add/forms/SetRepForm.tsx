@@ -13,6 +13,8 @@ import { resetToHome } from '../../../navigation/nav';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
+import { tr } from '../../../i18n/i18n';
+import { activityLabel } from '../../../data/activities';
 
 // SetRepForm (HTML 3.2, lines 503–556) — 세트·횟수형 (strength template).
 // 운동 부위 chips · per-exercise set table · ＋세트/종목 추가 · 볼륨/시간 summary
@@ -20,14 +22,22 @@ import { withAlpha } from '../../../theme/tokens';
 
 type SetRow = { set: string; reps: string; weight: string; warmup: boolean };
 
-const PARTS = ['가슴', '삼두', '등', '어깨', '하체'];
+// value는 저장·비교용(번역 금지, fields.부위), label은 표시용 번역.
+const PARTS = [
+  { value: '가슴', label: { en: 'Chest', ko: '가슴' } },
+  { value: '삼두', label: { en: 'Triceps', ko: '삼두' } },
+  { value: '등', label: { en: 'Back', ko: '등' } },
+  { value: '어깨', label: { en: 'Shoulders', ko: '어깨' } },
+  { value: '하체', label: { en: 'Legs', ko: '하체' } },
+];
 
 // 기분 4단계 — 이모지 + 저장 라벨(fields.기분). 이모지라 표정 구분이 확실.
+// label은 저장·비교용(번역 금지), name은 표시용(a11y) 번역.
 const MOODS = [
-  { emoji: '🙁', label: '별로' },
-  { emoji: '😐', label: '보통' },
-  { emoji: '🙂', label: '좋음' },
-  { emoji: '😄', label: '최고' },
+  { emoji: '🙁', label: '별로', name: { en: 'Bad', ko: '별로' } },
+  { emoji: '😐', label: '보통', name: { en: 'Okay', ko: '보통' } },
+  { emoji: '🙂', label: '좋음', name: { en: 'Good', ko: '좋음' } },
+  { emoji: '😄', label: '최고', name: { en: 'Great', ko: '최고' } },
 ];
 
 // fields.세트(JSON)에서 세트 행 복원. 저장값이 없거나 손상 시 빈 1행으로 시작.
@@ -98,7 +108,10 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
   const handleSave = () => {
     const hasSet = rows.some((r) => r.reps.trim() !== '' || r.weight.trim() !== '');
     if (part.trim() === '' && 총볼륨.trim() === '' && !hasSet) {
-      Alert.alert('필수 항목', '운동 부위나 세트 정보를 입력해 주세요.');
+      Alert.alert(
+        tr({ en: 'Required', ko: '필수 항목' }),
+        tr({ en: 'Enter a body part or set info.', ko: '운동 부위나 세트 정보를 입력해 주세요.' }),
+      );
       return;
     }
     const fields: Record<string, string> = {};
@@ -110,7 +123,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
     const filledRows = rows.filter((r) => r.reps.trim() !== '' || r.weight.trim() !== '');
     if (filledRows.length) fields.세트 = JSON.stringify(filledRows);
 
-    const meta = [part, 총볼륨 ? `총 볼륨 ${총볼륨}` : '']
+    const meta = [part, 총볼륨 ? tr({ en: `Total volume ${총볼륨}`, ko: `총 볼륨 ${총볼륨}` }) : '']
       .filter(Boolean)
       .join(' · ');
 
@@ -138,7 +151,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
   return (
     <Screen edges={['top', 'bottom']}>
       <FormHeader
-        title={activity}
+        title={activityLabel(activity)}
         icon={<Icon.dumbbell size={13} color={c.strength} strokeWidth={2.2} />}
         color={c.strength}
         soft={c.strengthSoft}
@@ -152,15 +165,15 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
 
         {/* 운동 부위 */}
         <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 8 }}>운동 부위</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 8 }}>{tr({ en: 'Body part', ko: '운동 부위' })}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
             {PARTS.map((p) => (
               <Chip
-                key={p}
-                label={p}
-                selected={p === part}
+                key={p.value}
+                label={tr(p.label)}
+                selected={p.value === part}
                 color={c.strength}
-                onPress={() => setPart(p)}
+                onPress={() => setPart(p.value)}
               />
             ))}
           </View>
@@ -187,16 +200,16 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
               borderBottomColor: c.border,
             }}
           >
-            <Text style={{ fontSize: 15, fontWeight: '700', color: c.text }}>벤치프레스</Text>
-            <Text style={{ fontSize: 12, color: c.text3 }}>{rows.length}세트</Text>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: c.text }}>{tr({ en: 'Bench press', ko: '벤치프레스' })}</Text>
+            <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: `${rows.length} sets`, ko: `${rows.length}세트` })}</Text>
           </View>
 
           {/* column header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, paddingHorizontal: 14 }}>
-            <Text style={{ width: 30, fontSize: 11, fontWeight: '600', color: c.text3 }}>세트</Text>
-            <Text style={{ flex: 1, fontSize: 11, fontWeight: '600', color: c.text3 }}>반복</Text>
-            <Text style={{ flex: 1, fontSize: 11, fontWeight: '600', color: c.text3 }}>중량</Text>
-            <Text style={{ width: 44, fontSize: 11, fontWeight: '600', color: c.text3, textAlign: 'right' }}>워밍업</Text>
+            <Text style={{ width: 30, fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Set', ko: '세트' })}</Text>
+            <Text style={{ flex: 1, fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Reps', ko: '반복' })}</Text>
+            <Text style={{ flex: 1, fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Weight', ko: '중량' })}</Text>
+            <Text style={{ width: 44, fontSize: 11, fontWeight: '600', color: c.text3, textAlign: 'right' }}>{tr({ en: 'Warmup', ko: '워밍업' })}</Text>
           </View>
 
           {rows.map((row, i) => (
@@ -275,7 +288,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
             }}
           >
             <Icon.plus size={15} color={c.strength} strokeWidth={2.4} />
-            <Text style={{ color: c.strength, fontSize: 13, fontWeight: '600' }}>세트 추가</Text>
+            <Text style={{ color: c.strength, fontSize: 13, fontWeight: '600' }}>{tr({ en: 'Add set', ko: '세트 추가' })}</Text>
           </Pressable>
         </View>
 
@@ -293,7 +306,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
             paddingHorizontal: 14,
           }}
         >
-          <Text style={{ fontSize: 15, fontWeight: '600', color: c.text }}>인클라인 덤벨</Text>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: c.text }}>{tr({ en: 'Incline dumbbell', ko: '인클라인 덤벨' })}</Text>
           <Icon.chevronRight size={18} color={c.text3} strokeWidth={2} />
         </View>
 
@@ -312,14 +325,14 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
           }}
         >
           <Icon.plus size={16} color={c.text2} strokeWidth={2.2} />
-          <Text style={{ fontSize: 14, fontWeight: '600', color: c.text2 }}>종목 추가</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: c.text2 }}>{tr({ en: 'Add exercise', ko: '종목 추가' })}</Text>
         </Pressable>
 
         {/* summary */}
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1, backgroundColor: c.strengthSoft, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14 }}>
             <Text style={{ fontSize: 11, color: c.text2 }}>
-              총 볼륨 <Text style={{ fontSize: 10, fontWeight: '600', color: c.strength }}>자동</Text>
+              {tr({ en: 'Total volume', ko: '총 볼륨' })} <Text style={{ fontSize: 10, fontWeight: '600', color: c.strength }}>{tr({ en: 'Auto', ko: '자동' })}</Text>
             </Text>
             <Text style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 2 }}>
               {총볼륨 ? (
@@ -328,7 +341,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
                   <Text style={{ fontSize: 12, color: c.text2 }}>kg</Text>
                 </>
               ) : (
-                <Text style={{ fontSize: 15, fontWeight: '600', color: c.text3 }}>자동</Text>
+                <Text style={{ fontSize: 15, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Auto', ko: '자동' })}</Text>
               )}
             </Text>
           </View>
@@ -336,12 +349,12 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
             onPress={() => 운동시간Ref.current?.focus()}
             style={{ flex: 1, backgroundColor: c.surfaceAlt, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14 }}
           >
-            <Text style={{ fontSize: 11, color: c.text2 }}>운동 시간</Text>
+            <Text style={{ fontSize: 11, color: c.text2 }}>{tr({ en: 'Workout time', ko: '운동 시간' })}</Text>
             <TextInput
               ref={운동시간Ref}
               value={운동시간}
               onChangeText={set운동시간}
-              placeholder="예: 52분"
+              placeholder={tr({ en: 'e.g. 52 min', ko: '예: 52분' })}
               placeholderTextColor={c.text3}
               style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 2, padding: 0 }}
             />
@@ -350,9 +363,9 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
 
         {/* 공통 세부 입력 (collapsed default) */}
         <DisclosureButton
-          title="세부 입력"
-          badge="선택"
-          subtitle="장소 · 동행 · 사진 · 메모 · 평점 · 기분"
+          title={tr({ en: 'More details', ko: '세부 입력' })}
+          badge={tr({ en: 'Optional', ko: '선택' })}
+          subtitle={tr({ en: 'Place · Companions · Photos · Memo · Rating · Mood', ko: '장소 · 동행 · 사진 · 메모 · 평점 · 기분' })}
           icon={<Icon.plus size={17} color={c.text2} strokeWidth={2.2} />}
           open={open}
           onPress={() => setOpen((o) => !o)}
@@ -362,7 +375,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
           <View style={{ gap: 15 }}>
             {/* 장소 */}
             <View>
-              <Text style={styleLabel(c)}>장소</Text>
+              <Text style={styleLabel(c)}>{tr({ en: 'Place', ko: '장소' })}</Text>
               <View
                 style={{
                   flexDirection: 'row',
@@ -381,16 +394,19 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
                 <TextInput
                   value={place}
                   onChangeText={setPlace}
-                  placeholder="장소"
+                  placeholder={tr({ en: 'Place', ko: '장소' })}
                   placeholderTextColor={c.text3}
                   style={{ flex: 1, fontSize: 14, color: c.text, padding: 0 }}
                 />
               </View>
               <View style={{ flexDirection: 'row', gap: 6, marginTop: 7 }}>
-                {['최근 · 올림픽공원', '양재천'].map((t) => (
+                {[
+                  { value: '올림픽공원', label: tr({ en: 'Recent · Olympic Park', ko: '최근 · 올림픽공원' }) },
+                  { value: '양재천', label: tr({ en: 'Yangjaecheon', ko: '양재천' }) },
+                ].map((t) => (
                   <Pressable
-                    key={t}
-                    onPress={() => setPlace(t.replace('최근 · ', ''))}
+                    key={t.value}
+                    onPress={() => setPlace(t.value)}
                     style={{
                       backgroundColor: c.surface,
                       borderWidth: 1,
@@ -400,7 +416,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
                       paddingHorizontal: 9,
                     }}
                   >
-                    <Text style={{ fontSize: 12, color: c.text2 }}>{t}</Text>
+                    <Text style={{ fontSize: 12, color: c.text2 }}>{t.label}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -408,13 +424,13 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
 
             {/* 동행 */}
             <View>
-              <Text style={styleLabel(c)}>동행</Text>
+              <Text style={styleLabel(c)}>{tr({ en: 'Companions', ko: '동행' })}</Text>
               <CompanionField companions={companions} onChange={setCompanions} />
             </View>
 
             {/* 사진 */}
             <View>
-              <Text style={styleLabel(c)}>사진</Text>
+              <Text style={styleLabel(c)}>{tr({ en: 'Photos', ko: '사진' })}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {photos.map((uri) => (
                   <View key={uri} style={{ width: 60, height: 60 }}>
@@ -423,7 +439,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
                       onPress={() => setPhotos((p) => p.filter((u) => u !== uri))}
                       hitSlop={6}
                       accessibilityRole="button"
-                      accessibilityLabel="사진 삭제"
+                      accessibilityLabel={tr({ en: 'Delete photo', ko: '사진 삭제' })}
                       style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: c.text, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.bg }}
                     >
                       <Glyph size={9} color={c.bg} strokeWidth={2.8}>
@@ -457,13 +473,13 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
 
             {/* 평점 */}
             <View>
-              <Text style={styleLabel(c)}>평점</Text>
+              <Text style={styleLabel(c)}>{tr({ en: 'Rating', ko: '평점' })}</Text>
               <RatingInput value={rating} onChange={setRating} size={20} />
             </View>
 
             {/* 기분 */}
             <View>
-              <Text style={styleLabel(c)}>기분</Text>
+              <Text style={styleLabel(c)}>{tr({ en: 'Mood', ko: '기분' })}</Text>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 {MOODS.map((m, i) => {
                   const on = mood === i;
@@ -473,7 +489,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
                       key={i}
                       onPress={() => setMood(on ? -1 : i)}
                       accessibilityRole="button"
-                      accessibilityLabel={`기분 ${m.label}`}
+                      accessibilityLabel={tr({ en: `Mood ${tr(m.name)}`, ko: `기분 ${tr(m.name)}` })}
                       accessibilityState={{ selected: on }}
                       style={{
                         flex: 1,
@@ -496,7 +512,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
 
             {/* 메모 */}
             <View>
-              <Text style={styleLabel(c)}>메모</Text>
+              <Text style={styleLabel(c)}>{tr({ en: 'Memo', ko: '메모' })}</Text>
               <View
                 style={{
                   backgroundColor: c.surfaceAlt,
@@ -509,7 +525,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
                 <TextInput
                   value={memo}
                   onChangeText={setMemo}
-                  placeholder="메모"
+                  placeholder={tr({ en: 'Memo', ko: '메모' })}
                   placeholderTextColor={c.text3}
                   multiline
                   style={{ fontSize: 13, color: c.text, lineHeight: 20, padding: 0, textAlignVertical: 'top' }}

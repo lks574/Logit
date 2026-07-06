@@ -16,6 +16,7 @@ import { PrimaryButton } from '../../components/auth-ui';
 import { useStore } from '../../store/StoreContext';
 import { useTheme } from '../../theme/ThemeContext';
 import { withAlpha } from '../../theme/tokens';
+import { tr } from '../../i18n/i18n';
 
 const TOTAL = 4;
 // 4단계 활동 후보 — 실제 카탈로그 활동(선택이 preferredActivities로 저장됨).
@@ -47,7 +48,7 @@ export default function OnboardingScreen() {
   const addCustom = () => {
     // Alert.prompt는 iOS 전용 — 없으면 조용히 무시(디자인상 선택 기능).
     if (Platform.OS !== 'ios' || !Alert.prompt) return;
-    Alert.prompt('직접 추가', '기록할 활동 이름을 입력하세요.', (name) => {
+    Alert.prompt(tr({ en: 'Add your own', ko: '직접 추가' }), tr({ en: 'Enter the name of the activity to log.', ko: '기록할 활동 이름을 입력하세요.' }), (name) => {
       const n = (name ?? '').trim();
       if (!n) return;
       addActivity({ name: n, template: 'free' });
@@ -62,7 +63,7 @@ export default function OnboardingScreen() {
       <View style={{ height: 34, justifyContent: 'center', alignItems: 'flex-end', paddingHorizontal: 22 }}>
         {step < TOTAL - 1 ? (
           <Pressable onPress={finish} hitSlop={8}>
-            <Text style={{ fontSize: 13.5, fontWeight: '600', color: c.text3 }}>건너뛰기</Text>
+            <Text style={{ fontSize: 13.5, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Skip', ko: '건너뛰기' })}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -111,7 +112,7 @@ export default function OnboardingScreen() {
             />
           ))}
         </View>
-        <PrimaryButton label={step === TOTAL - 1 ? 'Logit 시작하기' : '다음'} onPress={next} />
+        <PrimaryButton label={step === TOTAL - 1 ? tr({ en: 'Start Logit', ko: 'Logit 시작하기' }) : tr({ en: 'Next', ko: '다음' })} onPress={next} />
       </View>
     </Screen>
   );
@@ -141,10 +142,16 @@ function Welcome({ c, name }: { c: any; name: string }) {
       </View>
       <View style={{ alignItems: 'center' }}>
         <Text style={{ fontSize: 23, fontWeight: '700', letterSpacing: -0.69, color: c.text }}>
-          환영해요, {name || '기록가'}님
+          {tr({
+            en: `Welcome, ${name || 'Logger'}`,
+            ko: `환영해요, ${name || '기록가'}님`,
+          })}
         </Text>
         <Text style={{ fontSize: 14.5, color: c.text2, lineHeight: 23, textAlign: 'center', marginTop: 12 }}>
-          운동, 공연, 하루의 메모까지 —{'\n'}흩어진 순간을 Logit 한 곳에 쌓아요.{'\n'}30초면 오늘을 남길 수 있어요.
+          {tr({
+            en: 'Workouts, shows, and everyday notes —\nstack your scattered moments in Logit.\nYou can capture today in 30 seconds.',
+            ko: '운동, 공연, 하루의 메모까지 —\n흩어진 순간을 Logit 한 곳에 쌓아요.\n30초면 오늘을 남길 수 있어요.',
+          })}
         </Text>
       </View>
     </View>
@@ -154,16 +161,18 @@ function Welcome({ c, name }: { c: any; name: string }) {
 // ---- 2단계 · 기록 방식 ----
 function RecordMethods({ c }: { c: any }) {
   const cards = [
-    { title: '세트 · 횟수형', sub: '헬스 · 클라이밍 · 홈트', icon: <Path d="M6 6v12M18 6v12M6 12h12M4 9v6M20 9v6" /> },
-    { title: '거리 · 시간형', sub: '러닝 · 수영 · 자전거', icon: (<><Circle cx="12" cy="12" r="9" /><Path d="M12 7v5l3 2" /></>) },
-    { title: '관람 · 자유 기록형', sub: '공연 · 전시 · 일기', icon: <Path d="M4 19.5V6a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v13M8 8h7M8 11h7" /> },
+    { title: tr({ en: 'Sets · Reps', ko: '세트 · 횟수형' }), sub: tr({ en: 'Gym · Climbing · Home workout', ko: '헬스 · 클라이밍 · 홈트' }), icon: <Path d="M6 6v12M18 6v12M6 12h12M4 9v6M20 9v6" /> },
+    { title: tr({ en: 'Distance · Time', ko: '거리 · 시간형' }), sub: tr({ en: 'Running · Swimming · Cycling', ko: '러닝 · 수영 · 자전거' }), icon: (<><Circle cx="12" cy="12" r="9" /><Path d="M12 7v5l3 2" /></>) },
+    { title: tr({ en: 'Watch · Free notes', ko: '관람 · 자유 기록형' }), sub: tr({ en: 'Shows · Exhibits · Journal', ko: '공연 · 전시 · 일기' }), icon: <Path d="M4 19.5V6a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v13M8 8h7M8 11h7" /> },
   ];
   return (
     <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 30, gap: 24 }}>
       <View style={{ alignItems: 'center' }}>
-        <Text style={{ fontSize: 23, fontWeight: '700', letterSpacing: -0.69, color: c.text }}>기록 방식으로 묶어요</Text>
+        <Text style={{ fontSize: 23, fontWeight: '700', letterSpacing: -0.69, color: c.text }}>{tr({ en: 'Grouped by how you log', ko: '기록 방식으로 묶어요' })}</Text>
         <Text style={{ fontSize: 14.5, color: c.text2, lineHeight: 23, textAlign: 'center', marginTop: 10 }}>
-          종목이 아니라 <Text style={{ color: c.text, fontWeight: '700' }}>기록 방식</Text>으로.{'\n'}같은 골격 위에 수치만 바꿔 남겨요.
+          {tr({ en: 'Not by activity, but by ', ko: '종목이 아니라 ' })}
+          <Text style={{ color: c.text, fontWeight: '700' }}>{tr({ en: 'how you log it', ko: '기록 방식' })}</Text>
+          {tr({ en: '.\nSame frame, just change the numbers.', ko: '으로.\n같은 골격 위에 수치만 바꿔 남겨요.' })}
         </Text>
       </View>
       <View style={{ gap: 10 }}>
@@ -215,9 +224,9 @@ function CalendarPreview({ c }: { c: any }) {
   return (
     <View style={{ flex: 1, justifyContent: 'center', paddingHorizontal: 30, gap: 24 }}>
       <View style={{ alignItems: 'center' }}>
-        <Text style={{ fontSize: 23, fontWeight: '700', letterSpacing: -0.69, color: c.text }}>한 달을 한눈에</Text>
+        <Text style={{ fontSize: 23, fontWeight: '700', letterSpacing: -0.69, color: c.text }}>{tr({ en: 'A month at a glance', ko: '한 달을 한눈에' })}</Text>
         <Text style={{ fontSize: 14.5, color: c.text2, lineHeight: 23, textAlign: 'center', marginTop: 10 }}>
-          지난 기록과 앞으로의 약속을 함께 봐요.
+          {tr({ en: 'See past records and upcoming plans together.', ko: '지난 기록과 앞으로의 약속을 함께 봐요.' })}
         </Text>
       </View>
       <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 18, padding: 16 }}>
@@ -227,11 +236,11 @@ function CalendarPreview({ c }: { c: any }) {
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 18, marginTop: 16 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
             <View style={{ width: 13, height: 13, borderRadius: 7, backgroundColor: c.accent }} />
-            <Text style={{ fontSize: 12.5, color: c.text2 }}>한 일</Text>
+            <Text style={{ fontSize: 12.5, color: c.text2 }}>{tr({ en: 'Done', ko: '한 일' })}</Text>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
             <View style={{ width: 13, height: 13, borderRadius: 7, borderWidth: 1.6, borderColor: c.accent, borderStyle: 'dashed' }} />
-            <Text style={{ fontSize: 12.5, color: c.text2 }}>약속한 것</Text>
+            <Text style={{ fontSize: 12.5, color: c.text2 }}>{tr({ en: 'Planned', ko: '약속한 것' })}</Text>
           </View>
         </View>
       </View>
@@ -255,9 +264,9 @@ function FirstActivity({
 }) {
   return (
     <View style={{ flex: 1, paddingHorizontal: 26, paddingTop: 22 }}>
-      <Text style={{ fontSize: 23, fontWeight: '700', letterSpacing: -0.69, color: c.text }}>무엇부터 기록할까요?</Text>
+      <Text style={{ fontSize: 23, fontWeight: '700', letterSpacing: -0.69, color: c.text }}>{tr({ en: 'What will you log first?', ko: '무엇부터 기록할까요?' })}</Text>
       <Text style={{ fontSize: 14, color: c.text2, lineHeight: 22, marginTop: 8 }}>
-        고른 활동을 홈에 먼저 올려둘게요.{'\n'}나중에 언제든 바꿀 수 있어요.
+        {tr({ en: 'We’ll put your picks on Home first.\nYou can change them anytime.', ko: '고른 활동을 홈에 먼저 올려둘게요.\n나중에 언제든 바꿀 수 있어요.' })}
       </Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 9, marginTop: 22 }}>
         {choices.map((name) => {
@@ -306,7 +315,7 @@ function FirstActivity({
           <Glyph size={14} color={c.text2} strokeWidth={2.4}>
             <Path d="M12 5v14M5 12h14" />
           </Glyph>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: c.text2 }}>직접 추가</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: c.text2 }}>{tr({ en: 'Add your own', ko: '직접 추가' })}</Text>
         </Pressable>
       </View>
     </View>

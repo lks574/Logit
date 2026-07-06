@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { radius } from '../theme/tokens';
+import { tr } from '../i18n/i18n';
 
 // 크로스플랫폼 하단 액션 시트. react-native-web의 Alert가 no-op이라, 선택/확인/결과
 // 안내를 웹·네이티브 동일하게 처리하려고 RN Modal로 직접 구현한다.
@@ -18,7 +19,7 @@ export function ActionSheet({
   title,
   message,
   actions,
-  cancelLabel = '취소',
+  cancelLabel,
   onCancel,
 }: {
   visible: boolean;
@@ -87,7 +88,7 @@ export function ActionSheet({
               alignItems: 'center',
             }}
           >
-            <Text style={{ fontSize: 15, fontWeight: '600', color: c.text2 }}>{cancelLabel}</Text>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: c.text2 }}>{cancelLabel ?? tr({ en: 'Cancel', ko: '취소' })}</Text>
           </Pressable>
         </Pressable>
       </Pressable>

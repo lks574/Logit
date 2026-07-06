@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleProp, Text, View, ViewStyle } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { radius, withAlpha } from '../theme/tokens';
+import { tr } from '../i18n/i18n';
 import { Icon } from './Glyph';
 import { Stars } from './Rating';
 
@@ -110,7 +111,7 @@ export function PlanCard({
     <Pressable
       onPress={onPress}
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={['약속', title, meta].filter(Boolean).join(', ')}
+      accessibilityLabel={[tr({ en: 'Plan', ko: '약속' }), title, meta].filter(Boolean).join(', ')}
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -153,7 +154,7 @@ export function PlanCard({
         onPress={onCheck}
         hitSlop={8}
         accessibilityRole="button"
-        accessibilityLabel={`${title} 완료 처리`}
+        accessibilityLabel={tr({ en: `Mark ${title} done`, ko: `${title} 완료 처리` })}
         style={{
           width: 30,
           height: 30,

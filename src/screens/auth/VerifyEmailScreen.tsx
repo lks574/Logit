@@ -5,6 +5,7 @@ import { Glyph, Path, Rect } from '../../components/Glyph';
 import { PrimaryButton, BackButton } from '../../components/auth-ui';
 import { useAuth } from '../../auth/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
+import { tr } from '../../i18n/i18n';
 
 // 0.4 이메일 인증 대기 — authed + 미인증 상태의 루트 게이트. 인증되면 루트가 앱으로 전환.
 export default function VerifyEmailScreen() {
@@ -33,7 +34,7 @@ export default function VerifyEmailScreen() {
       await resendVerification();
       setCooldown(30);
     } catch (e) {
-      Alert.alert('다시 보내기', e instanceof Error ? e.message : '전송에 실패했어요.');
+      Alert.alert(tr({ en: 'Resend', ko: '다시 보내기' }), e instanceof Error ? e.message : tr({ en: 'Failed to send.', ko: '전송에 실패했어요.' }));
     }
   };
 
@@ -84,18 +85,21 @@ export default function VerifyEmailScreen() {
         </View>
 
         <View style={{ alignItems: 'center' }}>
-          <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.4, color: c.text }}>이메일을 확인해주세요</Text>
+          <Text style={{ fontSize: 20, fontWeight: '700', letterSpacing: -0.4, color: c.text }}>{tr({ en: 'Check your email', ko: '이메일을 확인해주세요' })}</Text>
           <Text style={{ fontSize: 14, color: c.text2, lineHeight: 22, textAlign: 'center', marginTop: 10 }}>
-            <Text style={{ color: c.text, fontWeight: '600' }}>{user?.email ?? '가입한 이메일'}</Text> 으로{'\n'}
-            인증 링크를 보냈어요. 링크를 누르면{'\n'}가입이 완료됩니다.
+            {tr({ en: 'We sent a verification link to\n', ko: '' })}
+            <Text style={{ color: c.text, fontWeight: '600' }}>{user?.email ?? tr({ en: 'your email', ko: '가입한 이메일' })}</Text>
+            {tr({ en: '.\nTap the link to finish signing up.', ko: ' 으로\n인증 링크를 보냈어요. 링크를 누르면\n가입이 완료됩니다.' })}
           </Text>
         </View>
 
         <View style={{ width: '100%', gap: 10, marginTop: 4 }}>
-          <PrimaryButton label="이메일 앱 열기" onPress={openMail} />
+          <PrimaryButton label={tr({ en: 'Open email app', ko: '이메일 앱 열기' })} onPress={openMail} />
           <Pressable onPress={onResend} disabled={cooldown > 0} hitSlop={6} style={{ alignItems: 'center', paddingVertical: 6 }}>
             <Text style={{ fontSize: 13.5, fontWeight: '600', color: cooldown > 0 ? c.text3 : c.text2 }}>
-              {cooldown > 0 ? `다시 보내기 (${cooldown}s)` : '메일이 안 왔어요 · 다시 보내기'}
+              {cooldown > 0
+                ? tr({ en: `Resend (${cooldown}s)`, ko: `다시 보내기 (${cooldown}s)` })
+                : tr({ en: 'Didn’t get it? · Resend', ko: '메일이 안 왔어요 · 다시 보내기' })}
             </Text>
           </Pressable>
         </View>
@@ -103,7 +107,8 @@ export default function VerifyEmailScreen() {
 
       <Pressable onPress={() => logout()} hitSlop={6} style={{ alignItems: 'center', paddingVertical: 8 }}>
         <Text style={{ fontSize: 12.5, color: c.text3 }}>
-          다른 이메일로 <Text style={{ color: c.accent, fontWeight: '600' }}>가입하기</Text>
+          {tr({ en: 'Sign up with a ', ko: '다른 이메일로 ' })}
+          <Text style={{ color: c.accent, fontWeight: '600' }}>{tr({ en: 'different email', ko: '가입하기' })}</Text>
         </Text>
       </Pressable>
     </Screen>

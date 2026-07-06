@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleProp, Text, View, ViewStyle } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../theme/ThemeContext';
+import { tr } from '../i18n/i18n';
 import { IconButton } from './Button';
 import { Icon } from './Glyph';
 
@@ -34,7 +35,7 @@ export function ScreenHeader({
       ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         {back ? (
-          <IconButton size={30} bg={c.surfaceAlt} label="뒤로" onPress={back}>
+          <IconButton size={30} bg={c.surfaceAlt} label={tr({ en: 'Back', ko: '뒤로' })} onPress={back}>
             <Icon.chevronLeft size={16} color={c.text2} strokeWidth={2.4} />
           </IconButton>
         ) : (

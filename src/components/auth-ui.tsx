@@ -3,6 +3,7 @@ import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-nativ
 import Svg, { Path as SvgPath } from 'react-native-svg';
 import { Glyph, Path, Rect, Circle } from './Glyph';
 import { useTheme } from '../theme/ThemeContext';
+import { tr } from '../i18n/i18n';
 
 // ---- 인증 화면 전용 아이콘 (핸드오프 SVG 그대로) ----
 type IP = { size?: number; color: string; strokeWidth?: number };
@@ -221,7 +222,7 @@ export function OrDivider() {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
       <View style={{ flex: 1, height: 1, backgroundColor: c.border }} />
-      <Text style={{ fontSize: 12, color: c.text3 }}>또는</Text>
+      <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: 'or', ko: '또는' })}</Text>
       <View style={{ flex: 1, height: 1, backgroundColor: c.border }} />
     </View>
   );

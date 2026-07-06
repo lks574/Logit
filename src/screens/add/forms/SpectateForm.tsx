@@ -12,6 +12,8 @@ import { resetToHome } from '../../../navigation/nav';
 import { useStore } from '../../../store/StoreContext';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
+import { tr } from '../../../i18n/i18n';
+import { activityLabel } from '../../../data/activities';
 
 // 3.4 SpectateForm — 관람·공연형 (perf color). Copy: Logit.dc.html lines 618–678.
 
@@ -118,7 +120,10 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
 
   const handleSave = () => {
     if (title.trim() === '') {
-      Alert.alert('필수 항목', '작품명을 입력해 주세요.');
+      Alert.alert(
+        tr({ en: 'Required', ko: '필수 항목' }),
+        tr({ en: 'Enter a title.', ko: '작품명을 입력해 주세요.' }),
+      );
       return;
     }
     const fields: Record<string, string> = {
@@ -156,7 +161,7 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
   return (
     <Screen edges={['top', 'bottom']}>
       <FormHeader
-        title={activity}
+        title={activityLabel(activity)}
         icon={<Icon.performance size={13} color={c.perf} strokeWidth={2.2} />}
         color={c.perf}
         soft={c.perfSoft}
@@ -166,14 +171,14 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
       <View style={{ padding: 16, gap: 13 }}>
         {/* 작품명 — required */}
         <View>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: c.text3, letterSpacing: 0.4, marginBottom: 7 }}>필수</Text>
+          <Text style={{ fontSize: 11, fontWeight: '700', color: c.text3, letterSpacing: 0.4, marginBottom: 7 }}>{tr({ en: 'Required', ko: '필수' })}</Text>
           <Pressable onPress={() => titleRef.current?.focus()} style={{ backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.perf, borderRadius: 13, paddingVertical: 13, paddingHorizontal: 14 }}>
-            <Text style={{ fontSize: 12, color: c.text2 }}>작품명</Text>
+            <Text style={{ fontSize: 12, color: c.text2 }}>{tr({ en: 'Title', ko: '작품명' })}</Text>
             <TextInput
               ref={titleRef}
               value={title}
               onChangeText={setTitle}
-              placeholder="작품명"
+              placeholder={tr({ en: 'Title', ko: '작품명' })}
               placeholderTextColor={c.text3}
               style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 3, padding: 0 }}
             />
@@ -192,8 +197,8 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
 
         {/* 공연장 / 좌석 */}
         <View style={{ flexDirection: 'row', gap: 10 }}>
-          <InputCard label="공연장" value={venue} onChangeText={setVenue} placeholder="공연장" flex={1.4} />
-          <InputCard label="좌석" value={seat} onChangeText={setSeat} placeholder="좌석" flex={1} />
+          <InputCard label={tr({ en: 'Venue', ko: '공연장' })} value={venue} onChangeText={setVenue} placeholder={tr({ en: 'Venue', ko: '공연장' })} flex={1.4} />
+          <InputCard label={tr({ en: 'Seat', ko: '좌석' })} value={seat} onChangeText={setSeat} placeholder={tr({ en: 'Seat', ko: '좌석' })} flex={1} />
         </View>
 
         {/* 관람 회차 / 티켓 가격 — 한 줄 */}
@@ -210,15 +215,15 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
               gap: 8,
             }}
           >
-            <Text style={{ fontSize: 12, color: c.text2 }}>관람 회차</Text>
-            <Stepper value={round} onChange={setRound} format={(v) => `${v}차`} color={c.perf} />
+            <Text style={{ fontSize: 12, color: c.text2 }}>{tr({ en: 'Viewing', ko: '관람 회차' })}</Text>
+            <Stepper value={round} onChange={setRound} format={(v) => tr({ en: `#${v}`, ko: `${v}차` })} color={c.perf} />
           </View>
-          <InputCard label="티켓 가격" value={ticket} onChangeText={setTicket} placeholder="예: 150,000원" flex={1} center />
+          <InputCard label={tr({ en: 'Ticket price', ko: '티켓 가격' })} value={ticket} onChangeText={setTicket} placeholder={tr({ en: 'e.g. 150,000 KRW', ko: '예: 150,000원' })} flex={1} center />
         </View>
 
         {/* 출연진 chips */}
         <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>출연진</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Cast', ko: '출연진' })}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7, alignItems: 'center' }}>
             {cast.map((name, i) => {
               const col = castColor(name);
@@ -243,7 +248,7 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
                     onPress={() => setCast((p) => p.filter((_, idx) => idx !== i))}
                     hitSlop={6}
                     accessibilityRole="button"
-                    accessibilityLabel={`${name} 삭제`}
+                    accessibilityLabel={tr({ en: `Delete ${name}`, ko: `${name} 삭제` })}
                     style={{ width: 17, height: 17, borderRadius: 9, backgroundColor: withAlpha(col, 22), alignItems: 'center', justifyContent: 'center' }}
                   >
                     <Glyph size={9} color={col} strokeWidth={2.6}>
@@ -269,7 +274,7 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
                 <TextInput
                   value={castDraft}
                   onChangeText={setCastDraft}
-                  placeholder="배우"
+                  placeholder={tr({ en: 'Actor', ko: '배우' })}
                   placeholderTextColor={c.text3}
                   autoFocus
                   returnKeyType="done"
@@ -280,7 +285,7 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
               </View>
             ) : (
               <Chip
-                label="추가"
+                label={tr({ en: 'Add', ko: '추가' })}
                 dashed
                 icon={<Icon.plus size={13} color={c.text2} strokeWidth={2.2} />}
                 onPress={() => setAdding(true)}
@@ -291,18 +296,18 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
 
         {/* 세부 입력: 평점 · 메모 · 함께한 사람 · 사진 */}
         <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>평점</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Rating', ko: '평점' })}</Text>
           <RatingInput value={rating} onChange={setRating} />
         </View>
 
         <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>메모</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Memo', ko: '메모' })}</Text>
           <Pressable onPress={() => memoRef.current?.focus()} style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 13 }}>
             <TextInput
               ref={memoRef}
               value={memo}
               onChangeText={setMemo}
-              placeholder="메모"
+              placeholder={tr({ en: 'Memo', ko: '메모' })}
               placeholderTextColor={c.text3}
               multiline
               style={{ fontSize: 14, color: c.text, padding: 0, minHeight: 44, textAlignVertical: 'top' }}
@@ -311,12 +316,12 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
         </View>
 
         <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>함께한 사람</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Companions', ko: '함께한 사람' })}</Text>
           <CompanionField companions={companions} onChange={setCompanions} />
         </View>
 
         <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>사진</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Photos', ko: '사진' })}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {photos.map((uri) => (
               <View key={uri} style={{ width: 60, height: 60 }}>
@@ -325,7 +330,7 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
                   onPress={() => setPhotos((p) => p.filter((u) => u !== uri))}
                   hitSlop={6}
                   accessibilityRole="button"
-                  accessibilityLabel="사진 삭제"
+                  accessibilityLabel={tr({ en: 'Delete photo', ko: '사진 삭제' })}
                   style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: c.text, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.bg }}
                 >
                   <Glyph size={9} color={c.bg} strokeWidth={2.8}>

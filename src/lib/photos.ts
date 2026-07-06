@@ -1,5 +1,6 @@
 import { Alert, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { tr } from '../i18n/i18n';
 
 const OPTS = { mediaTypes: ['images'] as ImagePicker.MediaType[], quality: 0.7 };
 
@@ -57,7 +58,10 @@ async function launch(source: 'camera' | 'library'): Promise<string | null> {
   if (source === 'camera') {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
-      Alert.alert('카메라 권한 필요', '설정에서 카메라 접근을 허용해 주세요.');
+      Alert.alert(
+        tr({ en: 'Camera access needed', ko: '카메라 권한 필요' }),
+        tr({ en: 'Allow camera access in Settings.', ko: '설정에서 카메라 접근을 허용해 주세요.' }),
+      );
       return null;
     }
     const res = await ImagePicker.launchCameraAsync(OPTS);
@@ -65,7 +69,10 @@ async function launch(source: 'camera' | 'library'): Promise<string | null> {
   }
   const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!perm.granted) {
-    Alert.alert('사진 권한 필요', '설정에서 사진 접근을 허용해 주세요.');
+    Alert.alert(
+      tr({ en: 'Photo access needed', ko: '사진 권한 필요' }),
+      tr({ en: 'Allow photo access in Settings.', ko: '설정에서 사진 접근을 허용해 주세요.' }),
+    );
     return null;
   }
   const res = await ImagePicker.launchImageLibraryAsync(OPTS);
@@ -80,10 +87,10 @@ export function choosePhoto(): Promise<string | null> {
       launch('library').then(resolve);
       return;
     }
-    Alert.alert('사진 추가', undefined, [
-      { text: '촬영', onPress: () => launch('camera').then(resolve) },
-      { text: '앨범에서 선택', onPress: () => launch('library').then(resolve) },
-      { text: '취소', style: 'cancel', onPress: () => resolve(null) },
+    Alert.alert(tr({ en: 'Add photo', ko: '사진 추가' }), undefined, [
+      { text: tr({ en: 'Take photo', ko: '촬영' }), onPress: () => launch('camera').then(resolve) },
+      { text: tr({ en: 'Choose from library', ko: '앨범에서 선택' }), onPress: () => launch('library').then(resolve) },
+      { text: tr({ en: 'Cancel', ko: '취소' }), style: 'cancel', onPress: () => resolve(null) },
     ]);
   });
 }

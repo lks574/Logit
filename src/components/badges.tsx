@@ -2,6 +2,7 @@ import React from 'react';
 import { Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { withAlpha } from '../theme/tokens';
+import { tr } from '../i18n/i18n';
 
 export type SyncState = 'synced' | 'pending' | 'offline';
 
@@ -9,9 +10,9 @@ export type SyncState = 'synced' | 'pending' | 'offline';
 export function SyncStatusBadge({ state }: { state: SyncState }) {
   const { c } = useTheme();
   const map = {
-    synced: { dot: c.success, label: '동기화됨', text: c.text2 },
-    pending: { dot: c.warning, label: '대기 중', text: c.text2 },
-    offline: { dot: c.text3, label: '오프라인', text: c.text3 },
+    synced: { dot: c.success, label: tr({ en: 'Synced', ko: '동기화됨' }), text: c.text2 },
+    pending: { dot: c.warning, label: tr({ en: 'Pending', ko: '대기 중' }), text: c.text2 },
+    offline: { dot: c.text3, label: tr({ en: 'Offline', ko: '오프라인' }), text: c.text3 },
   }[state];
   return (
     <View

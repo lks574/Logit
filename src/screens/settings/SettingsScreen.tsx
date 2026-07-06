@@ -11,6 +11,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { exportData, importData } from '../../lib/dataTransfer';
 import type { StoreState } from '../../store/types';
 import { useTheme } from '../../theme/ThemeContext';
+import { useLang, tr } from '../../i18n/i18n';
 import { radius } from '../../theme/tokens';
 
 type SheetState =
@@ -24,6 +25,7 @@ type SheetState =
 // 4.8 설정 — profile card, grouped surface cards with rows + dividers.
 export default function SettingsScreen() {
   const { c, mode, setMode } = useTheme();
+  const { mode: langMode, setMode: setLangMode } = useLang();
   const nav = useNavigation<any>();
   const { profile, records, plans, customActivities, onboardingComplete, preferredActivities, replaceAll } =
     useStore();
@@ -32,7 +34,7 @@ export default function SettingsScreen() {
   const [sheet, setSheet] = React.useState<SheetState>({ kind: 'none' });
 
   const errMessage = (e: unknown) =>
-    e instanceof Error ? e.message : '알 수 없는 오류가 발생했습니다.';
+    e instanceof Error ? e.message : tr({ en: 'An unknown error occurred.', ko: '알 수 없는 오류가 발생했습니다.' });
 
   const runExport = async (format: 'json' | 'csv') => {
     // 시트를 먼저 none으로 닫지 않는다 — 단일 Modal이 dismiss→재present되는 race를 피하고,
@@ -42,9 +44,9 @@ export default function SettingsScreen() {
         { records, plans, customActivities, profile, onboardingComplete, preferredActivities },
         format,
       );
-      setSheet({ kind: 'message', title: '내보내기', message: msg });
+      setSheet({ kind: 'message', title: tr({ en: 'Export', ko: '내보내기' }), message: msg });
     } catch (e) {
-      setSheet({ kind: 'message', title: '내보내기 실패', message: errMessage(e) });
+      setSheet({ kind: 'message', title: tr({ en: 'Export failed', ko: '내보내기 실패' }), message: errMessage(e) });
     }
   };
 
@@ -52,19 +54,22 @@ export default function SettingsScreen() {
     try {
       const incoming = await importData();
       if (!incoming) return; // 사용자 취소
-      const summary = `기록 ${incoming.records.length}개 · 약속 ${incoming.plans.length}개를 가져옵니다. 현재 데이터는 모두 대체됩니다.`;
+      const summary = tr({
+        en: `Importing ${incoming.records.length} records · ${incoming.plans.length} plans. All current data will be replaced.`,
+        ko: `기록 ${incoming.records.length}개 · 약속 ${incoming.plans.length}개를 가져옵니다. 현재 데이터는 모두 대체됩니다.`,
+      });
       setSheet({ kind: 'confirmImport', incoming, summary });
     } catch (e) {
-      setSheet({ kind: 'message', title: '가져오기 실패', message: errMessage(e) });
+      setSheet({ kind: 'message', title: tr({ en: 'Import failed', ko: '가져오기 실패' }), message: errMessage(e) });
     }
   };
 
   const confirmImport = async (incoming: StoreState) => {
     try {
       await replaceAll(incoming);
-      setSheet({ kind: 'message', title: '가져오기 완료', message: '데이터를 복원했습니다.' });
+      setSheet({ kind: 'message', title: tr({ en: 'Import complete', ko: '가져오기 완료' }), message: tr({ en: 'Your data has been restored.', ko: '데이터를 복원했습니다.' }) });
     } catch (e) {
-      setSheet({ kind: 'message', title: '가져오기 실패', message: '저장에 실패했습니다. 저장 공간을 확인해 주세요.' });
+      setSheet({ kind: 'message', title: tr({ en: 'Import failed', ko: '가져오기 실패' }), message: tr({ en: 'Failed to save. Please check your storage space.', ko: '저장에 실패했습니다. 저장 공간을 확인해 주세요.' }) });
     }
   };
 
@@ -79,9 +84,9 @@ export default function SettingsScreen() {
         onboardingComplete: true, // 리셋해도 온보딩을 다시 띄우지 않음
         preferredActivities: [],
       });
-      setSheet({ kind: 'message', title: '초기화 완료', message: '모든 기록과 약속을 삭제했습니다.' });
+      setSheet({ kind: 'message', title: tr({ en: 'Reset complete', ko: '초기화 완료' }), message: tr({ en: 'All records and plans have been deleted.', ko: '모든 기록과 약속을 삭제했습니다.' }) });
     } catch (e) {
-      setSheet({ kind: 'message', title: '초기화 실패', message: '삭제에 실패했습니다. 다시 시도해 주세요.' });
+      setSheet({ kind: 'message', title: tr({ en: 'Reset failed', ko: '초기화 실패' }), message: tr({ en: 'Failed to delete. Please try again.', ko: '삭제에 실패했습니다. 다시 시도해 주세요.' }) });
     }
   };
 
@@ -95,39 +100,39 @@ export default function SettingsScreen() {
     switch (sheet.kind) {
       case 'export':
         return {
-          title: '데이터 내보내기',
-          message: '형식을 선택하세요. JSON은 전체 복원용, CSV는 기록 열람용입니다.',
-          cancelLabel: '취소',
+          title: tr({ en: 'Export data', ko: '데이터 내보내기' }),
+          message: tr({ en: 'Choose a format. JSON is for full restore, CSV is for viewing records.', ko: '형식을 선택하세요. JSON은 전체 복원용, CSV는 기록 열람용입니다.' }),
+          cancelLabel: tr({ en: 'Cancel', ko: '취소' }),
           actions: [
-            { label: 'JSON (전체 백업)', onPress: () => runExport('json') },
-            { label: 'CSV (기록 표)', onPress: () => runExport('csv') },
+            { label: tr({ en: 'JSON (full backup)', ko: 'JSON (전체 백업)' }), onPress: () => runExport('json') },
+            { label: tr({ en: 'CSV (records table)', ko: 'CSV (기록 표)' }), onPress: () => runExport('csv') },
           ],
         };
       case 'confirmImport':
         return {
-          title: '데이터 가져오기',
+          title: tr({ en: 'Import data', ko: '데이터 가져오기' }),
           message: sheet.summary,
-          cancelLabel: '취소',
-          actions: [{ label: '전체 교체', destructive: true, onPress: () => confirmImport(sheet.incoming) }],
+          cancelLabel: tr({ en: 'Cancel', ko: '취소' }),
+          actions: [{ label: tr({ en: 'Replace all', ko: '전체 교체' }), destructive: true, onPress: () => confirmImport(sheet.incoming) }],
         };
       case 'confirmReset':
         return {
-          title: '데이터 리셋',
-          message: '모든 기록·약속·활동을 삭제합니다. 이 작업은 되돌릴 수 없습니다.',
-          cancelLabel: '취소',
-          actions: [{ label: '전체 삭제', destructive: true, onPress: confirmReset }],
+          title: tr({ en: 'Reset data', ko: '데이터 리셋' }),
+          message: tr({ en: 'This deletes all records, plans, and activities. This cannot be undone.', ko: '모든 기록·약속·활동을 삭제합니다. 이 작업은 되돌릴 수 없습니다.' }),
+          cancelLabel: tr({ en: 'Cancel', ko: '취소' }),
+          actions: [{ label: tr({ en: 'Delete all', ko: '전체 삭제' }), destructive: true, onPress: confirmReset }],
         };
       case 'confirmLogout':
         return {
-          title: '로그아웃',
-          message: '이 기기에서 로그아웃합니다. 기록 데이터는 기기에 그대로 남아요.',
-          cancelLabel: '취소',
-          actions: [{ label: '로그아웃', destructive: true, onPress: () => logout() }],
+          title: tr({ en: 'Log out', ko: '로그아웃' }),
+          message: tr({ en: 'You will be logged out on this device. Your record data stays on the device.', ko: '이 기기에서 로그아웃합니다. 기록 데이터는 기기에 그대로 남아요.' }),
+          cancelLabel: tr({ en: 'Cancel', ko: '취소' }),
+          actions: [{ label: tr({ en: 'Log out', ko: '로그아웃' }), destructive: true, onPress: () => logout() }],
         };
       case 'message':
-        return { title: sheet.title, message: sheet.message, cancelLabel: '확인', actions: [] };
+        return { title: sheet.title, message: sheet.message, cancelLabel: tr({ en: 'OK', ko: '확인' }), actions: [] };
       default:
-        return { title: '', message: undefined, cancelLabel: '취소', actions: [] };
+        return { title: '', message: undefined, cancelLabel: tr({ en: 'Cancel', ko: '취소' }), actions: [] };
     }
   })();
 
@@ -178,7 +183,7 @@ export default function SettingsScreen() {
     <Screen edges={['top']} contentStyle={{ paddingBottom: 24 }}>
       {/* Title */}
       <View style={{ paddingHorizontal: 18, paddingTop: 8, paddingBottom: 14 }}>
-        <T style={{ fontSize: 25, fontWeight: '700', letterSpacing: -0.75, color: c.text }}>설정</T>
+        <T style={{ fontSize: 25, fontWeight: '700', letterSpacing: -0.75, color: c.text }}>{tr({ en: 'Settings', ko: '설정' })}</T>
       </View>
 
       <View style={{ paddingHorizontal: 16, gap: 16 }}>
@@ -217,7 +222,7 @@ export default function SettingsScreen() {
 
         {/* 백업 · 동기화 */}
         <View>
-          <SectionLabel text="백업 · 동기화" />
+          <SectionLabel text={tr({ en: 'Backup · Sync', ko: '백업 · 동기화' })} />
           <Card>
             <SettingsRow
               icon={
@@ -225,10 +230,10 @@ export default function SettingsScreen() {
                   <Path d="M18 10a4 4 0 0 0-.7-7.9A6 6 0 0 0 6 6.5 4.5 4.5 0 0 0 7 15h11a3.5 3.5 0 0 0 0-5z" />
                 </Glyph>
               }
-              label="클라우드 백업"
+              label={tr({ en: 'Cloud backup', ko: '클라우드 백업' })}
               right={
                 <View style={{ backgroundColor: c.surfaceAlt, borderRadius: 6, paddingVertical: 4, paddingHorizontal: 9 }}>
-                  <T style={{ fontSize: 11, fontWeight: '600', color: c.text2 }}>곧 지원</T>
+                  <T style={{ fontSize: 11, fontWeight: '600', color: c.text2 }}>{tr({ en: 'Coming soon', ko: '곧 지원' })}</T>
                 </View>
               }
             />
@@ -239,7 +244,7 @@ export default function SettingsScreen() {
                   <Path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5" />
                 </Glyph>
               }
-              label="데이터 내보내기"
+              label={tr({ en: 'Export data', ko: '데이터 내보내기' })}
               value="CSV · JSON"
               onPress={() => setSheet({ kind: 'export' })}
             />
@@ -250,7 +255,7 @@ export default function SettingsScreen() {
                   <Path d="M12 3v13M7 8l5-5 5 5M5 21h14" />
                 </Glyph>
               }
-              label="데이터 가져오기"
+              label={tr({ en: 'Import data', ko: '데이터 가져오기' })}
               value="JSON"
               onPress={runImport}
             />
@@ -259,7 +264,7 @@ export default function SettingsScreen() {
 
         {/* 건강 데이터 연동 */}
         <View>
-          <SectionLabel text="건강 데이터 연동" />
+          <SectionLabel text={tr({ en: 'Health data', ko: '건강 데이터 연동' })} />
           <Card>
             <SettingsRow
               icon={
@@ -267,7 +272,7 @@ export default function SettingsScreen() {
                   <Path d="M20.8 5.6a5.5 5.5 0 0 0-8.8 1 5.5 5.5 0 0 0-8.8-1c-2.2 2.2-2 5.6.4 8L12 21l8.4-7.4c2.4-2.4 2.6-5.8.4-8z" />
                 </Glyph>
               }
-              label="Apple 건강 / Health Connect"
+              label={tr({ en: 'Apple Health / Health Connect', ko: 'Apple 건강 / Health Connect' })}
               right={
                 <View
                   style={{
@@ -277,19 +282,19 @@ export default function SettingsScreen() {
                     paddingHorizontal: 9,
                   }}
                 >
-                  <T style={{ fontSize: 11, fontWeight: '600', color: c.text2 }}>곧 지원</T>
+                  <T style={{ fontSize: 11, fontWeight: '600', color: c.text2 }}>{tr({ en: 'Coming soon', ko: '곧 지원' })}</T>
                 </View>
               }
             />
           </Card>
           <T style={{ fontSize: 11, color: c.text3, marginHorizontal: 4, marginTop: 7 }}>
-            자동 거리·심박 동기화는 후속 업데이트에서 제공됩니다.
+            {tr({ en: 'Automatic distance and heart-rate sync will arrive in a later update.', ko: '자동 거리·심박 동기화는 후속 업데이트에서 제공됩니다.' })}
           </T>
         </View>
 
         {/* 앱 */}
         <View>
-          <SectionLabel text="앱" />
+          <SectionLabel text={tr({ en: 'App', ko: '앱' })} />
           <Card>
             <ControlRow
               icon={
@@ -297,16 +302,36 @@ export default function SettingsScreen() {
                   <Path d="M12 3a6 6 0 0 0 0 18 9 9 0 0 1 0-18z" />
                 </Glyph>
               }
-              label="테마"
+              label={tr({ en: 'Theme', ko: '테마' })}
             >
               <Segmented
                 options={[
                   { key: 'light', label: 'Light' },
                   { key: 'dark', label: 'Dark' },
-                  { key: 'system', label: '시스템' },
+                  { key: 'system', label: tr({ en: 'System', ko: '시스템' }) },
                 ]}
                 value={mode}
                 onChange={setMode}
+              />
+            </ControlRow>
+            <Divider />
+            <ControlRow
+              icon={
+                <Glyph size={18} color={c.text2} strokeWidth={1.8}>
+                  <Path d="M5 8h14M9 4c-1.5 4-1.5 12 0 16M12 4v16" />
+                  <Path d="M4 20c3-1 5-3 6-6M14 14c1.5 2 3.5 4 6 6" />
+                </Glyph>
+              }
+              label={tr({ en: 'Language', ko: '언어' })}
+            >
+              <Segmented
+                options={[
+                  { key: 'en', label: 'English' },
+                  { key: 'ko', label: '한국어' },
+                  { key: 'system', label: tr({ en: 'System', ko: '시스템' }) },
+                ]}
+                value={langMode}
+                onChange={setLangMode}
               />
             </ControlRow>
           </Card>
@@ -314,7 +339,7 @@ export default function SettingsScreen() {
 
         {/* 계정 */}
         <View>
-          <SectionLabel text="계정" />
+          <SectionLabel text={tr({ en: 'Account', ko: '계정' })} />
           <Card>
             <SettingsRow
               icon={
@@ -322,7 +347,7 @@ export default function SettingsScreen() {
                   <Path d="M16 17l5-5-5-5M21 12H9M12 19a7 7 0 1 1 0-14" />
                 </Glyph>
               }
-              label="로그아웃"
+              label={tr({ en: 'Log out', ko: '로그아웃' })}
               value={user?.email ?? undefined}
               onPress={() => setSheet({ kind: 'confirmLogout' })}
             />
@@ -331,7 +356,7 @@ export default function SettingsScreen() {
 
         {/* 데이터 초기화 */}
         <View>
-          <SectionLabel text="데이터 초기화" />
+          <SectionLabel text={tr({ en: 'Reset data', ko: '데이터 초기화' })} />
           <Card>
             <SettingsRow
               icon={
@@ -339,13 +364,13 @@ export default function SettingsScreen() {
                   <Path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M6 6l1 14a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-14M10 11v6M14 11v6" />
                 </Glyph>
               }
-              label="데이터 리셋"
-              right={<T style={{ fontSize: 13, fontWeight: '600', color: c.error }}>전체 삭제</T>}
+              label={tr({ en: 'Reset data', ko: '데이터 리셋' })}
+              right={<T style={{ fontSize: 13, fontWeight: '600', color: c.error }}>{tr({ en: 'Delete all', ko: '전체 삭제' })}</T>}
               onPress={() => setSheet({ kind: 'confirmReset' })}
             />
           </Card>
           <T style={{ fontSize: 11, color: c.text3, marginHorizontal: 4, marginTop: 7 }}>
-            모든 기록·약속·활동을 지웁니다. 되돌릴 수 없습니다.
+            {tr({ en: 'Erases all records, plans, and activities. This cannot be undone.', ko: '모든 기록·약속·활동을 지웁니다. 되돌릴 수 없습니다.' })}
           </T>
         </View>
       </View>

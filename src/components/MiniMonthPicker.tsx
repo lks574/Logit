@@ -2,6 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { Icon } from './Glyph';
+import { tr } from '../i18n/i18n';
+
+const MONTH_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const monthName = (month: number) => MONTH_EN[month - 1];
 
 // Compact month-grid date picker (pure Views → works on every platform incl.
 // web preview). Value/onChange are 'YYYY-MM-DD'.
@@ -34,7 +38,15 @@ export function MiniMonthPicker({ value, onChange }: { value: string; onChange: 
   const weeks: (number | null)[][] = [];
   for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
 
-  const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+  const weekdays = [
+    tr({ en: 'Sun', ko: '일' }),
+    tr({ en: 'Mon', ko: '월' }),
+    tr({ en: 'Tue', ko: '화' }),
+    tr({ en: 'Wed', ko: '수' }),
+    tr({ en: 'Thu', ko: '목' }),
+    tr({ en: 'Fri', ko: '금' }),
+    tr({ en: 'Sat', ko: '토' }),
+  ];
 
   return (
     <View
@@ -48,11 +60,11 @@ export function MiniMonthPicker({ value, onChange }: { value: string; onChange: 
       }}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4, marginBottom: 6 }}>
-        <Pressable onPress={() => shift(-1)} hitSlop={8} accessibilityRole="button" accessibilityLabel="이전 달" style={{ padding: 4 }}>
+        <Pressable onPress={() => shift(-1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={tr({ en: 'Previous month', ko: '이전 달' })} style={{ padding: 4 }}>
           <Icon.chevronLeft size={16} color={c.text2} strokeWidth={2.4} />
         </Pressable>
-        <Text style={{ fontSize: 13, fontWeight: '700', color: c.text }}>{`${year}년 ${month}월`}</Text>
-        <Pressable onPress={() => shift(1)} hitSlop={8} accessibilityRole="button" accessibilityLabel="다음 달" style={{ padding: 4 }}>
+        <Text style={{ fontSize: 13, fontWeight: '700', color: c.text }}>{tr({ en: `${monthName(month)} ${year}`, ko: `${year}년 ${month}월` })}</Text>
+        <Pressable onPress={() => shift(1)} hitSlop={8} accessibilityRole="button" accessibilityLabel={tr({ en: 'Next month', ko: '다음 달' })} style={{ padding: 4 }}>
           <Icon.chevronRight size={16} color={c.text2} strokeWidth={2.4} />
         </Pressable>
       </View>

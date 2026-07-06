@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import { tr } from '../i18n/i18n';
 import { Icon } from './Glyph';
 
 // Field — labeled text input. required → accent 1.5px border. Gallery §07.
@@ -37,7 +38,7 @@ export function Field({
     >
       <Text style={{ fontSize: 12, color: c.text2 }}>
         {label}
-        {required ? <Text style={{ color: c.accent, fontWeight: '600' }}> · 필수</Text> : null}
+        {required ? <Text style={{ color: c.accent, fontWeight: '600' }}> · {tr({ en: 'Required', ko: '필수' })}</Text> : null}
       </Text>
       <TextInput
         ref={ref}

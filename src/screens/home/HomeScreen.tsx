@@ -7,26 +7,14 @@ import { ActivityCard } from '../../components/cards';
 import { SyncStatusBadge } from '../../components/badges';
 import { useTheme } from '../../theme/ThemeContext';
 import { withAlpha } from '../../theme/tokens';
-import { activities, colorsFor } from '../../data/activities';
+import { activities, activityLabel, colorsFor } from '../../data/activities';
+import { tr } from '../../i18n/i18n';
+import { longDate, slashDayWeekday, displayTimeLabel } from '../../lib/date';
 import { useStore, useSyncState } from '../../store/StoreContext';
 import { dday, upcomingPlans, weekStats } from '../../store/selectors';
 import { StoredPlan } from '../../store/types';
 
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
-
-// "7/2 (수)" — month/day + weekday, matching the design.
-function monthDayLabel(dateISO: string): string {
-  const d = new Date(Date.parse(dateISO + 'T00:00:00Z'));
-  return `${d.getUTCMonth() + 1}/${d.getUTCDate()} (${WEEKDAYS[d.getUTCDay()]})`;
-}
-
-// "6월 30일 월요일" — 헤더용, today에서 파생.
-function headerDate(dateISO: string): string {
-  const d = new Date(Date.parse(dateISO + 'T00:00:00Z'));
-  return `${d.getUTCMonth() + 1}월 ${d.getUTCDate()}일 ${WEEKDAYS[d.getUTCDay()]}요일`;
-}
-
-// "6/24 – 6/30" — 최근 7일 범위, today에서 파생.
+// "6/24 – 6/30" — 최근 7일 범위, today에서 파생. (숫자만 — 언어 무관)
 function weekRangeLabel(dateISO: string): string {
   const base = Date.parse(dateISO + 'T00:00:00Z');
   const f = (t: number) => {
@@ -59,9 +47,9 @@ export default function HomeScreen() {
         }}
       >
         <View>
-          <Text style={{ fontSize: 13, color: c.text2, fontWeight: '500' }}>{headerDate(today)}</Text>
+          <Text style={{ fontSize: 13, color: c.text2, fontWeight: '500' }}>{longDate(today)}</Text>
           <Text style={{ fontSize: 25, fontWeight: '700', letterSpacing: -0.75, color: c.text, marginTop: 2 }}>
-            기록
+            {tr({ en: 'Log', ko: '기록' })}
           </Text>
         </View>
         <View style={{ marginTop: 6 }}>
@@ -74,13 +62,13 @@ export default function HomeScreen() {
         {upcoming.length > 0 ? (
           <>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: -4 }}>
-              <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, letterSpacing: 0.24 }}>다가오는 약속</Text>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, letterSpacing: 0.24 }}>{tr({ en: 'Upcoming', ko: '다가오는 약속' })}</Text>
               <Pressable
                 onPress={() => nav.navigate('Plans')}
                 hitSlop={8}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
               >
-                <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>캘린더</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>{tr({ en: 'Calendar', ko: '캘린더' })}</Text>
                 <Icon.chevronRight size={14} color={c.accent} strokeWidth={2.2} />
               </Pressable>
             </View>
@@ -104,7 +92,7 @@ export default function HomeScreen() {
 
         {/* 이번 주 header */}
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, letterSpacing: 0.24 }}>이번 주</Text>
+          <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, letterSpacing: 0.24 }}>{tr({ en: 'This week', ko: '이번 주' })}</Text>
           <Text style={{ fontSize: 11, color: c.text3 }}>{weekRangeLabel(today)}</Text>
         </View>
 
@@ -113,11 +101,11 @@ export default function HomeScreen() {
           <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 12 }}>
             <Text style={{ fontSize: 22, fontWeight: '700', color: c.text }}>
               {week.count}
-              <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}> 기록 · {week.composition.length}종목</Text>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}> {tr({ en: 'records', ko: '기록' })} · {tr({ en: `${week.composition.length} sports`, ko: `${week.composition.length}종목` })}</Text>
             </Text>
             <Text style={{ fontSize: 20, fontWeight: '700', color: c.text }}>
               🔥{week.streak}
-              <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}> 연속</Text>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}> {tr({ en: 'streak', ko: '연속' })}</Text>
             </Text>
           </View>
 
@@ -134,13 +122,13 @@ export default function HomeScreen() {
                 {week.composition.map((a) => (
                   <View key={a.activity} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                     <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: colorsFor(a.template, c).color }} />
-                    <Text style={{ fontSize: 12, color: c.text2 }}>{a.activity} {a.count}</Text>
+                    <Text style={{ fontSize: 12, color: c.text2 }}>{activityLabel(a.activity)} {a.count}</Text>
                   </View>
                 ))}
               </View>
             </>
           ) : (
-            <Text style={{ fontSize: 12, color: c.text3 }}>이번 주 기록이 아직 없어요.</Text>
+            <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: 'No records this week yet.', ko: '이번 주 기록이 아직 없어요.' })}</Text>
           )}
         </View>
 
@@ -148,7 +136,7 @@ export default function HomeScreen() {
         {records.length > 0 ? (
           <>
             <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, letterSpacing: 0.24, marginTop: 2 }}>
-              최근 기록
+              {tr({ en: 'Recent', ko: '최근 기록' })}
             </Text>
 
             {records.slice(0, 6).map((r) => {
@@ -161,8 +149,8 @@ export default function HomeScreen() {
                   color={rc.color}
                   soft={rc.soft}
                   icon={<IconComp size={19} color={rc.color} />}
-                  title={r.activity}
-                  time={r.timeLabel}
+                  title={activityLabel(r.activity)}
+                  time={displayTimeLabel(r.timeLabel)}
                   meta={r.meta}
                   ratingFilled={r.rating}
                   memo={r.memo}
@@ -188,16 +176,16 @@ export default function HomeScreen() {
               </Glyph>
             </View>
             <View style={{ alignItems: 'center', gap: 5 }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>첫 기록을 남겨보세요</Text>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>{tr({ en: 'Add your first record', ko: '첫 기록을 남겨보세요' })}</Text>
               <Text style={{ fontSize: 12.5, color: c.text2, textAlign: 'center', lineHeight: 18 }}>
-                운동이나 공연을 기록하면{'\n'}여기와 통계에 차곡차곡 모여요.
+                {tr({ en: 'Log a workout or a show and it\nbuilds up here and in your stats.', ko: '운동이나 공연을 기록하면\n여기와 통계에 차곡차곡 모여요.' })}
               </Text>
             </View>
             <Pressable
               onPress={() => nav.navigate('AddChooser')}
               style={{ backgroundColor: c.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 2 }}
             >
-              <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>기록 추가하기</Text>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{tr({ en: 'Add record', ko: '기록 추가하기' })}</Text>
             </Pressable>
           </View>
         )}
@@ -223,8 +211,8 @@ function PlanRow({
   const colors = colorsFor(act?.template ?? plan.template, c);
   const IconComp = act ? Icon[act.icon] : Icon.yoga;
   const d = dday(plan.dateISO, today);
-  const dateLabel = d === 0 ? '오늘' : monthDayLabel(plan.dateISO);
-  const meta = `${dateLabel} ${plan.timeLabel} · ${plan.place ?? ''}`.trim();
+  const dateLabel = d === 0 ? tr({ en: 'Today', ko: '오늘' }) : slashDayWeekday(plan.dateISO);
+  const meta = `${dateLabel} ${displayTimeLabel(plan.timeLabel)} · ${plan.place ?? ''}`.trim();
 
   return (
     <>
@@ -235,11 +223,11 @@ function PlanRow({
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{plan.activity}</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{activityLabel(plan.activity)}</Text>
             {/* empty-ring "약속 미완료" dot on the first/today row */}
             {first && (
               <View
-                accessibilityLabel="약속 미완료"
+                accessibilityLabel={tr({ en: 'Plan incomplete', ko: '약속 미완료' })}
                 style={{ width: 6, height: 6, borderRadius: 3, borderWidth: 1.5, borderColor: c.accent }}
               />
             )}

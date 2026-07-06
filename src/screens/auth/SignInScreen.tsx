@@ -6,6 +6,7 @@ import { AuthInput, AuthIcon, PrimaryButton, SocialButton, OrDivider, BackButton
 import { useAuth } from '../../auth/AuthContext';
 import { authErrorMessage } from '../../auth/errors';
 import { useTheme } from '../../theme/ThemeContext';
+import { tr } from '../../i18n/i18n';
 
 // 0.2 로그인 — 이메일 + 비밀번호.
 export default function SignInScreen() {
@@ -37,7 +38,7 @@ export default function SignInScreen() {
     try {
       await fn();
     } catch (e) {
-      Alert.alert('로그인', e instanceof Error ? e.message : '로그인에 실패했어요.');
+      Alert.alert(tr({ en: 'Sign in', ko: '로그인' }), e instanceof Error ? e.message : tr({ en: 'Sign-in failed.', ko: '로그인에 실패했어요.' }));
     }
   };
 
@@ -47,12 +48,12 @@ export default function SignInScreen() {
         <BackButton onPress={() => nav.goBack()} />
       </View>
 
-      <Text style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.72, color: c.text }}>다시 오셨네요</Text>
-      <Text style={{ fontSize: 14, color: c.text2, marginTop: 6 }}>이메일로 로그인하고 이어서 기록해요.</Text>
+      <Text style={{ fontSize: 24, fontWeight: '700', letterSpacing: -0.72, color: c.text }}>{tr({ en: 'Welcome back', ko: '다시 오셨네요' })}</Text>
+      <Text style={{ fontSize: 14, color: c.text2, marginTop: 6 }}>{tr({ en: 'Sign in with email and keep logging.', ko: '이메일로 로그인하고 이어서 기록해요.' })}</Text>
 
       <View style={{ gap: 14, marginTop: 26 }}>
         <AuthInput
-          label="이메일"
+          label={tr({ en: 'Email', ko: '이메일' })}
           icon={<AuthIcon.mail size={17} color={c.text3} />}
           value={email}
           onChangeText={setEmail}
@@ -61,7 +62,7 @@ export default function SignInScreen() {
           error={error ? ' ' : undefined}
         />
         <AuthInput
-          label="비밀번호"
+          label={tr({ en: 'Password', ko: '비밀번호' })}
           icon={<AuthIcon.lock size={17} color={c.text3} />}
           value={password}
           onChangeText={setPassword}
@@ -71,9 +72,9 @@ export default function SignInScreen() {
           onSubmitEditing={onLogin}
         />
         <Pressable onPress={() => nav.navigate('PasswordReset')} hitSlop={6} style={{ alignSelf: 'flex-end', marginTop: -4 }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.accent }}>비밀번호를 잊으셨나요?</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.accent }}>{tr({ en: 'Forgot password?', ko: '비밀번호를 잊으셨나요?' })}</Text>
         </Pressable>
-        <PrimaryButton label="로그인" onPress={onLogin} loading={loading} disabled={!canSubmit} />
+        <PrimaryButton label={tr({ en: 'Sign in', ko: '로그인' })} onPress={onLogin} loading={loading} disabled={!canSubmit} />
       </View>
 
       <View style={{ marginVertical: 20 }}>
@@ -85,7 +86,7 @@ export default function SignInScreen() {
       </View>
 
       <View style={{ marginTop: 24 }}>
-        <FooterLink text="아직 계정이 없으신가요?" linkText="회원가입" onPress={() => nav.navigate('SignUp')} />
+        <FooterLink text={tr({ en: 'Don’t have an account yet?', ko: '아직 계정이 없으신가요?' })} linkText={tr({ en: 'Sign up', ko: '회원가입' })} onPress={() => nav.navigate('SignUp')} />
       </View>
     </Screen>
   );

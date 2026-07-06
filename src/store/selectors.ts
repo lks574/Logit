@@ -1,5 +1,6 @@
 import { TemplateType } from '../theme/tokens';
 import { StoredPlan, StoredRecord } from './types';
+import { tr } from '../i18n/i18n';
 
 // Pure derivations over store state. Dates are 'YYYY-MM-DD'.
 
@@ -214,15 +215,15 @@ export function periodRange(period: StatsPeriod, today: string): { start: string
   const m = +today.slice(5, 7);
   const p = (n: number) => String(n).padStart(2, '0');
   const lastDay = (yy: number, mm: number) => new Date(Date.UTC(yy, mm, 0)).getUTCDate();
-  if (period === 'all') return { start: '0000-01-01', end: '9999-12-31', tag: '전체' };
-  if (period === 'year') return { start: `${y}-01-01`, end: `${y}-12-31`, tag: '올해' };
+  if (period === 'all') return { start: '0000-01-01', end: '9999-12-31', tag: tr({ en: 'All', ko: '전체' }) };
+  if (period === 'year') return { start: `${y}-01-01`, end: `${y}-12-31`, tag: tr({ en: 'This year', ko: '올해' }) };
   if (period === 'quarter') {
     const q = Math.floor((m - 1) / 3);
     const sm = q * 3 + 1;
     const em = sm + 2;
-    return { start: `${y}-${p(sm)}-01`, end: `${y}-${p(em)}-${p(lastDay(y, em))}`, tag: `${q + 1}분기` };
+    return { start: `${y}-${p(sm)}-01`, end: `${y}-${p(em)}-${p(lastDay(y, em))}`, tag: tr({ en: `Q${q + 1}`, ko: `${q + 1}분기` }) };
   }
-  return { start: `${y}-${p(m)}-01`, end: `${y}-${p(m)}-${p(lastDay(y, m))}`, tag: `${m}월` };
+  return { start: `${y}-${p(m)}-01`, end: `${y}-${p(m)}-${p(lastDay(y, m))}`, tag: tr({ en: `${m}M`, ko: `${m}월` }) };
 }
 
 // 최근 5주(35일, 주=일요일 시작) 일별 활동 셀. level 0–3.
@@ -272,21 +273,30 @@ export function statsHub(records: StoredRecord[], period: StatsPeriod, today: st
     let subtitle: string;
     if (key === 'cardio') {
       const km = Math.round(rs.reduce((a, r) => a + parseKm(r), 0) * 10) / 10;
-      subtitle = `${rs.length}회 · ${km}km`;
+      subtitle = tr({ en: `${rs.length}× · ${km}km`, ko: `${rs.length}회 · ${km}km` });
     } else if (key === 'strength') {
       const t = Math.round((rs.reduce((a, r) => a + parseVolumeKg(r.fields?.총볼륨), 0) / 1000) * 10) / 10;
-      subtitle = `${rs.length}회 · ${t}t`;
+      subtitle = tr({ en: `${rs.length}× · ${t}t`, ko: `${rs.length}회 · ${t}t` });
     } else if (key === 'match') {
       const rec = rs.filter((r) => r.fields?.결과).length;
       const w = rs.filter((r) => r.fields?.결과 === '승').length;
-      subtitle = rec > 0 ? `${rs.length}회 · 승률 ${Math.round((w / rec) * 100)}%` : `${rs.length}회`;
+      subtitle =
+        rec > 0
+          ? tr({ en: `${rs.length}× · Win ${Math.round((w / rec) * 100)}%`, ko: `${rs.length}회 · 승률 ${Math.round((w / rec) * 100)}%` })
+          : tr({ en: `${rs.length}×`, ko: `${rs.length}회` });
     } else if (key === 'performance') {
       const rated = rs.map((r) => r.rating).filter((x): x is number => !!x);
       const avgR = rated.length ? Math.round(avg(rated) * 10) / 10 : 0;
-      subtitle = `${rs.length}편${avgR ? ` · 평점 ${avgR}` : ''}`;
+      subtitle = tr({
+        en: `${rs.length}${avgR ? ` · ★ ${avgR}` : ''}`,
+        ko: `${rs.length}편${avgR ? ` · 평점 ${avgR}` : ''}`,
+      });
     } else {
       const bookN = new Set(rs.filter((r) => r.activity === '독서').map((r) => r.fields?.제목).filter(Boolean)).size;
-      subtitle = `${rs.length}회${bookN ? ` · 책 ${bookN}권` : ''}`;
+      subtitle = tr({
+        en: `${rs.length}×${bookN ? ` · ${bookN} books` : ''}`,
+        ko: `${rs.length}회${bookN ? ` · 책 ${bookN}권` : ''}`,
+      });
     }
     const spark = monthlyCounts(records.filter((r) => r.template === tpl), today).map((x) => x.value);
     return { key, template: tpl, count: rs.length, subtitle, spark };

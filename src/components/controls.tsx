@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
+import { tr } from '../i18n/i18n';
 
 // Toggle — 44x26, on = accent. Gallery §07.
 export function Toggle({ value, onChange, color, label }: { value: boolean; onChange?: (v: boolean) => void; color?: string; label?: string }) {
@@ -111,11 +112,11 @@ export function Stepper({
   );
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      {btn('−', '감소', () => onChange(Math.max(0, value - 1)))}
+      {btn('−', tr({ en: 'Decrease', ko: '감소' }), () => onChange(Math.max(0, value - 1)))}
       <Text style={{ fontSize: 16, fontWeight: '700', color: color ?? c.text, minWidth: 28, textAlign: 'center' }}>
         {format ? format(value) : value}
       </Text>
-      {btn('＋', '증가', () => onChange(value + 1))}
+      {btn('＋', tr({ en: 'Increase', ko: '증가' }), () => onChange(value + 1))}
     </View>
   );
 }

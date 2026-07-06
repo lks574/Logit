@@ -9,10 +9,11 @@ import { Segmented } from '../../../components/controls';
 import { RatingInput, CompanionField } from '../../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
-import { activities } from '../../../data/activities';
+import { activities, activityLabel } from '../../../data/activities';
 import { resetToHome } from '../../../navigation/nav';
 import { useStore } from '../../../store/StoreContext';
 import { useTheme } from '../../../theme/ThemeContext';
+import { tr } from '../../../i18n/i18n';
 
 // FreeForm — 자유 기록형 catch-all (free template, accent color #3D5A80).
 // Derived from the common skeleton (§02, HTML lines 296–437):
@@ -65,11 +66,17 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
   const handleSave = () => {
     if (isBook) {
       if (title.trim() === '' && memo.trim() === '') {
-        Alert.alert('필수 항목', '책 제목이나 메모를 입력해 주세요.');
+        Alert.alert(
+          tr({ en: 'Required', ko: '필수 항목' }),
+          tr({ en: 'Enter a book title or memo.', ko: '책 제목이나 메모를 입력해 주세요.' }),
+        );
         return;
       }
     } else if (duration.trim() === '' && memo.trim() === '') {
-      Alert.alert('필수 항목', '시간이나 메모를 입력해 주세요.');
+      Alert.alert(
+        tr({ en: 'Required', ko: '필수 항목' }),
+        tr({ en: 'Enter a time or memo.', ko: '시간이나 메모를 입력해 주세요.' }),
+      );
       return;
     }
     const durTrim = duration.trim();
@@ -78,7 +85,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
     const titleTrim = title.trim();
     const meta = isBook
       ? [titleTrim, 시간].filter(Boolean).join(' · ')
-      : [시간, `강도 ${강도}`].filter(Boolean).join(' · ');
+      : [시간, tr({ en: `Intensity ${강도}`, ko: `강도 ${강도}` })].filter(Boolean).join(' · ');
     const payload = {
       activity,
       template: 'free' as const,
@@ -112,7 +119,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
   return (
     <Screen edges={['top', 'bottom']}>
       <FormHeader
-        title={activity}
+        title={activityLabel(activity)}
         icon={(() => {
           const Ico = activities[activity] ? Icon[activities[activity].icon] : Icon.yoga;
           return <Ico size={13} color={c.accent} strokeWidth={2.2} />;
@@ -126,7 +133,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
         {/* 필수 — 날짜 · 시간 (편집 가능) */}
         <View>
           <Text style={{ fontSize: 11, fontWeight: '700', color: c.text3, letterSpacing: 0.4, marginBottom: 7 }}>
-            필수
+            {tr({ en: 'Required', ko: '필수' })}
           </Text>
           <DateTimeField
             dateISO={dateISO}
@@ -139,12 +146,12 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
 
         {/* 독서 — 책 제목 */}
         {isBook ? (
-          <Field label="책 제목" value={title} onChangeText={setTitle} placeholder="예: 데미안" />
+          <Field label={tr({ en: 'Book title', ko: '책 제목' })} value={title} onChangeText={setTitle} placeholder={tr({ en: 'e.g. Demian', ko: '예: 데미안' })} />
         ) : null}
 
         {/* core — 시간 (duration) */}
         <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>시간</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Time', ko: '시간' })}</Text>
           <Pressable
             onPress={() => durationRef.current?.focus()}
             style={{
@@ -162,23 +169,23 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
               value={duration}
               onChangeText={(t) => setDuration(t.replace(/[^0-9]/g, ''))}
               keyboardType="number-pad"
-              placeholder="예: 45"
+              placeholder={tr({ en: 'e.g. 45', ko: '예: 45' })}
               placeholderTextColor={c.text3}
               style={{ fontSize: 18, fontWeight: '700', color: c.text, padding: 0, minWidth: 56 }}
             />
-            <Text style={{ fontSize: 13, color: c.text2 }}>분</Text>
+            <Text style={{ fontSize: 13, color: c.text2 }}>{tr({ en: 'min', ko: '분' })}</Text>
           </Pressable>
         </View>
 
         {/* core — 강도 (segmented) — 독서 제외 */}
         {!isBook ? (
           <View>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>강도</Text>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Intensity', ko: '강도' })}</Text>
             <Segmented<Intensity>
               options={[
-                { key: 'low', label: '낮음' },
-                { key: 'mid', label: '보통' },
-                { key: 'high', label: '높음' },
+                { key: 'low', label: tr({ en: 'Low', ko: '낮음' }) },
+                { key: 'mid', label: tr({ en: 'Medium', ko: '보통' }) },
+                { key: 'high', label: tr({ en: 'High', ko: '높음' }) },
               ]}
               value={intensity}
               onChange={setIntensity}
@@ -189,16 +196,16 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
 
         {/* core — 평점 */}
         <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>평점</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Rating', ko: '평점' })}</Text>
           <RatingInput value={rating} onChange={setRating} size={22} />
         </View>
 
         {/* 공통 세부 입력 (collapsed default) — 독서 제외 */}
         {!isBook ? (
           <DisclosureButton
-            title="세부 입력"
-            badge="선택"
-            subtitle="장소 · 동행 · 사진 · 메모"
+            title={tr({ en: 'More details', ko: '세부 입력' })}
+            badge={tr({ en: 'Optional', ko: '선택' })}
+            subtitle={tr({ en: 'Place · Companions · Photos · Memo', ko: '장소 · 동행 · 사진 · 메모' })}
             icon={<Icon.plus size={17} color={c.text2} strokeWidth={2.2} />}
             open={open}
             onPress={() => setOpen((o) => !o)}
@@ -208,17 +215,17 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
         {!isBook && open ? (
           <>
             {/* 장소 */}
-            <Field label="장소" value={place} onChangeText={setPlace} placeholder="장소" />
+            <Field label={tr({ en: 'Place', ko: '장소' })} value={place} onChangeText={setPlace} placeholder={tr({ en: 'Place', ko: '장소' })} />
 
             {/* 동행 */}
             <View>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>동행</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Companions', ko: '동행' })}</Text>
               <CompanionField companions={companions} onChange={setCompanions} />
             </View>
 
             {/* 사진 */}
             <View>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>사진</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Photos', ko: '사진' })}</Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {photos.map((uri) => (
                   <View key={uri} style={{ width: 60, height: 60 }}>
@@ -227,7 +234,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
                       onPress={() => setPhotos((p) => p.filter((u) => u !== uri))}
                       hitSlop={6}
                       accessibilityRole="button"
-                      accessibilityLabel="사진 삭제"
+                      accessibilityLabel={tr({ en: 'Delete photo', ko: '사진 삭제' })}
                       style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: 10, backgroundColor: c.text, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: c.bg }}
                     >
                       <Glyph size={9} color={c.bg} strokeWidth={2.8}>
@@ -262,7 +269,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
         ) : null}
 
         {/* 메모 */}
-        <Field label="메모" value={memo} onChangeText={setMemo} placeholder="메모" />
+        <Field label={tr({ en: 'Memo', ko: '메모' })} value={memo} onChangeText={setMemo} placeholder={tr({ en: 'Memo', ko: '메모' })} />
 
         {/* offline footer */}
         <View
@@ -275,7 +282,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
           }}
         >
           <Icon.check size={14} color={c.text3} strokeWidth={2} />
-          <Text style={{ fontSize: 12, color: c.text3 }}>오프라인에서도 즉시 저장됩니다</Text>
+          <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: 'Saved instantly, even offline', ko: '오프라인에서도 즉시 저장됩니다' })}</Text>
         </View>
       </View>
     </Screen>
