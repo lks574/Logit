@@ -6,6 +6,7 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { StoreProvider, useStore } from './src/store/StoreContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
+import { seed } from './src/store/seed';
 
 // 저장 실패(저장 공간 부족 등) 시 전역 배너 — 무음 유실을 사용자에게 알린다.
 function PersistErrorBanner() {
@@ -44,18 +45,25 @@ function Root() {
   );
 }
 
-// 로그인 사용자 정보를 로컬 프로필에 반영(향후 동기화의 신원 소스). 이름은 사용자가 편집했을 수 있어
-// displayName이 있을 때만 시드하고, 이메일은 계정 이메일을 따른다.
+// 로그인 사용자를 로컬 프로필에 반영(향후 동기화의 신원 소스).
+// 계정(email)이 바뀔 때만 닉네임을 다시 세팅한다 → 같은 계정 재로그인 시엔 건드리지 않아
+// 사용자가 ProfileEdit에서 바꾼 닉네임이 유지된다. 닉네임 우선순위: displayName → 이메일 앞부분.
 function AuthProfileSync() {
   const { user } = useAuth();
   const { profile, updateProfile } = useStore();
   React.useEffect(() => {
     if (!user) return;
-    const patch: { name?: string; email?: string } = {};
-    if (user.displayName && !profile.name) patch.name = user.displayName;
-    if (user.email && user.email !== profile.email) patch.email = user.email;
-    if (Object.keys(patch).length) updateProfile(patch);
-  }, [user, profile.name, profile.email, updateProfile]);
+    const email = user.email ?? '';
+    if (!email) return;
+    const desired = user.displayName?.trim() || email.split('@')[0] || '사용자';
+    const accountChanged = email !== profile.email;
+    const nameIsSeedDefault = profile.name === seed.profile.name; // 시드 기본값 = 사용자가 정한 게 아님
+    if (accountChanged) {
+      updateProfile({ name: desired, email }); // 계정 바뀜 → 새 계정 정보로
+    } else if ((nameIsSeedDefault || !profile.name) && profile.name !== desired) {
+      updateProfile({ name: desired }); // 같은 계정인데 이름이 시드 기본값이면 교정(사용자 편집은 유지)
+    }
+  }, [user, profile.email, profile.name, updateProfile]);
   return null;
 }
 

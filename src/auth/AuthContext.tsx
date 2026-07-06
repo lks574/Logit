@@ -29,6 +29,7 @@ type AuthContextValue = {
   resendVerification: () => Promise<void>;
   refreshVerified: () => Promise<boolean>;
   resetPassword: (email: string) => Promise<void>;
+  updateDisplayName: (name: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
   logout: () => Promise<void>;
@@ -110,6 +111,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     resetPassword: async (email) => {
       if (!isFirebaseConfigured) return; // mock: 성공한 척.
       await sendPasswordResetEmail(auth, email.trim());
+    },
+    updateDisplayName: async (name) => {
+      const displayName = name.trim();
+      if (!isFirebaseConfigured) {
+        const next: AppUser = { email: user?.email ?? null, displayName, emailVerified: true };
+        await AsyncStorage.setItem(MOCK_KEY, JSON.stringify(next));
+        setUser(next);
+        return;
+      }
+      if (!auth.currentUser) return;
+      await updateProfile(auth.currentUser, { displayName });
+      // 프로필 변경은 onAuthStateChanged를 안 태우므로 스냅샷으로 context 갱신.
+      setUser({
+        email: auth.currentUser.email,
+        displayName: auth.currentUser.displayName,
+        emailVerified: auth.currentUser.emailVerified,
+      });
     },
     signInWithGoogle: async () => {
       if (!isFirebaseConfigured) return mockSignIn('google.user@logit.dev', 'Google 사용자');
