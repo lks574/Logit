@@ -8,6 +8,8 @@ import { Segmented } from '../../components/controls';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStore } from '../../store/StoreContext';
 import { categoryStats, StatsPeriod, StatsCategory } from '../../store/selectors';
+import { tr, Msg } from '../../i18n/i18n';
+import { activityLabel } from '../../data/activities';
 
 function mix(a: string, b: string, pct: number): string {
   const p = (h: string) => [1, 3, 5].map((i) => parseInt(h.replace('#', '').slice(i - 1, i + 1), 16));
@@ -18,20 +20,24 @@ function mix(a: string, b: string, pct: number): string {
   return `rgb(${ch(ar, br)}, ${ch(ag, bg)}, ${ch(ab, bb)})`;
 }
 
-const META: Record<StatsCategory, { label: string; sub: string }> = {
-  cardio: { label: '유산소', sub: '러닝 · 사이클 · 수영' },
-  strength: { label: '근력', sub: '웨이트 · 맨몸' },
-  match: { label: '대전', sub: '축구 · 야구 · 라켓' },
-  performance: { label: '공연', sub: '뮤지컬 · 연극 · 콘서트' },
-  free: { label: '자유', sub: '요가 · 독서 · 메모' },
+const META: Record<StatsCategory, { label: Msg; sub: Msg }> = {
+  cardio: { label: { en: 'Cardio', ko: '유산소' }, sub: { en: 'Running · Cycling · Swimming', ko: '러닝 · 사이클 · 수영' } },
+  strength: { label: { en: 'Strength', ko: '근력' }, sub: { en: 'Weights · Bodyweight', ko: '웨이트 · 맨몸' } },
+  match: { label: { en: 'Match', ko: '대전' }, sub: { en: 'Soccer · Baseball · Racket', ko: '축구 · 야구 · 라켓' } },
+  performance: { label: { en: 'Shows', ko: '공연' }, sub: { en: 'Musical · Play · Concert', ko: '뮤지컬 · 연극 · 콘서트' } },
+  free: { label: { en: 'Free', ko: '자유' }, sub: { en: 'Yoga · Reading · Notes', ko: '요가 · 독서 · 메모' } },
 };
 
 export default function CategoryStatsScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { category } = useRoute().params as { category: StatsCategory };
+  const { category, period: initialPeriod } = useRoute().params as {
+    category: StatsCategory;
+    period?: StatsPeriod;
+  };
   const { records, today } = useStore();
-  const [period, setPeriod] = useState<StatsPeriod>('month');
+  // 허브에서 넘어온 기간을 그대로 이어받는다(없으면 전체).
+  const [period, setPeriod] = useState<StatsPeriod>(initialPeriod ?? 'all');
   const s = categoryStats(records, category, period, today) as any;
 
   const palette: Record<StatsCategory, { col: string; soft: string }> = {
@@ -61,8 +67,8 @@ export default function CategoryStatsScreen() {
           <Icon.chevronLeft size={17} color={c.text2} strokeWidth={2} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 19, fontWeight: '700', letterSpacing: -0.4, color: c.text }}>{meta.label}</Text>
-          <Text style={{ fontSize: 11, color: c.text3 }}>{meta.sub}</Text>
+          <Text style={{ fontSize: 19, fontWeight: '700', letterSpacing: -0.4, color: c.text }}>{tr(meta.label)}</Text>
+          <Text style={{ fontSize: 11, color: c.text3 }}>{tr(meta.sub)}</Text>
         </View>
         <View style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: col }} />
       </View>
@@ -70,10 +76,10 @@ export default function CategoryStatsScreen() {
       <View style={{ paddingHorizontal: 16, gap: 11 }}>
         <Segmented<StatsPeriod>
           options={[
-            { key: 'month', label: '월간' },
-            { key: 'quarter', label: '분기' },
-            { key: 'year', label: '연간' },
-            { key: 'all', label: '전체' },
+            { key: 'all', label: tr({ en: 'All', ko: '전체' }) },
+            { key: 'month', label: tr({ en: 'Month', ko: '월간' }) },
+            { key: 'quarter', label: tr({ en: 'Quarter', ko: '분기' }) },
+            { key: 'year', label: tr({ en: 'Year', ko: '연간' }) },
           ]}
           value={period}
           onChange={setPeriod}
@@ -81,7 +87,7 @@ export default function CategoryStatsScreen() {
         />
 
         {s.count === 0 ? (
-          <Text style={{ fontSize: 12.5, color: c.text3, paddingVertical: 12, textAlign: 'center' }}>이 기간에 기록이 없어요.</Text>
+          <Text style={{ fontSize: 12.5, color: c.text3, paddingVertical: 12, textAlign: 'center' }}>{tr({ en: 'No records in this period.', ko: '이 기간에 기록이 없어요.' })}</Text>
         ) : null}
 
         {/* ── 유산소 ── */}
@@ -90,8 +96,8 @@ export default function CategoryStatsScreen() {
             {/* 월별 거리 */}
             <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>월별 달린 거리</Text>
-                <Text style={{ fontSize: 12, fontWeight: '700', color: col }}>총 {s.totalKm}km</Text>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'Monthly distance', ko: '월별 달린 거리' })}</Text>
+                <Text style={{ fontSize: 12, fontWeight: '700', color: col }}>{tr({ en: `Total ${s.totalKm}km`, ko: `총 ${s.totalKm}km` })}</Text>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', gap: 7, height: 86 }}>
                 {(() => {
@@ -111,12 +117,12 @@ export default function CategoryStatsScreen() {
 
             {/* 2×2 지표 */}
             <View style={{ flexDirection: 'row', gap: 9 }}>
-              {metric('평균 페이스', <>{s.avgPace ?? '—'}{s.avgPace ? unit('/km') : null}</>)}
-              {metric('평균 심박', s.avgHr != null ? <>{s.avgHr}{unit('bpm')}</> : '—')}
+              {metric(tr({ en: 'Avg pace', ko: '평균 페이스' }), <>{s.avgPace ?? '—'}{s.avgPace ? unit('/km') : null}</>)}
+              {metric(tr({ en: 'Avg HR', ko: '평균 심박' }), s.avgHr != null ? <>{s.avgHr}{unit('bpm')}</> : '—')}
             </View>
             <View style={{ flexDirection: 'row', gap: 9 }}>
-              {metric('최장 거리', <>{s.maxKm}{unit('km')}</>)}
-              {metric('총 운동 시간', <>{s.totalHours}{unit('시간')}</>)}
+              {metric(tr({ en: 'Longest', ko: '최장 거리' }), <>{s.maxKm}{unit('km')}</>)}
+              {metric(tr({ en: 'Total time', ko: '총 운동 시간' }), <>{s.totalHours}{unit(tr({ en: 'h', ko: '시간' }))}</>)}
             </View>
           </>
         ) : null}
@@ -125,13 +131,13 @@ export default function CategoryStatsScreen() {
         {category === 'strength' ? (
           <>
             <View style={{ flexDirection: 'row', gap: 9 }}>
-              {metric('총 볼륨', <>{s.totalT}{unit('t')}</>)}
-              {metric('운동 횟수', <>{s.workouts}{unit('회')}</>)}
+              {metric(tr({ en: 'Total volume', ko: '총 볼륨' }), <>{s.totalT}{unit('t')}</>)}
+              {metric(tr({ en: 'Workouts', ko: '운동 횟수' }), <>{s.workouts}{unit(tr({ en: '×', ko: '회' }))}</>)}
             </View>
             <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 12 }}>부위별 빈도</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 12 }}>{tr({ en: 'By body part', ko: '부위별 빈도' })}</Text>
               {s.bodyParts.length === 0 ? (
-                <Text style={{ fontSize: 12, color: c.text3 }}>부위 기록이 없어요.</Text>
+                <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: 'No body-part records.', ko: '부위 기록이 없어요.' })}</Text>
               ) : (
                 <View style={{ gap: 10 }}>
                   {s.bodyParts.map((b: any) => (
@@ -153,17 +159,17 @@ export default function CategoryStatsScreen() {
         {category === 'match' ? (
           <>
             <View style={{ flexDirection: 'row', gap: 9 }}>
-              {metric('총 경기', <>{s.count}{unit('회')}</>)}
-              {metric('승률', s.resultRecorded > 0 ? <>{s.winRate}{unit('%')}</> : '—')}
+              {metric(tr({ en: 'Matches', ko: '총 경기' }), <>{s.count}{unit(tr({ en: '×', ko: '회' }))}</>)}
+              {metric(tr({ en: 'Win rate', ko: '승률' }), s.resultRecorded > 0 ? <>{s.winRate}{unit('%')}</> : '—')}
             </View>
             <View style={{ backgroundColor: soft, borderRadius: 14, padding: 14 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 10 }}>전적</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 10 }}>{tr({ en: 'Record', ko: '전적' })}</Text>
               {s.resultRecorded > 0 ? (
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   {[
-                    { label: '승', v: s.wins, color: c.success },
-                    { label: '무', v: s.draws, color: c.text2 },
-                    { label: '패', v: s.losses, color: c.error },
+                    { label: tr({ en: 'W', ko: '승' }), v: s.wins, color: c.success },
+                    { label: tr({ en: 'D', ko: '무' }), v: s.draws, color: c.text2 },
+                    { label: tr({ en: 'L', ko: '패' }), v: s.losses, color: c.error },
                   ].map((x) => (
                     <View key={x.label} style={{ flex: 1, alignItems: 'center', backgroundColor: c.surface, borderRadius: 10, paddingVertical: 10 }}>
                       <Text style={{ fontSize: 22, fontWeight: '800', color: x.color }}>{x.v}</Text>
@@ -172,16 +178,16 @@ export default function CategoryStatsScreen() {
                   ))}
                 </View>
               ) : (
-                <Text style={{ fontSize: 12.5, color: c.text3 }}>결과(승/무/패)가 기록된 경기가 없어요. 기록 시 결과를 선택하면 전적이 쌓여요.</Text>
+                <Text style={{ fontSize: 12.5, color: c.text3 }}>{tr({ en: 'No matches with a result (W/D/L) logged yet. Pick a result when logging to build your record.', ko: '결과(승/무/패)가 기록된 경기가 없어요. 기록 시 결과를 선택하면 전적이 쌓여요.' })}</Text>
               )}
             </View>
             {s.bySport.length > 0 ? (
               <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14, gap: 10 }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>종목별</Text>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'By sport', ko: '종목별' })}</Text>
                 {s.bySport.map((b: any) => (
                   <View key={b.activity} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 12.5, color: c.text2 }}>{b.activity}</Text>
-                    <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.text }}>{b.count}회</Text>
+                    <Text style={{ fontSize: 12.5, color: c.text2 }}>{activityLabel(b.activity)}</Text>
+                    <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.text }}>{tr({ en: `${b.count}×`, ko: `${b.count}회` })}</Text>
                   </View>
                 ))}
               </View>
@@ -193,16 +199,16 @@ export default function CategoryStatsScreen() {
         {category === 'free' ? (
           <>
             <View style={{ flexDirection: 'row', gap: 9 }}>
-              {metric('총 기록', <>{s.count}{unit('회')}</>)}
-              {metric('읽은 책', <>{s.bookCount}{unit('권')}</>)}
+              {metric(tr({ en: 'Records', ko: '총 기록' }), <>{s.count}{unit(tr({ en: '×', ko: '회' }))}</>)}
+              {metric(tr({ en: 'Books read', ko: '읽은 책' }), <>{s.bookCount}{unit(tr({ en: 'books', ko: '권' }))}</>)}
             </View>
             {s.byActivity.length > 0 ? (
               <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14, gap: 10 }}>
-                <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>활동별</Text>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'By activity', ko: '활동별' })}</Text>
                 {s.byActivity.map((b: any) => (
                   <View key={b.activity} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 12.5, color: c.text2 }}>{b.activity}</Text>
-                    <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.text }}>{b.count}회</Text>
+                    <Text style={{ fontSize: 12.5, color: c.text2 }}>{activityLabel(b.activity)}</Text>
+                    <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.text }}>{tr({ en: `${b.count}×`, ko: `${b.count}회` })}</Text>
                   </View>
                 ))}
               </View>
@@ -214,9 +220,9 @@ export default function CategoryStatsScreen() {
         {category === 'performance' ? (
           <>
             <View style={{ flexDirection: 'row', gap: 9 }}>
-              {metric('총 관람', <>{s.count}{unit('편')}</>)}
+              {metric(tr({ en: 'Watched', ko: '총 관람' }), <>{s.count}{unit(tr({ en: 'shows', ko: '편' }))}</>)}
               <View style={{ flex: 1, ...card }}>
-                <Text style={{ fontSize: 11, color: c.text2 }}>평균 평점</Text>
+                <Text style={{ fontSize: 11, color: c.text2 }}>{tr({ en: 'Avg rating', ko: '평균 평점' })}</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 3 }}>
                   <Text style={{ fontSize: 17, fontWeight: '700', color: c.text }}>{s.avgRating ?? '—'}</Text>
                   {s.avgRating ? (
@@ -230,9 +236,9 @@ export default function CategoryStatsScreen() {
 
             {/* 장르별 관람 */}
             <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 11 }}>장르별 관람</Text>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 11 }}>{tr({ en: 'By genre', ko: '장르별 관람' })}</Text>
               {s.genres.length === 0 ? (
-                <Text style={{ fontSize: 12, color: c.text3 }}>기록이 없어요.</Text>
+                <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: 'No records.', ko: '기록이 없어요.' })}</Text>
               ) : (
                 <>
                   <View style={{ flexDirection: 'row', height: 14, borderRadius: 7, overflow: 'hidden', marginBottom: 11 }}>
@@ -244,8 +250,8 @@ export default function CategoryStatsScreen() {
                     {s.genres.map((g: any, i: number) => (
                       <View key={g.genre} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: mix(col, c.surface, 100 - i * 35) }} />
-                        <Text style={{ flex: 1, fontSize: 12, color: c.text2 }}>{g.genre}</Text>
-                        <Text style={{ fontSize: 12, fontWeight: '700', color: c.text }}>{g.count}편</Text>
+                        <Text style={{ flex: 1, fontSize: 12, color: c.text2 }}>{activityLabel(g.genre)}</Text>
+                        <Text style={{ fontSize: 12, fontWeight: '700', color: c.text }}>{tr({ en: `${g.count}`, ko: `${g.count}편` })}</Text>
                       </View>
                     ))}
                   </View>
@@ -256,13 +262,13 @@ export default function CategoryStatsScreen() {
             {/* 최다 기록 */}
             {s.topWork.value || s.topActor || s.topVenue.value ? (
               <View style={{ backgroundColor: soft, borderRadius: 14, padding: 14 }}>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: col, marginBottom: 9 }}>최다 기록</Text>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: col, marginBottom: 9 }}>{tr({ en: 'Top records', ko: '최다 기록' })}</Text>
                 <View style={{ gap: 8 }}>
                   {s.topWork.value ? (
-                    <Row label="최다 관람 작품" value={`${s.topWork.value} · ${s.topWork.n}회`} c={c} />
+                    <Row label={tr({ en: 'Most-watched work', ko: '최다 관람 작품' })} value={tr({ en: `${s.topWork.value} · ${s.topWork.n}×`, ko: `${s.topWork.value} · ${s.topWork.n}회` })} c={c} />
                   ) : null}
-                  {s.topActor ? <Row label="최다 배우" value={s.topActor} c={c} /> : null}
-                  {s.topVenue.value ? <Row label="최애 극장" value={s.topVenue.value} c={c} /> : null}
+                  {s.topActor ? <Row label={tr({ en: 'Top actor', ko: '최다 배우' })} value={s.topActor} c={c} /> : null}
+                  {s.topVenue.value ? <Row label={tr({ en: 'Favorite venue', ko: '최애 극장' })} value={s.topVenue.value} c={c} /> : null}
                 </View>
               </View>
             ) : null}
@@ -301,10 +307,10 @@ function PaceTrend({ paceLine, color, c }: { paceLine: { month: number; sec: num
   return (
     <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-        <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>평균 페이스 추이</Text>
+        <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'Pace trend', ko: '평균 페이스 추이' })}</Text>
         {pts.length >= 2 && delta !== 0 ? (
           <Text style={{ fontSize: 11, fontWeight: '600', color: delta > 0 ? c.success : c.error }}>
-            {delta > 0 ? '↓' : '↑'} {Math.abs(delta)}″ {delta > 0 ? '빨라짐' : '느려짐'}
+            {delta > 0 ? '↓' : '↑'} {Math.abs(delta)}″ {delta > 0 ? tr({ en: 'faster', ko: '빨라짐' }) : tr({ en: 'slower', ko: '느려짐' })}
           </Text>
         ) : null}
       </View>
@@ -318,12 +324,12 @@ function PaceTrend({ paceLine, color, c }: { paceLine: { month: number; sec: num
           </Svg>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 2 }}>
             {paceLine.map((p) => (
-              <Text key={p.month} style={{ fontSize: 10, color: c.text3 }}>{p.month}월</Text>
+              <Text key={p.month} style={{ fontSize: 10, color: c.text3 }}>{tr({ en: `${p.month}M`, ko: `${p.month}월` })}</Text>
             ))}
           </View>
         </>
       ) : (
-        <Text style={{ fontSize: 12, color: c.text3 }}>페이스 데이터가 더 필요해요.</Text>
+        <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: 'Need more pace data.', ko: '페이스 데이터가 더 필요해요.' })}</Text>
       )}
     </View>
   );

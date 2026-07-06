@@ -5,7 +5,10 @@ export type RootStackParamList = {
   ActivitySelect: undefined;
   RecordForm: { activity: string; template: TemplateType; recordId?: string };
   Detail: { activity: string; recordId?: string };
-  CategoryStats: { category: 'cardio' | 'strength' | 'match' | 'performance' | 'free' };
+  CategoryStats: {
+    category: 'cardio' | 'strength' | 'match' | 'performance' | 'free';
+    period?: 'month' | 'quarter' | 'year' | 'all';
+  };
   AddChooser: undefined;
   AddPlan: { planId?: string; dateISO?: string } | undefined;
   AddActivity: undefined;
