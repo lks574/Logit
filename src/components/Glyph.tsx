@@ -194,6 +194,24 @@ export const Icon = {
       <Path d="M9 9h.01M15 9h.01M9 13c1 1.2 5 1.2 6 0" />
     </Glyph>
   ),
+  tent: (p: IconProps) => (
+    <Glyph {...p}>
+      <Path d="M12 4 3 20h18z" />
+      <Path d="M12 4v16" />
+    </Glyph>
+  ),
+  mappin: (p: IconProps) => (
+    <Glyph {...p}>
+      <Path d="M12 22s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12z" />
+      <Circle cx="12" cy="10" r="2.5" />
+    </Glyph>
+  ),
+  utensils: (p: IconProps) => (
+    <Glyph {...p}>
+      <Path d="M6 3v6a2 2 0 0 0 4 0V3M8 9v12" />
+      <Path d="M16 3c-1.2 0-2 2-2 5s.8 4 2 4v9" />
+    </Glyph>
+  ),
 };
 
 export type IconName = keyof typeof Icon;

@@ -21,6 +21,8 @@ export type Palette = {
   teamSoft: string;
   perf: string;
   perfSoft: string;
+  outing: string;
+  outingSoft: string;
   success: string;
   warning: string;
   error: string;
@@ -46,6 +48,8 @@ export const light: Palette = {
   teamSoft: '#E4EAF3',
   perf: '#8A6BA8',
   perfSoft: '#EEE8F3',
+  outing: '#5F8D4E',
+  outingSoft: '#E6EEDF',
   success: '#3C9A6A',
   warning: '#C9962E',
   error: '#C2473D',
@@ -71,6 +75,8 @@ export const dark: Palette = {
   teamSoft: '#1F2A38',
   perf: '#A98AC6',
   perfSoft: '#2A2335',
+  outing: '#7BAE68',
+  outingSoft: '#212A1D',
   success: '#4FB57E',
   warning: '#DFAE48',
   error: '#D75F54',
@@ -99,9 +105,10 @@ export const templateColor: Record<
   match: { color: 'team', soft: 'teamSoft' },
   spectate: { color: 'perf', soft: 'perfSoft' },
   free: { color: 'accent', soft: 'accentSoft' },
+  outing: { color: 'outing', soft: 'outingSoft' },
 };
 
-export type TemplateType = 'endurance' | 'setrep' | 'match' | 'spectate' | 'free';
+export type TemplateType = 'endurance' | 'setrep' | 'match' | 'spectate' | 'free' | 'outing';
 
 // color-mix(in srgb, <hex> N%, transparent) → rgba. hex must be #RRGGBB.
 export function withAlpha(hex: string, pct: number): string {

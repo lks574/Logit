@@ -17,6 +17,7 @@ const SECTIONS: { template: TemplateType; label: Msg; hint?: Msg }[] = [
   { template: 'setrep', label: { en: 'Strength', ko: '근력' }, hint: { en: '· sets · reps', ko: '· 세트·횟수형' } },
   { template: 'match', label: { en: 'Match', ko: '대전·경기형' }, hint: { en: '· sports with opponents', ko: '· 상대 있는 종목' } },
   { template: 'spectate', label: { en: 'Performance', ko: '공연·관람형' }, hint: { en: '· musical · play · concert', ko: '· 뮤지컬·연극·콘서트' } },
+  { template: 'outing', label: { en: 'Leisure & outings', ko: '여가·나들이' }, hint: { en: '· camping · travel · dining', ko: '· 캠핑·여행·맛집' } },
   { template: 'free', label: { en: 'Free record', ko: '자유 기록형' } },
 ];
 

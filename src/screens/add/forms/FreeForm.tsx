@@ -30,13 +30,18 @@ const LABEL_INTENSITY: Record<string, Intensity> = { 낮음: 'low', 보통: 'mid
 export default function FreeForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord } = useStore();
+  const { addRecord, updateRecord, getRecord, customActivities } = useStore();
 
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
   // 독서는 자유 템플릿을 공유하지만 필드가 다르다: 책 제목 + 메모만(강도·세부 없음).
   const isBook = activity === '독서';
+  // 여가·나들이(여행·맛집 등)는 시간·강도가 어울리지 않아 숨긴다(장소·동행·사진·평점·메모만).
+  // 빌트인·커스텀 활동 모두 template === 'outing' 이면 적용.
+  const templateOf =
+    activities[activity]?.template ?? customActivities.find((a) => a.name === activity)?.template;
+  const isOuting = !isBook && templateOf === 'outing';
 
   // PREFILL controlled state from the record when editing; start BLANK on create.
   // 날짜·시간: 편집이면 저장값, 신규면 현재 날짜/시각.
@@ -53,7 +58,7 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
   const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
   const [open, setOpen] = React.useState(
-    !!(record?.companions?.length || record?.photos?.length || record?.fields?.['장소']),
+    isOuting || !!(record?.companions?.length || record?.photos?.length || record?.fields?.['장소']),
   );
 
   const durationRef = React.useRef<TextInput>(null);
@@ -72,6 +77,14 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
         );
         return;
       }
+    } else if (isOuting) {
+      if (place.trim() === '' && memo.trim() === '') {
+        Alert.alert(
+          tr({ en: 'Required', ko: '필수 항목' }),
+          tr({ en: 'Enter a place or memo.', ko: '장소나 메모를 입력해 주세요.' }),
+        );
+        return;
+      }
     } else if (duration.trim() === '' && memo.trim() === '') {
       Alert.alert(
         tr({ en: 'Required', ko: '필수 항목' }),
@@ -85,10 +98,12 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
     const titleTrim = title.trim();
     const meta = isBook
       ? [titleTrim, 시간].filter(Boolean).join(' · ')
-      : [시간, tr({ en: `Intensity ${강도}`, ko: `강도 ${강도}` })].filter(Boolean).join(' · ');
+      : isOuting
+        ? place
+        : [시간, tr({ en: `Intensity ${강도}`, ko: `강도 ${강도}` })].filter(Boolean).join(' · ');
     const payload = {
       activity,
-      template: 'free' as const,
+      template: (isOuting ? 'outing' : 'free') as 'outing' | 'free',
       dateISO,
       timeLabel,
       meta,
@@ -101,11 +116,15 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
             ...(titleTrim ? { 제목: titleTrim } : {}),
             ...(시간 ? { 시간 } : {}),
           }
-        : {
-            ...(시간 ? { 시간 } : {}),
-            강도,
-            ...(place ? { 장소: place } : {}),
-          },
+        : isOuting
+          ? {
+              ...(place ? { 장소: place } : {}),
+            }
+          : {
+              ...(시간 ? { 시간 } : {}),
+              강도,
+              ...(place ? { 장소: place } : {}),
+            },
     };
     if (editing) {
       updateRecord(recordId!, payload);
@@ -149,36 +168,38 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
           <Field label={tr({ en: 'Book title', ko: '책 제목' })} value={title} onChangeText={setTitle} placeholder={tr({ en: 'e.g. Demian', ko: '예: 데미안' })} />
         ) : null}
 
-        {/* core — 시간 (duration) */}
-        <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Time', ko: '시간' })}</Text>
-          <Pressable
-            onPress={() => durationRef.current?.focus()}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'baseline',
-              gap: 4,
-              backgroundColor: c.surfaceAlt,
-              borderRadius: 10,
-              paddingVertical: 11,
-              paddingHorizontal: 12,
-            }}
-          >
-            <TextInput
-              ref={durationRef}
-              value={duration}
-              onChangeText={(t) => setDuration(t.replace(/[^0-9]/g, ''))}
-              keyboardType="number-pad"
-              placeholder={tr({ en: 'e.g. 45', ko: '예: 45' })}
-              placeholderTextColor={c.text3}
-              style={{ fontSize: 18, fontWeight: '700', color: c.text, padding: 0, minWidth: 56 }}
-            />
-            <Text style={{ fontSize: 13, color: c.text2 }}>{tr({ en: 'min', ko: '분' })}</Text>
-          </Pressable>
-        </View>
+        {/* core — 시간 (duration) — 독서·여가 제외 */}
+        {!isBook && !isOuting ? (
+          <View>
+            <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Time', ko: '시간' })}</Text>
+            <Pressable
+              onPress={() => durationRef.current?.focus()}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'baseline',
+                gap: 4,
+                backgroundColor: c.surfaceAlt,
+                borderRadius: 10,
+                paddingVertical: 11,
+                paddingHorizontal: 12,
+              }}
+            >
+              <TextInput
+                ref={durationRef}
+                value={duration}
+                onChangeText={(t) => setDuration(t.replace(/[^0-9]/g, ''))}
+                keyboardType="number-pad"
+                placeholder={tr({ en: 'e.g. 45', ko: '예: 45' })}
+                placeholderTextColor={c.text3}
+                style={{ fontSize: 18, fontWeight: '700', color: c.text, padding: 0, minWidth: 56 }}
+              />
+              <Text style={{ fontSize: 13, color: c.text2 }}>{tr({ en: 'min', ko: '분' })}</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
-        {/* core — 강도 (segmented) — 독서 제외 */}
-        {!isBook ? (
+        {/* core — 강도 (segmented) — 독서·여가 제외 */}
+        {!isBook && !isOuting ? (
           <View>
             <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Intensity', ko: '강도' })}</Text>
             <Segmented<Intensity>

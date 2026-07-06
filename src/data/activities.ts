@@ -31,6 +31,9 @@ export const activities: Record<string, Activity> = {
   콘서트: { name: '콘서트', label: { en: 'Concert', ko: '콘서트' }, template: 'spectate', icon: 'performance' },
   요가: { name: '요가', label: { en: 'Yoga', ko: '요가' }, template: 'free', icon: 'yoga' },
   독서: { name: '독서', label: { en: 'Reading', ko: '독서' }, template: 'free', icon: 'book' },
+  캠핑: { name: '캠핑', label: { en: 'Camping', ko: '캠핑' }, template: 'outing', icon: 'tent' },
+  여행: { name: '여행', label: { en: 'Travel', ko: '여행' }, template: 'outing', icon: 'mappin' },
+  맛집: { name: '맛집', label: { en: 'Dining', ko: '맛집' }, template: 'outing', icon: 'utensils' },
 };
 
 // 활동 표시명: 빌트인은 현재 언어로, 커스텀(사용자 입력)은 저장된 이름 그대로.

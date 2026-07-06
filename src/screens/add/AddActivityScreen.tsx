@@ -23,6 +23,7 @@ const TEMPLATES: TemplateDef[] = [
   { id: 'setrep', name: { en: 'Sets · Reps', ko: '세트·횟수형' }, example: { en: 'Exercise · Sets · Reps · Level', ko: '종목 · 세트 · 반복 · 난이도' }, icon: Icon.dumbbell },
   { id: 'match', name: { en: 'Match', ko: '대전·경기형' }, example: { en: 'Opponent · Score · Result', ko: '상대 · 스코어 · 승패' }, icon: Icon.soccer },
   { id: 'spectate', name: { en: 'Performance', ko: '관람·공연형' }, example: { en: 'Venue · Seat · Rating', ko: '장소 · 좌석 · 평점' }, icon: Icon.performance },
+  { id: 'outing', name: { en: 'Leisure & outings', ko: '여가·나들이' }, example: { en: 'Place · Companions · Rating', ko: '장소 · 동행 · 평점' }, icon: Icon.tent },
   { id: 'free', name: { en: 'Free record', ko: '자유 기록형' }, example: { en: 'Title · Memo · Photo', ko: '제목 · 메모 · 사진' }, icon: Icon.yoga },
 ];
 
