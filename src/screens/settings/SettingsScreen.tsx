@@ -9,6 +9,7 @@ import { ActionSheet } from '../../components/ActionSheet';
 import { useStore } from '../../store/StoreContext';
 import { useAuth } from '../../auth/AuthContext';
 import { exportData, importData } from '../../lib/dataTransfer';
+import { backupNow, fetchBackup } from '../../lib/cloudBackup';
 import type { StoreState } from '../../store/types';
 import { useTheme } from '../../theme/ThemeContext';
 import { useLang, tr } from '../../i18n/i18n';
@@ -20,6 +21,7 @@ type SheetState =
   | { kind: 'confirmImport'; incoming: StoreState; summary: string }
   | { kind: 'confirmReset' }
   | { kind: 'confirmLogout' }
+  | { kind: 'cloud' }
   | { kind: 'message'; title: string; message?: string };
 
 // 4.8 설정 — profile card, grouped surface cards with rows + dividers.
@@ -73,6 +75,43 @@ export default function SettingsScreen() {
     }
   };
 
+  // ── 클라우드 백업 ─────────────────────────────────────────────
+  const currentState = (): StoreState => ({ records, plans, customActivities, profile, onboardingComplete, preferredActivities });
+  const [cloud, setCloud] = React.useState<{ loading: boolean; data?: StoreState | null; updatedAt?: number | null; err?: string }>({ loading: false });
+
+  const openCloud = () => {
+    setSheet({ kind: 'cloud' });
+    if (!user) {
+      setCloud({ loading: false, err: tr({ en: 'Sign in required.', ko: '로그인이 필요합니다.' }) });
+      return;
+    }
+    setCloud({ loading: true });
+    fetchBackup(user.uid)
+      .then((b) => setCloud({ loading: false, data: b?.data ?? null, updatedAt: b?.updatedAt ?? null }))
+      .catch((e) => setCloud({ loading: false, err: errMessage(e) }));
+  };
+
+  const doBackup = async () => {
+    if (!user) return;
+    setSheet({ kind: 'message', title: tr({ en: 'Cloud backup', ko: '클라우드 백업' }), message: tr({ en: 'Backing up…', ko: '백업 중…' }) });
+    try {
+      await backupNow(user.uid, currentState());
+      setSheet({ kind: 'message', title: tr({ en: 'Backup complete', ko: '백업 완료' }), message: tr({ en: 'Saved to the cloud.', ko: '클라우드에 저장했어요.' }) });
+    } catch (e) {
+      setSheet({ kind: 'message', title: tr({ en: 'Backup failed', ko: '백업 실패' }), message: errMessage(e) });
+    }
+  };
+
+  const doRestore = () => {
+    if (!cloud.data) return;
+    const d = cloud.data;
+    const summary = tr({
+      en: `Restoring ${d.records.length} records · ${d.plans.length} plans from the cloud. All current data will be replaced.`,
+      ko: `클라우드에서 기록 ${d.records.length}개 · 약속 ${d.plans.length}개를 복원합니다. 현재 데이터는 모두 대체됩니다.`,
+    });
+    setSheet({ kind: 'confirmImport', incoming: d, summary });
+  };
+
   // 데이터 리셋: 기록·약속·활동을 전부 비운다(프로필은 유지). replaceAll이 사진 고아까지 정리.
   const confirmReset = async () => {
     try {
@@ -115,6 +154,28 @@ export default function SettingsScreen() {
           cancelLabel: tr({ en: 'Cancel', ko: '취소' }),
           actions: [{ label: tr({ en: 'Replace all', ko: '전체 교체' }), destructive: true, onPress: () => confirmImport(sheet.incoming) }],
         };
+      case 'cloud': {
+        const when =
+          cloud.updatedAt != null
+            ? new Date(cloud.updatedAt).toLocaleString()
+            : null;
+        const message = cloud.loading
+          ? tr({ en: 'Checking…', ko: '확인 중…' })
+          : cloud.err
+            ? cloud.err
+            : cloud.data
+              ? tr({ en: `Last backup: ${when}`, ko: `마지막 백업: ${when}` })
+              : tr({ en: 'No cloud backup yet.', ko: '아직 클라우드 백업이 없어요.' });
+        return {
+          title: tr({ en: 'Cloud backup', ko: '클라우드 백업' }),
+          message,
+          cancelLabel: tr({ en: 'Cancel', ko: '취소' }),
+          actions: [
+            { label: tr({ en: 'Back up now', ko: '지금 백업' }), onPress: doBackup },
+            ...(cloud.data ? [{ label: tr({ en: 'Restore', ko: '복원' }), onPress: doRestore }] : []),
+          ],
+        };
+      }
       case 'confirmReset':
         return {
           title: tr({ en: 'Reset data', ko: '데이터 리셋' }),
@@ -231,11 +292,8 @@ export default function SettingsScreen() {
                 </Glyph>
               }
               label={tr({ en: 'Cloud backup', ko: '클라우드 백업' })}
-              right={
-                <View style={{ backgroundColor: c.surfaceAlt, borderRadius: 6, paddingVertical: 4, paddingHorizontal: 9 }}>
-                  <T style={{ fontSize: 11, fontWeight: '600', color: c.text2 }}>{tr({ en: 'Coming soon', ko: '곧 지원' })}</T>
-                </View>
-              }
+              value={tr({ en: 'Back up · Restore', ko: '백업 · 복원' })}
+              onPress={openCloud}
             />
             <Divider />
             <SettingsRow

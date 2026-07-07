@@ -17,7 +17,7 @@ const VERSION = 1;
 
 export type ExportFormat = 'json' | 'csv';
 
-type Envelope = {
+export type Envelope = {
   app: string;
   version: number;
   exportedAt: string;
@@ -26,14 +26,13 @@ type Envelope = {
 
 // ── 직렬화 ──────────────────────────────────────────────────────────
 
+// 백업 봉투(파일·클라우드 공용). 클라우드는 이 객체를 그대로 Firestore에 저장한다.
+export function buildEnvelope(state: StoreState): Envelope {
+  return { app: APP, version: VERSION, exportedAt: new Date().toISOString(), data: state };
+}
+
 export function buildJSON(state: StoreState): string {
-  const env: Envelope = {
-    app: APP,
-    version: VERSION,
-    exportedAt: new Date().toISOString(),
-    data: state,
-  };
-  return JSON.stringify(env, null, 2);
+  return JSON.stringify(buildEnvelope(state), null, 2);
 }
 
 const CSV_CORE = [
@@ -201,7 +200,7 @@ function validPlan(p: any): boolean {
   );
 }
 
-function normalize(parsed: any): StoreState {
+export function normalize(parsed: any): StoreState {
   if (!parsed || parsed.app !== APP || typeof parsed.version !== 'number') {
     throw new Error(tr({ en: 'This is not a valid Logit backup file.', ko: '올바른 Logit 백업 파일이 아닙니다.' }));
   }

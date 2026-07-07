@@ -20,7 +20,7 @@ import { tr } from '../i18n/i18n';
 type Status = 'loading' | 'authed' | 'unauthed';
 
 // 앱이 필요로 하는 최소 user 형태(Firebase User가 구조적으로 만족). mock도 이 형태를 만든다.
-export type AppUser = { email: string | null; displayName: string | null; emailVerified: boolean };
+export type AppUser = { uid: string; email: string | null; displayName: string | null; emailVerified: boolean };
 
 type AuthContextValue = {
   status: Status;
@@ -62,6 +62,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.getItem(MOCK_KEY)
       .then((raw) => {
         const u = raw ? (JSON.parse(raw) as AppUser) : null;
+        // 구버전 저장값엔 uid가 없을 수 있음 → 이메일 기반으로 보정.
+        if (u && !u.uid) u.uid = `mock-${(u.email ?? '').toLowerCase()}`;
         setUser(u);
         setStatus(u ? 'authed' : 'unauthed');
       })
@@ -70,6 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const mockSignIn = async (email: string, displayName?: string) => {
     const u: AppUser = {
+      uid: `mock-${email.trim().toLowerCase()}`, // 이메일 기반 안정 id(mock 전용)
       email: email.trim(),
       displayName: displayName?.trim() || email.trim().split('@')[0] || tr({ en: 'Logger', ko: '기록하는 사람' }),
       emailVerified: true, // mock은 인증 게이트를 건너뛴다(메일 발송 불가).
@@ -116,7 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     updateDisplayName: async (name) => {
       const displayName = name.trim();
       if (!isFirebaseConfigured) {
-        const next: AppUser = { email: user?.email ?? null, displayName, emailVerified: true };
+        const next: AppUser = { uid: user?.uid ?? `mock-${(user?.email ?? '').toLowerCase()}`, email: user?.email ?? null, displayName, emailVerified: true };
         await AsyncStorage.setItem(MOCK_KEY, JSON.stringify(next));
         setUser(next);
         return;
@@ -125,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await updateProfile(auth.currentUser, { displayName });
       // 프로필 변경은 onAuthStateChanged를 안 태우므로 스냅샷으로 context 갱신.
       setUser({
+        uid: auth.currentUser.uid,
         email: auth.currentUser.email,
         displayName: auth.currentUser.displayName,
         emailVerified: auth.currentUser.emailVerified,
