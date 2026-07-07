@@ -203,8 +203,23 @@ export default function CategoryStatsScreen() {
             <View style={{ flexDirection: 'row', gap: 9 }}>
               {metric(tr({ en: 'Records', ko: '총 기록' }), <>{s.count}{unit(tr({ en: '×', ko: '회' }))}</>)}
               {metric(tr({ en: 'Nights', ko: '숙박' }), <>{s.totalNights}{unit(tr({ en: 'nights', ko: '박' }))}</>)}
-              {metric(tr({ en: 'Places', ko: '장소' }), <>{s.placeCount}{unit(tr({ en: 'places', ko: '곳' }))}</>)}
+              {metric(tr({ en: 'Regions', ko: '지역' }), <>{s.regionCount}{unit(tr({ en: 'regions', ko: '곳' }))}</>)}
             </View>
+            {/* 지역별 */}
+            <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14, gap: 10 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'By region', ko: '지역별' })}</Text>
+              {s.byRegion.length === 0 ? (
+                <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: 'No region recorded.', ko: '기록된 지역이 없어요.' })}</Text>
+              ) : (
+                s.byRegion.map((b: any) => (
+                  <View key={b.region} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                    <Text style={{ fontSize: 12.5, color: c.text2 }} numberOfLines={1}>{b.region}</Text>
+                    <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.text }}>{tr({ en: `${b.count}×`, ko: `${b.count}회` })}</Text>
+                  </View>
+                ))
+              )}
+            </View>
+            {/* 활동별 */}
             {s.byActivity.length > 0 ? (
               <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14, gap: 10 }}>
                 <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'By activity', ko: '활동별' })}</Text>

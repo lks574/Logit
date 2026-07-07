@@ -303,10 +303,10 @@ export function statsHub(records: StoredRecord[], period: StatsPeriod, today: st
         ko: `${rs.length}편${avgR ? ` · 평점 ${avgR}` : ''}`,
       });
     } else if (key === 'outing') {
-      const placeN = new Set(rs.map((r) => r.fields?.장소).filter(Boolean)).size;
+      const regionN = new Set(rs.map((r) => r.fields?.지역).filter(Boolean)).size;
       subtitle = tr({
-        en: `${rs.length}×${placeN ? ` · ${placeN} places` : ''}`,
-        ko: `${rs.length}회${placeN ? ` · ${placeN}곳` : ''}`,
+        en: `${rs.length}×${regionN ? ` · ${regionN} regions` : ''}`,
+        ko: `${rs.length}회${regionN ? ` · ${regionN}개 지역` : ''}`,
       });
     } else {
       const bookN = new Set(rs.filter((r) => r.activity === '독서').map((r) => r.fields?.제목).filter(Boolean)).size;
@@ -395,12 +395,17 @@ export function categoryStats(records: StoredRecord[], category: StatsCategory, 
   }
 
   if (category === 'outing') {
-    const placeCount = new Set(inRange.map((r) => r.fields?.장소).filter(Boolean)).size;
     const totalNights = inRange.reduce((a, r) => a + nightsOf(r), 0);
     const byActMap = new Map<string, number>();
-    for (const r of inRange) byActMap.set(r.activity, (byActMap.get(r.activity) ?? 0) + 1);
+    const byRegionMap = new Map<string, number>();
+    for (const r of inRange) {
+      byActMap.set(r.activity, (byActMap.get(r.activity) ?? 0) + 1);
+      const region = r.fields?.지역?.trim();
+      if (region) byRegionMap.set(region, (byRegionMap.get(region) ?? 0) + 1);
+    }
     const byActivity = [...byActMap.entries()].sort((a, b) => b[1] - a[1]).map(([activity, count]) => ({ activity, count }));
-    return { category, count: inRange.length, placeCount, totalNights, byActivity };
+    const byRegion = [...byRegionMap.entries()].sort((a, b) => b[1] - a[1]).map(([region, count]) => ({ region, count }));
+    return { category, count: inRange.length, totalNights, regionCount: byRegion.length, byRegion, byActivity };
   }
 
   if (category === 'free') {
