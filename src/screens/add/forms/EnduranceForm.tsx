@@ -86,8 +86,8 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
   const moodColors = [c.team, c.warning, c.success, c.star]; // 별로·보통·좋음·최고 (부드러운 톤)
 
   const pickPhoto = async () => {
-    const uri = await choosePhoto();
-    if (uri) setPhotos((p) => [...p, uri]);
+    const uris = await choosePhoto();
+    if (uris.length) setPhotos((p) => [...p, ...uris]);
   };
 
   // 최근 같은 활동 기록(현재 편집 중인 것 제외). records는 최신순.

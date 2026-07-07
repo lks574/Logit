@@ -125,8 +125,8 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
 
   const pickPhoto = async () => {
-    const uri = await choosePhoto();
-    if (uri) setPhotos((p) => [...p, uri]);
+    const uris = await choosePhoto();
+    if (uris.length) setPhotos((p) => [...p, ...uris]);
   };
 
   const castPalette = [c.perf, c.team, c.cardio, c.strength, c.accent, c.warning];

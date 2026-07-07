@@ -101,8 +101,8 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
     setRows((r) => r.map((row, idx) => (idx === i ? { ...row, [key]: val } : row)));
 
   const pickPhoto = async () => {
-    const uri = await choosePhoto();
-    if (uri) setPhotos((p) => [...p, uri]);
+    const uris = await choosePhoto();
+    if (uris.length) setPhotos((p) => [...p, ...uris]);
   };
 
   const handleSave = () => {

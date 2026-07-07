@@ -54,7 +54,8 @@ export function deletePhoto(stored: string): void {
   } catch {}
 }
 
-async function launch(source: 'camera' | 'library'): Promise<string | null> {
+// 앨범은 다중 선택 지원. 촬영은 항상 1장. 선택된 이미지의 영구 경로 배열(없으면 [])을 반환.
+async function launch(source: 'camera' | 'library'): Promise<string[]> {
   if (source === 'camera') {
     const perm = await ImagePicker.requestCameraPermissionsAsync();
     if (!perm.granted) {
@@ -62,10 +63,11 @@ async function launch(source: 'camera' | 'library'): Promise<string | null> {
         tr({ en: 'Camera access needed', ko: '카메라 권한 필요' }),
         tr({ en: 'Allow camera access in Settings.', ko: '설정에서 카메라 접근을 허용해 주세요.' }),
       );
-      return null;
+      return [];
     }
     const res = await ImagePicker.launchCameraAsync(OPTS);
-    return !res.canceled && res.assets?.[0] ? persist(res.assets[0].uri) : null;
+    if (res.canceled || !res.assets?.[0]) return [];
+    return [await persist(res.assets[0].uri)];
   }
   const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!perm.granted) {
@@ -73,15 +75,16 @@ async function launch(source: 'camera' | 'library'): Promise<string | null> {
       tr({ en: 'Photo access needed', ko: '사진 권한 필요' }),
       tr({ en: 'Allow photo access in Settings.', ko: '설정에서 사진 접근을 허용해 주세요.' }),
     );
-    return null;
+    return [];
   }
-  const res = await ImagePicker.launchImageLibraryAsync(OPTS);
-  return !res.canceled && res.assets?.[0] ? persist(res.assets[0].uri) : null;
+  const res = await ImagePicker.launchImageLibraryAsync({ ...OPTS, allowsMultipleSelection: true });
+  if (res.canceled || !res.assets?.length) return [];
+  return Promise.all(res.assets.map((a) => persist(a.uri)));
 }
 
-// 사진 추가 — 촬영 / 앨범에서 선택 액션 시트를 띄우고 선택된 이미지 uri(없으면 null)를 반환.
+// 사진 추가 — 촬영 / 앨범(다중) 액션 시트를 띄우고 선택된 이미지 경로 배열(없으면 [])을 반환.
 // 웹에는 촬영이 없으므로 바로 라이브러리로.
-export function choosePhoto(): Promise<string | null> {
+export function choosePhoto(): Promise<string[]> {
   return new Promise((resolve) => {
     if (Platform.OS === 'web') {
       launch('library').then(resolve);
@@ -90,7 +93,7 @@ export function choosePhoto(): Promise<string | null> {
     Alert.alert(tr({ en: 'Add photo', ko: '사진 추가' }), undefined, [
       { text: tr({ en: 'Take photo', ko: '촬영' }), onPress: () => launch('camera').then(resolve) },
       { text: tr({ en: 'Choose from library', ko: '앨범에서 선택' }), onPress: () => launch('library').then(resolve) },
-      { text: tr({ en: 'Cancel', ko: '취소' }), style: 'cancel', onPress: () => resolve(null) },
+      { text: tr({ en: 'Cancel', ko: '취소' }), style: 'cancel', onPress: () => resolve([]) },
     ]);
   });
 }

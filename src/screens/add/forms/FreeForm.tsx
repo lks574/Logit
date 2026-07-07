@@ -64,8 +64,8 @@ export default function FreeForm({ activity, recordId }: { activity: string; rec
   const durationRef = React.useRef<TextInput>(null);
 
   const pickPhoto = async () => {
-    const uri = await choosePhoto();
-    if (uri) setPhotos((p) => [...p, uri]);
+    const uris = await choosePhoto();
+    if (uris.length) setPhotos((p) => [...p, ...uris]);
   };
 
   const handleSave = () => {
