@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Image, Text, View } from 'react-native';
+import { Alert, Image, Modal, Pressable, Text, View } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Row, Screen } from '../../components/primitives';
 import { ScreenHeader } from '../../components/ScreenHeader';
@@ -81,6 +81,8 @@ export default function DetailScreen() {
 
   const recordId = route.params?.recordId;
   const record = recordId ? getRecord(recordId) : undefined;
+  // 사진 전체화면 뷰어 — 탭한 사진 uri를 담으면 모달이 뜬다.
+  const [zoom, setZoom] = React.useState<string | null>(null);
 
   // 레코드가 없으면(recordId 미전달·삭제됨·stale·가져오기로 교체됨) 빈 상태를 보여준다.
   if (!record) {
@@ -215,19 +217,23 @@ export default function DetailScreen() {
           ) : null}
         </Row>
 
-        {/* Photos — 실제 사진이 있을 때만 표시 */}
+        {/* Photos — 실제 사진이 있을 때만 표시. 탭 → 전체화면. */}
         {hasPhotos ? (
-          <Row gap={8}>
-            {photos!.slice(0, 2).map((uri, i) => (
-              <Image
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {photos!.map((uri, i) => (
+              <Pressable
                 key={`${uri}-${i}`}
-                source={{ uri: photoUri(uri) }}
-                style={{ flex: 1, height: v.photoHeight, borderRadius: 13, backgroundColor: c.surfaceAlt }}
-                resizeMode="cover"
-              />
+                onPress={() => setZoom(photoUri(uri))}
+                style={{ width: photos!.length === 1 ? '100%' : '48%' }}
+              >
+                <Image
+                  source={{ uri: photoUri(uri) }}
+                  style={{ width: '100%', height: v.photoHeight, borderRadius: 13, backgroundColor: c.surfaceAlt }}
+                  resizeMode="cover"
+                />
+              </Pressable>
             ))}
-            {photos!.length === 1 ? <View style={{ flex: 1 }} /> : null}
-          </Row>
+          </View>
         ) : null}
 
         {/* 상세 수치 table (cardio / match) */}
@@ -256,6 +262,16 @@ export default function DetailScreen() {
           </View>
         ) : null}
       </View>
+
+      {/* 전체화면 사진 뷰어 — 아무 곳이나 탭하면 닫힘 */}
+      <Modal visible={!!zoom} transparent animationType="fade" onRequestClose={() => setZoom(null)}>
+        <Pressable onPress={() => setZoom(null)} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.96)', alignItems: 'center', justifyContent: 'center' }}>
+          {zoom ? <Image source={{ uri: zoom }} style={{ width: '100%', height: '100%' }} resizeMode="contain" /> : null}
+          <Pressable onPress={() => setZoom(null)} hitSlop={10} style={{ position: 'absolute', top: 52, right: 20, width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon.close size={20} color="#fff" strokeWidth={2.4} />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 }
