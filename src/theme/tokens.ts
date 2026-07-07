@@ -84,16 +84,6 @@ export const dark: Palette = {
 };
 
 export const radius = { sm: 8, md: 14, lg: 20, xl: 28, card: 14 } as const;
-export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 } as const;
-
-export const type = {
-  title: { fontSize: 25, fontWeight: '700' as const, letterSpacing: -0.75 },
-  heading: { fontSize: 18, fontWeight: '700' as const },
-  body: { fontSize: 15, fontWeight: '400' as const },
-  bodyStrong: { fontSize: 15, fontWeight: '600' as const },
-  label: { fontSize: 12, fontWeight: '600' as const },
-  caption: { fontSize: 11, fontWeight: '400' as const },
-};
 
 // Template → color/soft key map (Record Templates).
 export const templateColor: Record<
