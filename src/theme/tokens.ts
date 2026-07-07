@@ -48,8 +48,8 @@ export const light: Palette = {
   teamSoft: '#E4EAF3',
   perf: '#8A6BA8',
   perfSoft: '#EEE8F3',
-  outing: '#5F8D4E',
-  outingSoft: '#E6EEDF',
+  outing: '#6E8E4E', // 디자인 handoff: leisure(올리브 그린)
+  outingSoft: '#E9EFDF',
   success: '#3C9A6A',
   warning: '#C9962E',
   error: '#C2473D',
@@ -75,8 +75,8 @@ export const dark: Palette = {
   teamSoft: '#1F2A38',
   perf: '#A98AC6',
   perfSoft: '#2A2335',
-  outing: '#7BAE68',
-  outingSoft: '#212A1D',
+  outing: '#93B06B', // 디자인 handoff: leisure(올리브 그린)
+  outingSoft: '#242C1B',
   success: '#4FB57E',
   warning: '#DFAE48',
   error: '#D75F54',

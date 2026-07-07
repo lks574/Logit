@@ -18,6 +18,7 @@ export type Activity = {
 export const activities: Record<string, Activity> = {
   런닝: { name: '런닝', label: { en: 'Running', ko: '런닝' }, template: 'endurance', icon: 'running' },
   자전거: { name: '자전거', label: { en: 'Cycling', ko: '자전거' }, template: 'endurance', icon: 'running' },
+  수영: { name: '수영', label: { en: 'Swimming', ko: '수영' }, template: 'endurance', icon: 'running' }, // ponytail: swim 아이콘 없어 running 재사용
   헬스: { name: '헬스', label: { en: 'Gym', ko: '헬스' }, template: 'setrep', icon: 'dumbbell' },
   클라이밍: { name: '클라이밍', label: { en: 'Climbing', ko: '클라이밍' }, template: 'setrep', icon: 'dumbbell' },
   축구: { name: '축구', label: { en: 'Soccer', ko: '축구' }, template: 'match', icon: 'soccer' },

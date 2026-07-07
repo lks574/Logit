@@ -1,6 +1,7 @@
 import { TemplateType } from '../theme/tokens';
 import { StoredPlan, StoredRecord } from './types';
 import { tr } from '../i18n/i18n';
+import { activities } from '../data/activities';
 
 // Pure derivations over store state. Dates are 'YYYY-MM-DD'.
 
@@ -220,11 +221,12 @@ export function statsHub(records: StoredRecord[], period: StatsPeriod, today: st
   return { tag, count, activeDays, streak, heatmap: heatmapCells(records, today), cats };
 }
 
-// 카테고리 세부 통계.
-export function categoryStats(records: StoredRecord[], category: StatsCategory, period: StatsPeriod, today: string) {
+// 카테고리 세부 통계. activity 주면 그 종목(장르/활동) 하나로 좁힌다.
+export function categoryStats(records: StoredRecord[], category: StatsCategory, period: StatsPeriod, today: string, activity?: string) {
   const tpl = CATEGORY_TEMPLATE[category];
   const { start, end } = periodRange(period, today);
-  const all = records.filter((r) => r.template === tpl);
+  let all = records.filter((r) => r.template === tpl);
+  if (activity) all = all.filter((r) => r.activity === activity);
   const inRange = all.filter((r) => r.dateISO >= start && r.dateISO <= end);
 
   if (category === 'cardio') {
@@ -353,4 +355,132 @@ export function categoryStats(records: StoredRecord[], category: StatsCategory, 
   const topWork = top('작품');
   const topVenue = top('공연장');
   return { category, count, avgRating, genres, topWork, topActor, topVenue };
+}
+
+// 단독 세부 화면의 "최신순 기록" 리스트. 기간·(옵션)종목으로 좁혀 날짜 내림차순.
+export function recentRecords(
+  records: StoredRecord[],
+  category: StatsCategory,
+  period: StatsPeriod,
+  today: string,
+  activity?: string,
+): StoredRecord[] {
+  const tpl = CATEGORY_TEMPLATE[category];
+  const { start, end } = periodRange(period, today);
+  return records
+    .filter((r) => r.template === tpl && (!activity || r.activity === activity) && r.dateISO >= start && r.dateISO <= end)
+    .sort((a, b) => (a.dateISO < b.dateISO ? 1 : -1));
+}
+
+// 단독 세부 화면의 리치 섹션(요약 스트립 · 랭킹 카드 · 2단 카드). 있는 필드로만 집계.
+export type RankRow = { name: string; count: number; pct: number };
+export type SubtypeSections = {
+  summary: { label: string; value: string; unit?: string }[];
+  rank: { title: string; caption?: string; rows: RankRow[] } | null;
+  cols: { title: string; rows: { label: string; value: string }[] }[];
+};
+export function subtypeSections(records: StoredRecord[], category: StatsCategory, activity: string, period: StatsPeriod, today: string): SubtypeSections {
+  const rs = recentRecords(records, category, period, today, activity);
+  const wd = ['일', '월', '화', '수', '목', '금', '토'];
+  // 임의 getter로 그룹 카운트 → 게이지 pct(최댓값 100%).
+  const rankBy = (get: (r: StoredRecord) => string | undefined | null): RankRow[] => {
+    const m = new Map<string, number>();
+    for (const r of rs) {
+      const k = get(r);
+      if (k) m.set(k, (m.get(k) ?? 0) + 1);
+    }
+    const arr = [...m.entries()].sort((a, b) => b[1] - a[1]);
+    const max = Math.max(1, ...arr.map(([, n]) => n));
+    return arr.map(([name, count]) => ({ name, count, pct: Math.round((count / max) * 100) }));
+  };
+  const actorRank = (): RankRow[] => {
+    const m = new Map<string, number>();
+    for (const r of rs) {
+      const cast = r.fields?.출연진;
+      if (!cast) continue;
+      for (const entry of cast.split(/\s·\s|,/)) {
+        const parts = entry.trim().split('·');
+        const actor = parts[parts.length - 1].trim();
+        if (actor) m.set(actor, (m.get(actor) ?? 0) + 1);
+      }
+    }
+    const arr = [...m.entries()].sort((a, b) => b[1] - a[1]);
+    const max = Math.max(1, ...arr.map(([, n]) => n));
+    return arr.map(([name, count]) => ({ name, count, pct: Math.round((count / max) * 100) }));
+  };
+  const weekdayCol = () =>
+    rankBy((r) => wd[new Date(Date.parse(r.dateISO + 'T00:00:00Z')).getUTCDay()] + tr({ en: '', ko: '요일' }))
+      .slice(0, 3)
+      .map((x) => ({ label: x.name, value: tr({ en: `${x.count}×`, ko: `${x.count}회` }) }));
+  const toCol = (rows: RankRow[], unit: { en: string; ko: string }) =>
+    rows.slice(0, 3).map((x) => ({ label: x.name, value: tr({ en: `${x.count}${unit.en}`, ko: `${x.count}${unit.ko}` }) }));
+  const times = { en: '×', ko: '회' };
+
+  if (category === 'performance') {
+    const rated = rs.map((r) => r.rating).filter((x): x is number => !!x);
+    const works = rankBy((r) => r.fields?.작품);
+    return {
+      summary: [
+        { label: tr({ en: 'Watched', ko: '관람' }), value: String(rs.length), unit: tr({ en: 'shows', ko: '편' }) },
+        { label: tr({ en: 'Avg rating', ko: '평점' }), value: rated.length ? String(Math.round(avg(rated) * 10) / 10) : '—' },
+      ],
+      rank: null,
+      cols: [
+        { title: tr({ en: 'Rewatch', ko: '재관람' }), rows: toCol(works, times) },
+        { title: tr({ en: 'Top actors', ko: '본 배우' }), rows: toCol(actorRank(), times) },
+      ],
+    };
+  }
+  if (category === 'cardio') {
+    const totalKm = Math.round(rs.reduce((a, r) => a + parseKm(r), 0) * 10) / 10;
+    const paceSecs = rs.map(parsePaceSec).filter((x): x is number => x != null);
+    return {
+      summary: [
+        { label: tr({ en: 'Count', ko: '횟수' }), value: String(rs.length), unit: tr({ en: '×', ko: '회' }) },
+        { label: tr({ en: 'Distance', ko: '거리' }), value: String(totalKm), unit: 'km' },
+        { label: tr({ en: 'Avg pace', ko: '평균 페이스' }), value: paceSecs.length ? formatPace(Math.round(avg(paceSecs))) : '—' },
+      ],
+      rank: { title: tr({ en: 'By course', ko: '코스별' }), rows: rankBy((r) => r.fields?.장소) },
+      cols: [{ title: tr({ en: 'Top weekday', ko: '요일 TOP' }), rows: weekdayCol() }],
+    };
+  }
+  if (category === 'strength') {
+    const totalT = Math.round((rs.reduce((a, r) => a + parseVolumeKg(r.fields?.총볼륨), 0) / 1000) * 10) / 10;
+    return {
+      summary: [
+        { label: tr({ en: 'Count', ko: '횟수' }), value: String(rs.length), unit: tr({ en: '×', ko: '회' }) },
+        { label: tr({ en: 'Volume', ko: '볼륨' }), value: String(totalT), unit: 't' },
+      ],
+      rank: { title: tr({ en: 'By body part', ko: '부위별' }), rows: rankBy((r) => r.fields?.부위) },
+      cols: [{ title: tr({ en: 'Top weekday', ko: '요일 TOP' }), rows: weekdayCol() }],
+    };
+  }
+  if (category === 'outing') {
+    const regions = rankBy((r) => r.fields?.지역?.trim());
+    return {
+      summary: [
+        { label: tr({ en: 'Records', ko: '총 기록' }), value: String(rs.length), unit: tr({ en: '×', ko: '회' }) },
+        { label: tr({ en: 'Regions', ko: '지역' }), value: String(regions.length), unit: tr({ en: '', ko: '곳' }) },
+      ],
+      rank: { title: tr({ en: 'By region', ko: '지역별' }), rows: regions },
+      cols: [{ title: tr({ en: 'Frequent spots', ko: '자주 간 곳' }), rows: toCol(rankBy((r) => r.fields?.장소), times) }],
+    };
+  }
+  // match · free — 요일 TOP만.
+  return {
+    summary: [{ label: tr({ en: 'Records', ko: '총 기록' }), value: String(rs.length), unit: tr({ en: '×', ko: '회' }) }],
+    rank: null,
+    cols: [{ title: tr({ en: 'Top weekday', ko: '요일 TOP' }), rows: weekdayCol() }],
+  };
+}
+
+// 카테고리 세부 → "세부 종목" 리스트. 등록된 모든 종목(0건 포함)을 기간 내 횟수로.
+export function subtypesForCategory(records: StoredRecord[], category: StatsCategory, period: StatsPeriod, today: string) {
+  const tpl = CATEGORY_TEMPLATE[category];
+  const { start, end } = periodRange(period, today);
+  const inRange = records.filter((r) => r.template === tpl && r.dateISO >= start && r.dateISO <= end);
+  return Object.values(activities)
+    .filter((a) => a.template === tpl)
+    .map((a) => ({ activity: a.name, count: inRange.filter((r) => r.activity === a.name).length }))
+    .sort((a, b) => b.count - a.count);
 }

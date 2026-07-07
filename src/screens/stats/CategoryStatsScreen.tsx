@@ -5,12 +5,12 @@ import Svg, { Polyline, Circle as SvgCircle } from 'react-native-svg';
 import { Screen } from '../../components/primitives';
 import { Glyph, Path, Icon } from '../../components/Glyph';
 import { Segmented } from '../../components/controls';
-import { NativeAdCard } from '../../components/NativeAdCard';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStore } from '../../store/StoreContext';
-import { categoryStats, StatsPeriod, StatsCategory } from '../../store/selectors';
+import { categoryStats, recentRecords, subtypeSections, subtypesForCategory, StatsPeriod, StatsCategory } from '../../store/selectors';
 import { tr, Msg } from '../../i18n/i18n';
-import { activityLabel } from '../../data/activities';
+import { activityLabel, iconFor } from '../../data/activities';
+import { Stars } from '../../components/Rating';
 
 function mix(a: string, b: string, pct: number): string {
   const p = (h: string) => [1, 3, 5].map((i) => parseInt(h.replace('#', '').slice(i - 1, i + 1), 16));
@@ -33,14 +33,31 @@ const META: Record<StatsCategory, { label: Msg; sub: Msg }> = {
 export default function CategoryStatsScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { category, period: initialPeriod } = useRoute().params as {
+  const { category, period: initialPeriod, activity } = useRoute().params as {
     category: StatsCategory;
     period?: StatsPeriod;
+    activity?: string; // 단일 종목(장르/활동)으로 좁힐 때
   };
   const { records, today } = useStore();
   // 허브에서 넘어온 기간을 그대로 이어받는다(없으면 전체).
   const [period, setPeriod] = useState<StatsPeriod>(initialPeriod ?? 'all');
-  const s = categoryStats(records, category, period, today) as any;
+  const s = categoryStats(records, category, period, today, activity) as any;
+  const drill = (act: string) => nav.push('CategoryStats', { category, period, activity: act });
+  // 단독 세부(종목 하나)에서만 최신순 기록 리스트를 노출. 기본 4행 + 더보기.
+  const recent = activity ? recentRecords(records, category, period, today, activity) : [];
+  const [shown, setShown] = useState(4);
+  // 별점이 있는 기록이면 최신순/별점순 정렬 토글 노출.
+  const hasRatings = recent.some((r) => !!r.rating);
+  const [sortBy, setSortBy] = useState<'recent' | 'rating'>('recent');
+  const sortedRecent = sortBy === 'rating'
+    ? [...recent].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0) || (a.dateISO < b.dateISO ? 1 : -1))
+    : recent;
+  // 단독 세부 리치 섹션(요약 스트립·랭킹 게이지·2단 카드).
+  const sections = activity ? subtypeSections(records, category, activity, period, today) : null;
+  // 유산소·근력 부모 화면에서만 "세부 종목" 리스트(공연·여가는 분포 카드가 그 역할).
+  const subtypes = !activity && (category === 'cardio' || category === 'strength')
+    ? subtypesForCategory(records, category, period, today)
+    : [];
 
   const palette: Record<StatsCategory, { col: string; soft: string }> = {
     cardio: { col: c.cardio, soft: c.cardioSoft },
@@ -70,8 +87,8 @@ export default function CategoryStatsScreen() {
           <Icon.chevronLeft size={17} color={c.text2} strokeWidth={2} />
         </Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 19, fontWeight: '700', letterSpacing: -0.4, color: c.text }}>{tr(meta.label)}</Text>
-          <Text style={{ fontSize: 11, color: c.text3 }}>{tr(meta.sub)}</Text>
+          <Text style={{ fontSize: 19, fontWeight: '700', letterSpacing: -0.4, color: c.text }}>{activity ? activityLabel(activity) : tr(meta.label)}</Text>
+          <Text style={{ fontSize: 11, color: c.text3 }}>{activity ? tr(meta.label) : tr(meta.sub)}</Text>
         </View>
         <View style={{ width: 11, height: 11, borderRadius: 6, backgroundColor: col }} />
       </View>
@@ -93,8 +110,70 @@ export default function CategoryStatsScreen() {
           <Text style={{ fontSize: 12.5, color: c.text3, paddingVertical: 12, textAlign: 'center' }}>{tr({ en: 'No records in this period.', ko: '이 기간에 기록이 없어요.' })}</Text>
         ) : null}
 
+        {/* ── 단독 세부: 요약 스트립 · 랭킹 게이지 · 2단 카드 ── */}
+        {activity && sections ? (
+          <>
+            {sections.summary.length > 0 ? (
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {sections.summary.map((m, i) => (
+                  <View key={i} style={{ flex: 1, ...card }}>
+                    <Text style={{ fontSize: 10.5, color: c.text2 }}>{m.label}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 2, marginTop: 3 }}>
+                      <Text style={{ fontSize: 19, fontWeight: '700', color: c.text }}>{m.value}</Text>
+                      {m.unit ? <Text style={{ fontSize: 10.5, color: c.text2, fontWeight: '500' }}>{m.unit}</Text> : null}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {sections.rank && sections.rank.rows.length > 0 ? (
+              <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{sections.rank.title}</Text>
+                  {sections.rank.caption ? <Text style={{ fontSize: 11, color: c.text3 }}>{sections.rank.caption}</Text> : null}
+                </View>
+                <View style={{ gap: 10 }}>
+                  {sections.rank.rows.slice(0, 5).map((r, i) => (
+                    <View key={r.name} style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
+                      <Text style={{ width: 14, fontSize: 11, fontWeight: '700', color: i === 0 ? col : c.text3 }}>{i + 1}</Text>
+                      <Text numberOfLines={1} style={{ flex: 1, fontSize: 12.5, fontWeight: '600', color: c.text }}>{r.name}</Text>
+                      <View style={{ width: 96, height: 8, backgroundColor: c.surfaceAlt, borderRadius: 4, overflow: 'hidden' }}>
+                        <View style={{ width: `${r.pct}%`, height: '100%', backgroundColor: i === 0 ? col : mix(col, c.surface, 75), borderRadius: 4 }} />
+                      </View>
+                      <Text style={{ width: 26, textAlign: 'right', fontSize: 11, fontWeight: '700', color: c.text }}>{r.count}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
+            {sections.cols.some((cl) => cl.rows.length > 0) ? (
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {sections.cols.map((cl, i) => (
+                  <View key={i} style={{ flex: 1, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 13 }}>
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: c.text, marginBottom: 8 }}>{cl.title}</Text>
+                    {cl.rows.length === 0 ? (
+                      <Text style={{ fontSize: 11.5, color: c.text3 }}>—</Text>
+                    ) : (
+                      <View style={{ gap: 6 }}>
+                        {cl.rows.map((row, j) => (
+                          <View key={j} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 6 }}>
+                            <Text numberOfLines={1} style={{ flex: 1, fontSize: 11.5, color: c.text2 }}>{row.label}</Text>
+                            <Text style={{ fontSize: 11.5, fontWeight: '700', color: c.text }}>{row.value}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                ))}
+              </View>
+            ) : null}
+          </>
+        ) : null}
+
         {/* ── 유산소 ── */}
-        {category === 'cardio' ? (
+        {!activity && category === 'cardio' ? (
           <>
             {/* 월별 거리 */}
             <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14 }}>
@@ -131,7 +210,7 @@ export default function CategoryStatsScreen() {
         ) : null}
 
         {/* ── 근력 ── */}
-        {category === 'strength' ? (
+        {!activity && category === 'strength' ? (
           <>
             <View style={{ flexDirection: 'row', gap: 9 }}>
               {metric(tr({ en: 'Total volume', ko: '총 볼륨' }), <>{s.totalT}{unit('t')}</>)}
@@ -159,7 +238,7 @@ export default function CategoryStatsScreen() {
         ) : null}
 
         {/* ── 대전 ── */}
-        {category === 'match' ? (
+        {!activity && category === 'match' ? (
           <>
             <View style={{ flexDirection: 'row', gap: 9 }}>
               {metric(tr({ en: 'Matches', ko: '총 경기' }), <>{s.count}{unit(tr({ en: '×', ko: '회' }))}</>)}
@@ -184,14 +263,15 @@ export default function CategoryStatsScreen() {
                 <Text style={{ fontSize: 12.5, color: c.text3 }}>{tr({ en: 'No matches with a result (W/D/L) logged yet. Pick a result when logging to build your record.', ko: '결과(승/무/패)가 기록된 경기가 없어요. 기록 시 결과를 선택하면 전적이 쌓여요.' })}</Text>
               )}
             </View>
-            {s.bySport.length > 0 ? (
+            {!activity && s.bySport.length > 0 ? (
               <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14, gap: 10 }}>
                 <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'By sport', ko: '종목별' })}</Text>
                 {s.bySport.map((b: any) => (
-                  <View key={b.activity} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 12.5, color: c.text2 }}>{activityLabel(b.activity)}</Text>
+                  <Pressable key={b.activity} onPress={() => drill(b.activity)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ flex: 1, fontSize: 12.5, color: c.text2 }}>{activityLabel(b.activity)}</Text>
                     <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.text }}>{tr({ en: `${b.count}×`, ko: `${b.count}회` })}</Text>
-                  </View>
+                    <Icon.chevronRight size={13} color={c.text3} strokeWidth={2} />
+                  </Pressable>
                 ))}
               </View>
             ) : null}
@@ -199,7 +279,7 @@ export default function CategoryStatsScreen() {
         ) : null}
 
         {/* ── 자유 ── */}
-        {category === 'outing' ? (
+        {!activity && category === 'outing' ? (
           <>
             <View style={{ flexDirection: 'row', gap: 9 }}>
               {metric(tr({ en: 'Records', ko: '총 기록' }), <>{s.count}{unit(tr({ en: '×', ko: '회' }))}</>)}
@@ -221,34 +301,36 @@ export default function CategoryStatsScreen() {
               )}
             </View>
             {/* 활동별 */}
-            {s.byActivity.length > 0 ? (
+            {!activity && s.byActivity.length > 0 ? (
               <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14, gap: 10 }}>
                 <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'By activity', ko: '활동별' })}</Text>
                 {s.byActivity.map((b: any) => (
-                  <View key={b.activity} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 12.5, color: c.text2 }}>{activityLabel(b.activity)}</Text>
+                  <Pressable key={b.activity} onPress={() => drill(b.activity)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ flex: 1, fontSize: 12.5, color: c.text2 }}>{activityLabel(b.activity)}</Text>
                     <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.text }}>{tr({ en: `${b.count}×`, ko: `${b.count}회` })}</Text>
-                  </View>
+                    <Icon.chevronRight size={13} color={c.text3} strokeWidth={2} />
+                  </Pressable>
                 ))}
               </View>
             ) : null}
           </>
         ) : null}
 
-        {category === 'free' ? (
+        {!activity && category === 'free' ? (
           <>
             <View style={{ flexDirection: 'row', gap: 9 }}>
               {metric(tr({ en: 'Records', ko: '총 기록' }), <>{s.count}{unit(tr({ en: '×', ko: '회' }))}</>)}
               {metric(tr({ en: 'Books read', ko: '읽은 책' }), <>{s.bookCount}{unit(tr({ en: 'books', ko: '권' }))}</>)}
             </View>
-            {s.byActivity.length > 0 ? (
+            {!activity && s.byActivity.length > 0 ? (
               <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14, gap: 10 }}>
                 <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'By activity', ko: '활동별' })}</Text>
                 {s.byActivity.map((b: any) => (
-                  <View key={b.activity} style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                    <Text style={{ fontSize: 12.5, color: c.text2 }}>{activityLabel(b.activity)}</Text>
+                  <Pressable key={b.activity} onPress={() => drill(b.activity)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={{ flex: 1, fontSize: 12.5, color: c.text2 }}>{activityLabel(b.activity)}</Text>
                     <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.text }}>{tr({ en: `${b.count}×`, ko: `${b.count}회` })}</Text>
-                  </View>
+                    <Icon.chevronRight size={13} color={c.text3} strokeWidth={2} />
+                  </Pressable>
                 ))}
               </View>
             ) : null}
@@ -256,7 +338,7 @@ export default function CategoryStatsScreen() {
         ) : null}
 
         {/* ── 공연 ── */}
-        {category === 'performance' ? (
+        {!activity && category === 'performance' ? (
           <>
             <View style={{ flexDirection: 'row', gap: 9 }}>
               {metric(tr({ en: 'Watched', ko: '총 관람' }), <>{s.count}{unit(tr({ en: 'shows', ko: '편' }))}</>)}
@@ -273,7 +355,8 @@ export default function CategoryStatsScreen() {
               </View>
             </View>
 
-            {/* 장르별 관람 */}
+            {/* 장르별 관람 — 단일 장르로 좁힌 상태면 숨김 */}
+            {!activity ? (
             <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14 }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 11 }}>{tr({ en: 'By genre', ko: '장르별 관람' })}</Text>
               {s.genres.length === 0 ? (
@@ -287,16 +370,18 @@ export default function CategoryStatsScreen() {
                   </View>
                   <View style={{ gap: 7 }}>
                     {s.genres.map((g: any, i: number) => (
-                      <View key={g.genre} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Pressable key={g.genre} onPress={() => drill(g.genre)} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <View style={{ width: 9, height: 9, borderRadius: 3, backgroundColor: mix(col, c.surface, 100 - i * 35) }} />
                         <Text style={{ flex: 1, fontSize: 12, color: c.text2 }}>{activityLabel(g.genre)}</Text>
                         <Text style={{ fontSize: 12, fontWeight: '700', color: c.text }}>{tr({ en: `${g.count}`, ko: `${g.count}편` })}</Text>
-                      </View>
+                        <Icon.chevronRight size={13} color={c.text3} strokeWidth={2} />
+                      </Pressable>
                     ))}
                   </View>
                 </>
               )}
             </View>
+            ) : null}
 
             {/* 최다 기록 */}
             {s.topWork.value || s.topActor || s.topVenue.value ? (
@@ -314,7 +399,70 @@ export default function CategoryStatsScreen() {
           </>
         ) : null}
 
-        <NativeAdCard />
+        {/* 세부 종목 리스트 — 유산소·근력 부모에서만. 탭 → 단독 세부. */}
+        {subtypes.length > 0 ? (
+          <View style={{ gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 2 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'Sub-types', ko: '세부 종목' })}</Text>
+              <Text style={{ fontSize: 11, color: c.text3 }}>{tr({ en: 'Tap for details →', ko: '탭하면 세부 →' })}</Text>
+            </View>
+            {subtypes.map((st) => {
+              const SubIcon = iconFor(st.activity);
+              return (
+                <Pressable key={st.activity} onPress={() => drill(st.activity)} style={{ flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 13, paddingVertical: 10, paddingHorizontal: 12 }}>
+                  <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
+                    <SubIcon size={16} color={col} strokeWidth={2} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{activityLabel(st.activity)}</Text>
+                    <Text style={{ fontSize: 11, color: c.text3, marginTop: 1 }}>{tr({ en: `${st.count}×`, ko: `${st.count}회` })}</Text>
+                  </View>
+                  <Icon.chevronRight size={17} color={c.text3} strokeWidth={2} />
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+
+        {/* 최신순 기록 — 단독 세부에서만. 100% 실데이터. */}
+        {activity && recent.length > 0 ? (
+          <View style={{ gap: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 2 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: `Records · ${recent.length}`, ko: `기록 · ${recent.length}건` })}</Text>
+              {hasRatings ? (
+                <View style={{ flexDirection: 'row', backgroundColor: c.surfaceAlt, borderRadius: 8, padding: 2 }}>
+                  {([['recent', tr({ en: 'Latest', ko: '최신순' })], ['rating', tr({ en: 'Rating', ko: '별점순' })]] as const).map(([key, label]) => (
+                    <Pressable key={key} onPress={() => setSortBy(key)} style={{ paddingVertical: 4, paddingHorizontal: 10, borderRadius: 6, backgroundColor: sortBy === key ? c.surface : 'transparent' }}>
+                      <Text style={{ fontSize: 11, fontWeight: sortBy === key ? '700' : '500', color: sortBy === key ? c.text : c.text2 }}>{label}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : (
+                <Text style={{ fontSize: 11, color: c.text3 }}>{tr({ en: 'Latest', ko: '최신순' })}</Text>
+              )}
+            </View>
+            {sortedRecent.slice(0, shown).map((r) => (
+              <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 13, paddingVertical: 10, paddingHorizontal: 12 }}>
+                <View style={{ width: 38, alignItems: 'center' }}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 17 }}>{+r.dateISO.slice(8, 10)}</Text>
+                  <Text style={{ fontSize: 9.5, color: c.text3 }}>{tr({ en: `${+r.dateISO.slice(5, 7)}M`, ko: `${+r.dateISO.slice(5, 7)}월` })}</Text>
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '600', color: c.text }}>
+                    {r.fields?.작품 ?? r.fields?.지역 ?? r.fields?.장소 ?? activityLabel(r.activity)}
+                  </Text>
+                  {r.meta ? <Text numberOfLines={1} style={{ fontSize: 11, color: c.text3, marginTop: 1 }}>{r.meta}</Text> : null}
+                </View>
+                {r.rating ? <Stars filled={r.rating} size={12} /> : null}
+              </View>
+            ))}
+            {recent.length > shown ? (
+              <Pressable onPress={() => setShown((n) => n + 6)} style={{ alignItems: 'center', paddingVertical: 8 }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>{tr({ en: `Show ${recent.length - shown} more`, ko: `이전 기록 ${recent.length - shown}건 더 보기` })}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
       </View>
     </Screen>
   );
