@@ -37,18 +37,11 @@ export function NativeAdCard() {
 
   if (!ad) return null;
 
+  // NativeAdView에 직접 padding/gap을 주면 네이티브 asset 프레임 계산이 어긋나
+  // "asset outside native ad view" validator 경고가 뜬다. 스타일은 안쪽 래퍼로 옮긴다.
   return (
-    <NativeAdView
-      nativeAd={ad}
-      style={{
-        backgroundColor: c.surface,
-        borderWidth: 1,
-        borderColor: c.border,
-        borderRadius: 13,
-        padding: 12,
-        gap: 9,
-      }}
-    >
+    <NativeAdView nativeAd={ad}>
+      <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 13, padding: 12, gap: 9 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         {ad.icon?.url ? (
           <NativeAsset assetType={NativeAssetType.ICON}>
@@ -82,6 +75,7 @@ export function NativeAdCard() {
           </View>
         </NativeAsset>
       ) : null}
+      </View>
     </NativeAdView>
   );
 }
