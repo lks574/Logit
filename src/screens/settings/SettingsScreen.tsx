@@ -39,7 +39,18 @@ export default function SettingsScreen() {
   const errMessage = (e: unknown) =>
     e instanceof Error ? e.message : tr({ en: 'An unknown error occurred.', ko: '알 수 없는 오류가 발생했습니다.' });
 
+  // 보상형 광고 게이트 — 내보내기·복원·백업 실행 전 광고 시청. 끝까지 안 보면 false.
+  const requireAd = async (): Promise<boolean> => {
+    setSheet({ kind: 'message', title: tr({ en: 'Ad', ko: '광고' }), message: tr({ en: 'Loading ad…', ko: '광고 준비 중…' }) });
+    const ok = await showRewarded();
+    if (!ok) {
+      setSheet({ kind: 'message', title: tr({ en: 'Canceled', ko: '취소됨' }), message: tr({ en: 'Watch the ad to the end to continue.', ko: '광고를 끝까지 시청해야 진행됩니다.' }) });
+    }
+    return ok;
+  };
+
   const runExport = async (format: 'json' | 'csv') => {
+    if (!(await requireAd())) return;
     // 시트를 먼저 none으로 닫지 않는다 — 단일 Modal이 dismiss→재present되는 race를 피하고,
     // 결과 message로 콘텐츠만 교체한다.
     try {
@@ -68,6 +79,7 @@ export default function SettingsScreen() {
   };
 
   const confirmImport = async (incoming: StoreState) => {
+    if (!(await requireAd())) return;
     try {
       await replaceAll(incoming);
       setSheet({ kind: 'message', title: tr({ en: 'Import complete', ko: '가져오기 완료' }), message: tr({ en: 'Your data has been restored.', ko: '데이터를 복원했습니다.' }) });
@@ -94,13 +106,7 @@ export default function SettingsScreen() {
 
   const doBackup = async () => {
     if (!user) return;
-    // 보상형 광고를 끝까지 시청해야 백업 진행.
-    setSheet({ kind: 'message', title: tr({ en: 'Cloud backup', ko: '클라우드 백업' }), message: tr({ en: 'Loading ad…', ko: '광고 준비 중…' }) });
-    const rewarded = await showRewarded();
-    if (!rewarded) {
-      setSheet({ kind: 'message', title: tr({ en: 'Backup canceled', ko: '백업 취소' }), message: tr({ en: 'Watch the ad to the end to back up.', ko: '광고를 끝까지 시청해야 백업됩니다.' }) });
-      return;
-    }
+    if (!(await requireAd())) return; // 광고 끝까지 시청해야 백업
     setSheet({ kind: 'message', title: tr({ en: 'Cloud backup', ko: '클라우드 백업' }), message: tr({ en: 'Backing up…', ko: '백업 중…' }) });
     try {
       await backupNow(user.uid, currentState());
