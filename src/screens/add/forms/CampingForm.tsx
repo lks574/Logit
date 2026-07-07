@@ -61,6 +61,7 @@ export default function CampingForm({ activity, recordId }: { activity: string; 
   const [endISO, setEndISO] = React.useState(record?.fields?.마지막일 ?? record?.dateISO ?? nowDateISO());
   const [region, setRegion] = React.useState(record?.fields?.지역 ?? '');
   const [camp, setCamp] = React.useState(record?.fields?.장소 ?? '');
+  const [tags, setTags] = React.useState(record?.fields?.분류 ?? '');
   const [rating, setRating] = React.useState(record?.rating ?? 0);
   const [memo, setMemo] = React.useState(record?.memo ?? '');
   const [picking, setPicking] = React.useState<'start' | 'end' | null>(null);
@@ -91,6 +92,7 @@ export default function CampingForm({ activity, recordId }: { activity: string; 
     const fields: Record<string, string> = {
       장소: camp.trim(),
       ...(region.trim() ? { 지역: region.trim() } : {}),
+      ...(tags.trim() ? { 분류: tags.trim() } : {}),
       마지막일: endISO,
       기간: period,
     };
@@ -163,6 +165,14 @@ export default function CampingForm({ activity, recordId }: { activity: string; 
           value={region}
           onChangeText={setRegion}
           placeholder={tr({ en: 'e.g. Gangwon · Chuncheon', ko: '예: 강원도 · 춘천시' })}
+        />
+
+        {/* 분류 — 태그(쉼표 구분) */}
+        <Field
+          label={tr({ en: 'Tags', ko: '분류' })}
+          value={tags}
+          onChangeText={setTags}
+          placeholder={tr({ en: 'e.g. Valley, National, Sea view', ko: '예: 계곡, 국가, 바닷가' })}
         />
 
         {/* 메모 */}
