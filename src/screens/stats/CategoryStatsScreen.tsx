@@ -442,7 +442,7 @@ export default function CategoryStatsScreen() {
               )}
             </View>
             {sortedRecent.slice(0, shown).map((r) => (
-              <View key={r.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 13, paddingVertical: 10, paddingHorizontal: 12 }}>
+              <Pressable key={r.id} onPress={() => nav.navigate('Detail', { activity: r.activity, recordId: r.id })} style={{ flexDirection: 'row', alignItems: 'center', gap: 11, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 13, paddingVertical: 10, paddingHorizontal: 12 }}>
                 <View style={{ width: 38, alignItems: 'center' }}>
                   <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, lineHeight: 17 }}>{+r.dateISO.slice(8, 10)}</Text>
                   <Text style={{ fontSize: 9.5, color: c.text3 }}>{tr({ en: `${+r.dateISO.slice(5, 7)}M`, ko: `${+r.dateISO.slice(5, 7)}월` })}</Text>
@@ -454,7 +454,7 @@ export default function CategoryStatsScreen() {
                   {r.meta ? <Text numberOfLines={1} style={{ fontSize: 11, color: c.text3, marginTop: 1 }}>{r.meta}</Text> : null}
                 </View>
                 {r.rating ? <Stars filled={r.rating} size={12} /> : null}
-              </View>
+              </Pressable>
             ))}
             {recent.length > shown ? (
               <Pressable onPress={() => setShown((n) => n + 6)} style={{ alignItems: 'center', paddingVertical: 8 }}>
