@@ -5,6 +5,7 @@ import Svg, { Polyline, Circle as SvgCircle } from 'react-native-svg';
 import { Screen } from '../../components/primitives';
 import { Glyph, Path, Icon } from '../../components/Glyph';
 import { Segmented } from '../../components/controls';
+import { NativeAdCard } from '../../components/NativeAdCard';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStore } from '../../store/StoreContext';
 import { categoryStats, StatsPeriod, StatsCategory } from '../../store/selectors';
@@ -312,6 +313,8 @@ export default function CategoryStatsScreen() {
             ) : null}
           </>
         ) : null}
+
+        <NativeAdCard />
       </View>
     </Screen>
   );

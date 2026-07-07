@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Screen, T, Row } from '../../components/primitives';
 import { Icon } from '../../components/Glyph';
 import { Segmented } from '../../components/controls';
+import { NativeAdCard } from '../../components/NativeAdCard';
 import { useTheme } from '../../theme/ThemeContext';
 import { withAlpha } from '../../theme/tokens';
 import { activities, colorsFor, activityLabel } from '../../data/activities';
@@ -440,6 +441,7 @@ export default function ActivitySelectScreen() {
         ) : null}
           </>
         )}
+        <NativeAdCard />
       </View>
     </Screen>
   );
