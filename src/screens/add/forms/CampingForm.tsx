@@ -4,7 +4,7 @@ import { Alert, Pressable, Text, View } from 'react-native';
 import { Screen } from '../../../components/primitives';
 import { FormHeader } from '../../../components/FormHeader';
 import { Field } from '../../../components/Field';
-import { RatingInput, CompanionField } from '../../../components/Rating';
+import { RatingInput } from '../../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
 import { MiniMonthPicker } from '../../../components/MiniMonthPicker';
 import { nowDateISO } from '../../../components/DateTimeField';
@@ -31,6 +31,25 @@ const nightsLabel = (nights: number) =>
     ? tr({ en: 'Day trip', ko: '당일' })
     : tr({ en: `${nights} night${nights > 1 ? 's' : ''}`, ko: `${nights}박 ${nights + 1}일` });
 
+// 떠나는 날/돌아오는 날 박스. 컴포넌트 밖에 정의해 매 렌더 재생성(리마운트)에 따른 터치 리스폰더 불안정을 막는다.
+function DateBox({ label, iso, active, onPress, c }: { label: string; iso: string; active: boolean; onPress: () => void; c: any }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={{ flex: 1, backgroundColor: c.surface, borderWidth: 1, borderColor: active ? c.outing : c.border, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 13 }}
+    >
+      <Text style={{ fontSize: 12, color: c.text2 }}>{label}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 3 }}>
+        <Glyph size={15} color={c.outing}>
+          <Rect x="3" y="4.5" width="18" height="16" rx="2.5" />
+          <Path d="M3 9.5h18M8 2.5v4M16 2.5v4" />
+        </Glyph>
+        <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{monthDayWeekday(iso)}</Text>
+      </View>
+    </Pressable>
+  );
+}
+
 export default function CampingForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
@@ -44,15 +63,14 @@ export default function CampingForm({ activity, recordId }: { activity: string; 
   const [camp, setCamp] = React.useState(record?.fields?.장소 ?? '');
   const [rating, setRating] = React.useState(record?.rating ?? 0);
   const [memo, setMemo] = React.useState(record?.memo ?? '');
-  const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
   const [picking, setPicking] = React.useState<'start' | 'end' | null>(null);
 
   const nights = daysBetween(startISO, endISO);
 
-  // 시작일 선택 시 마지막일이 그보다 앞이면 같이 당김.
+  // 떠나는 날을 바꾸면 돌아오는 날도 같은 날짜로 맞춘다(당일치기 기본).
   const onPickStart = (iso: string) => {
     setStartISO(iso);
-    if (Date.parse(endISO + 'T00:00:00Z') < Date.parse(iso + 'T00:00:00Z')) setEndISO(iso);
+    setEndISO(iso);
     setPicking(null);
   };
   const onPickEnd = (iso: string) => {
@@ -84,7 +102,6 @@ export default function CampingForm({ activity, recordId }: { activity: string; 
       meta: [period, camp.trim(), region.trim()].filter(Boolean).join(' · '),
       rating,
       memo,
-      companions,
       photos: [] as string[],
       fields,
     };
@@ -97,29 +114,6 @@ export default function CampingForm({ activity, recordId }: { activity: string; 
     }
   };
 
-  const DateBox = ({ label, iso, which }: { label: string; iso: string; which: 'start' | 'end' }) => (
-    <Pressable
-      onPress={() => setPicking((p) => (p === which ? null : which))}
-      style={{
-        flex: 1,
-        backgroundColor: c.surface,
-        borderWidth: 1,
-        borderColor: picking === which ? c.outing : c.border,
-        borderRadius: 12,
-        paddingVertical: 11,
-        paddingHorizontal: 13,
-      }}
-    >
-      <Text style={{ fontSize: 12, color: c.text2 }}>{label}</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, marginTop: 3 }}>
-        <Glyph size={15} color={c.outing}>
-          <Rect x="3" y="4.5" width="18" height="16" rx="2.5" />
-          <Path d="M3 9.5h18M8 2.5v4M16 2.5v4" />
-        </Glyph>
-        <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{monthDayWeekday(iso)}</Text>
-      </View>
-    </Pressable>
-  );
 
   return (
     <Screen edges={['top', 'bottom']}>
@@ -138,9 +132,9 @@ export default function CampingForm({ activity, recordId }: { activity: string; 
             {tr({ en: 'Period', ko: '기간' })}
           </Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <DateBox label={tr({ en: 'Start', ko: '시작일' })} iso={startISO} which="start" />
+            <DateBox label={tr({ en: 'Depart', ko: '떠나는 날' })} iso={startISO} active={picking === 'start'} onPress={() => setPicking((p) => (p === 'start' ? null : 'start'))} c={c} />
             <Text style={{ fontSize: 14, color: c.text3 }}>~</Text>
-            <DateBox label={tr({ en: 'End', ko: '마지막일' })} iso={endISO} which="end" />
+            <DateBox label={tr({ en: 'Return', ko: '돌아오는 날' })} iso={endISO} active={picking === 'end'} onPress={() => setPicking((p) => (p === 'end' ? null : 'end'))} c={c} />
           </View>
           <View style={{ alignSelf: 'flex-start', backgroundColor: c.outingSoft, borderRadius: 8, paddingVertical: 4, paddingHorizontal: 10, marginTop: 8 }}>
             <Text style={{ fontSize: 12.5, fontWeight: '700', color: c.outing }}>{nightsLabel(nights)}</Text>
@@ -149,13 +143,13 @@ export default function CampingForm({ activity, recordId }: { activity: string; 
           {picking === 'end' ? <MiniMonthPicker value={endISO} onChange={onPickEnd} /> : null}
         </View>
 
-        {/* 장소 — 도/시 + 캠핑장명 */}
-        <Field
-          label={tr({ en: 'Region (province · city)', ko: '지역 (도·시)' })}
-          value={region}
-          onChangeText={setRegion}
-          placeholder={tr({ en: 'e.g. Gangwon · Chuncheon', ko: '예: 강원도 · 춘천시' })}
-        />
+        {/* 평점 — (지역이 있던 자리) */}
+        <View>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Rating', ko: '평점' })}</Text>
+          <RatingInput value={rating} onChange={setRating} size={22} />
+        </View>
+
+        {/* 캠핑장명 */}
         <Field
           label={tr({ en: 'Campground', ko: '캠핑장명' })}
           value={camp}
@@ -163,17 +157,13 @@ export default function CampingForm({ activity, recordId }: { activity: string; 
           placeholder={tr({ en: 'e.g. Jarasum Camping', ko: '예: 자라섬 오토캠핑장' })}
         />
 
-        {/* 같이한 사람 */}
-        <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Companions', ko: '같이한 사람' })}</Text>
-          <CompanionField companions={companions} onChange={setCompanions} />
-        </View>
-
-        {/* 평점 */}
-        <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Rating', ko: '평점' })}</Text>
-          <RatingInput value={rating} onChange={setRating} size={22} />
-        </View>
+        {/* 지역 — (동행이 있던 자리) */}
+        <Field
+          label={tr({ en: 'Region (province · city)', ko: '지역 (도·시)' })}
+          value={region}
+          onChangeText={setRegion}
+          placeholder={tr({ en: 'e.g. Gangwon · Chuncheon', ko: '예: 강원도 · 춘천시' })}
+        />
 
         {/* 메모 */}
         <Field label={tr({ en: 'Memo', ko: '메모' })} value={memo} onChangeText={setMemo} placeholder={tr({ en: 'Memo', ko: '메모' })} />
