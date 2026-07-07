@@ -448,10 +448,9 @@ export default function CategoryStatsScreen() {
                   <Text style={{ fontSize: 9.5, color: c.text3 }}>{tr({ en: `${+r.dateISO.slice(5, 7)}M`, ko: `${+r.dateISO.slice(5, 7)}월` })}</Text>
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ fontSize: 13, fontWeight: '600', color: c.text }}>
-                    {r.fields?.작품 ?? r.fields?.지역 ?? r.fields?.장소 ?? activityLabel(r.activity)}
+                  <Text numberOfLines={2} style={{ fontSize: 13, fontWeight: '600', color: c.text }}>
+                    {r.meta || r.fields?.작품 || r.fields?.장소 || r.fields?.지역 || activityLabel(r.activity)}
                   </Text>
-                  {r.meta ? <Text numberOfLines={1} style={{ fontSize: 11, color: c.text3, marginTop: 1 }}>{r.meta}</Text> : null}
                 </View>
                 {r.rating ? <Stars filled={r.rating} size={12} /> : null}
               </Pressable>
