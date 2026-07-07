@@ -10,6 +10,7 @@ import { useStore } from '../../store/StoreContext';
 import { useAuth } from '../../auth/AuthContext';
 import { exportData, importData } from '../../lib/dataTransfer';
 import { backupNow, fetchBackup } from '../../lib/cloudBackup';
+import { showRewarded } from '../../lib/ads';
 import type { StoreState } from '../../store/types';
 import { useTheme } from '../../theme/ThemeContext';
 import { useLang, tr } from '../../i18n/i18n';
@@ -93,6 +94,13 @@ export default function SettingsScreen() {
 
   const doBackup = async () => {
     if (!user) return;
+    // 보상형 광고를 끝까지 시청해야 백업 진행.
+    setSheet({ kind: 'message', title: tr({ en: 'Cloud backup', ko: '클라우드 백업' }), message: tr({ en: 'Loading ad…', ko: '광고 준비 중…' }) });
+    const rewarded = await showRewarded();
+    if (!rewarded) {
+      setSheet({ kind: 'message', title: tr({ en: 'Backup canceled', ko: '백업 취소' }), message: tr({ en: 'Watch the ad to the end to back up.', ko: '광고를 끝까지 시청해야 백업됩니다.' }) });
+      return;
+    }
     setSheet({ kind: 'message', title: tr({ en: 'Cloud backup', ko: '클라우드 백업' }), message: tr({ en: 'Backing up…', ko: '백업 중…' }) });
     try {
       await backupNow(user.uid, currentState());
@@ -159,13 +167,16 @@ export default function SettingsScreen() {
           cloud.updatedAt != null
             ? new Date(cloud.updatedAt).toLocaleString()
             : null;
-        const message = cloud.loading
+        const status = cloud.loading
           ? tr({ en: 'Checking…', ko: '확인 중…' })
           : cloud.err
             ? cloud.err
             : cloud.data
               ? tr({ en: `Last backup: ${when}`, ko: `마지막 백업: ${when}` })
               : tr({ en: 'No cloud backup yet.', ko: '아직 클라우드 백업이 없어요.' });
+        // 보상형 광고 안내 문구.
+        const adNote = tr({ en: 'Watch a short ad to back up to the cloud.', ko: '짧은 광고를 시청하면 클라우드에 백업됩니다.' });
+        const message = cloud.loading || cloud.err ? status : `${status}\n${adNote}`;
         return {
           title: tr({ en: 'Cloud backup', ko: '클라우드 백업' }),
           message,

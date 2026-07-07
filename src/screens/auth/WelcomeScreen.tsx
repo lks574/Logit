@@ -12,7 +12,7 @@ import { tr } from '../../i18n/i18n';
 export default function WelcomeScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { signInWithGoogle, signInWithApple } = useAuth();
+  const { signInWithGoogle } = useAuth();
 
   const social = (fn: () => Promise<void>) => async () => {
     try {
@@ -57,7 +57,6 @@ export default function WelcomeScreen() {
           <OrDivider />
         </View>
         <SocialButton provider="google" label={tr({ en: 'Continue with Google', ko: 'Google로 계속하기' })} onPress={social(signInWithGoogle)} />
-        <SocialButton provider="apple" label={tr({ en: 'Continue with Apple', ko: 'Apple로 계속하기' })} onPress={social(signInWithApple)} />
         <View style={{ marginTop: 6 }}>
           <FooterLink text={tr({ en: 'Already have an account?', ko: '이미 계정이 있으신가요?' })} linkText={tr({ en: 'Sign in', ko: '로그인' })} onPress={() => nav.navigate('SignIn')} />
         </View>

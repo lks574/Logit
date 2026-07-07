@@ -153,7 +153,7 @@ function pickFileWeb(): Promise<string | null> {
   });
 }
 
-const TEMPLATES = ['endurance', 'setrep', 'match', 'spectate', 'free'];
+const TEMPLATES = ['endurance', 'setrep', 'match', 'spectate', 'outing', 'free'];
 const SYNC = ['synced', 'pending'];
 
 const isStr = (v: unknown): v is string => typeof v === 'string';
@@ -191,7 +191,7 @@ function validPlan(p: any): boolean {
     isStr(p.activity) &&
     isStr(p.dateISO) &&
     DATE_RE.test(p.dateISO) &&
-    isStr(p.timeLabel) &&
+    (p.timeLabel === undefined || isStr(p.timeLabel)) &&
     TEMPLATES.includes(p.template) &&
     (p.place === undefined || isStr(p.place)) &&
     (p.memo === undefined || isStr(p.memo)) &&

@@ -8,7 +8,6 @@ import {
   updateProfile,
   signInWithCredential,
   GoogleAuthProvider,
-  OAuthProvider,
   signOut,
   reload,
 } from 'firebase/auth';
@@ -32,7 +31,6 @@ type AuthContextValue = {
   resetPassword: (email: string) => Promise<void>;
   updateDisplayName: (name: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  signInWithApple: () => Promise<void>;
   logout: () => Promise<void>;
 };
 
@@ -144,19 +142,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!idToken) throw new Error(tr({ en: 'Couldn’t get an idToken from Google sign-in.', ko: 'Google 로그인에서 idToken을 받지 못했어요.' }));
       await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
     },
-    signInWithApple: async () => {
-      if (!isFirebaseConfigured) return mockSignIn('apple.user@logit.dev', tr({ en: 'Apple User', ko: 'Apple 사용자' }));
-      const AppleAuthentication = await loadAppleAuth();
-      const credential = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-      });
-      if (!credential.identityToken) throw new Error(tr({ en: 'Couldn’t get a token from Apple sign-in.', ko: 'Apple 로그인에서 토큰을 받지 못했어요.' }));
-      const provider = new OAuthProvider('apple.com');
-      await signInWithCredential(auth, provider.credential({ idToken: credential.identityToken }));
-    },
     logout: async () => {
       if (!isFirebaseConfigured) {
         await AsyncStorage.removeItem(MOCK_KEY);
@@ -183,12 +168,5 @@ async function loadGoogleSignin() {
     return await import('@react-native-google-signin/google-signin');
   } catch {
     throw new Error(tr({ en: 'Google sign-in module is missing. Please rebuild the dev build.', ko: 'Google 로그인 모듈이 없어요. dev 빌드를 재생성해주세요.' }));
-  }
-}
-async function loadAppleAuth() {
-  try {
-    return await import('expo-apple-authentication');
-  } catch {
-    throw new Error(tr({ en: 'Apple sign-in module is missing. Please rebuild the dev build.', ko: 'Apple 로그인 모듈이 없어요. dev 빌드를 재생성해주세요.' }));
   }
 }

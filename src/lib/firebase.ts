@@ -13,7 +13,7 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 // initializeFirestore는 앱당 1회만 허용 → 이미 초기화됐으면 getFirestore로 폴백.
 export const db = (() => {
   try {
-    return initializeFirestore(app, { experimentalForceLongPolling: true });
+    return initializeFirestore(app, { experimentalForceLongPolling: true, ignoreUndefinedProperties: true });
   } catch {
     return getFirestore(app);
   }

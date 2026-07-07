@@ -12,7 +12,7 @@ import { tr } from '../../i18n/i18n';
 export default function SignInScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { signIn, signInWithGoogle, signInWithApple } = useAuth();
+  const { signIn, signInWithGoogle } = useAuth();
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [error, setError] = React.useState<string>();
@@ -80,10 +80,7 @@ export default function SignInScreen() {
       <View style={{ marginVertical: 20 }}>
         <OrDivider />
       </View>
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        <SocialButton provider="google" label="Google" onPress={social(signInWithGoogle)} flex />
-        <SocialButton provider="apple" label="Apple" onPress={social(signInWithApple)} flex />
-      </View>
+      <SocialButton provider="google" label="Google" onPress={social(signInWithGoogle)} />
 
       <View style={{ marginTop: 24 }}>
         <FooterLink text={tr({ en: 'Don’t have an account yet?', ko: '아직 계정이 없으신가요?' })} linkText={tr({ en: 'Sign up', ko: '회원가입' })} onPress={() => nav.navigate('SignUp')} />
