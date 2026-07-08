@@ -52,6 +52,18 @@ export default function CategoryStatsScreen() {
   const sortedRecent = sortBy === 'rating'
     ? [...recent].sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0) || (a.dateISO < b.dateISO ? 1 : -1))
     : recent;
+  // 방문/관람 횟수 배지 — 같은 대상의 몇 번째 기록인지(1회는 숨김, 2부터 표시).
+  const baseTitle = (str?: string) => (str ?? '').replace(/\s*\(\d+\)\s*$/, '').trim();
+  const revisitKey = (r: any) => (category === 'performance' ? baseTitle(r.fields?.작품) : (r.fields?.장소 ?? '').trim());
+  const visitNo = (r: any) => {
+    if (category !== 'performance' && category !== 'outing') return 1;
+    const key = revisitKey(r);
+    if (!key) return 1;
+    // 이 기록 시점까지의 동일 대상 누적 수(같은 날짜는 id로 안정 정렬).
+    return records.filter(
+      (o) => o.template === r.template && revisitKey(o) === key && (o.dateISO < r.dateISO || (o.dateISO === r.dateISO && o.id <= r.id)),
+    ).length;
+  };
   // 단독 세부 리치 섹션(요약 스트립·랭킹 게이지·2단 카드).
   const sections = activity ? subtypeSections(records, category, activity, period, today) : null;
   // 유산소·근력 부모 화면에서만 "세부 종목" 리스트(공연·여가는 분포 카드가 그 역할).
@@ -452,6 +464,11 @@ export default function CategoryStatsScreen() {
                     {r.meta || r.fields?.작품 || r.fields?.장소 || r.fields?.지역 || activityLabel(r.activity)}
                   </Text>
                 </View>
+                {visitNo(r) >= 2 ? (
+                  <View style={{ minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
+                    <Text style={{ fontSize: 11, fontWeight: '800', color: col }}>{visitNo(r)}</Text>
+                  </View>
+                ) : null}
                 {r.rating ? <Stars filled={r.rating} size={12} /> : null}
               </Pressable>
             ))}

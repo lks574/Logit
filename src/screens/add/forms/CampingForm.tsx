@@ -53,7 +53,7 @@ function DateBox({ label, iso, active, onPress, c }: { label: string; iso: strin
 export default function CampingForm({ activity, recordId }: { activity: string; recordId?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord } = useStore();
+  const { addRecord, updateRecord, getRecord, records } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
@@ -65,6 +65,13 @@ export default function CampingForm({ activity, recordId }: { activity: string; 
   const [rating, setRating] = React.useState(record?.rating ?? 0);
   const [memo, setMemo] = React.useState(record?.memo ?? '');
   const [picking, setPicking] = React.useState<'start' | 'end' | null>(null);
+
+  // 재방문 힌트 — 같은 장소(캠핑장/맛집/방문지)를 전에 기록했는지(자기 자신 제외).
+  const priorVisits = React.useMemo(() => {
+    const name = camp.trim();
+    if (!name) return 0;
+    return records.filter((r) => r.template === 'outing' && r.id !== recordId && (r.fields?.장소 ?? '').trim() === name).length;
+  }, [camp, records, recordId]);
 
   const nights = daysBetween(startISO, endISO);
 
@@ -152,12 +159,22 @@ export default function CampingForm({ activity, recordId }: { activity: string; 
         </View>
 
         {/* 캠핑장명 */}
-        <Field
-          label={tr({ en: 'Campground', ko: '캠핑장명' })}
-          value={camp}
-          onChangeText={setCamp}
-          placeholder={tr({ en: 'e.g. Jarasum Camping', ko: '예: 자라섬 오토캠핑장' })}
-        />
+        <View>
+          <Field
+            label={tr({ en: 'Campground', ko: '캠핑장명' })}
+            value={camp}
+            onChangeText={setCamp}
+            placeholder={tr({ en: 'e.g. Jarasum Camping', ko: '예: 자라섬 오토캠핑장' })}
+          />
+          {priorVisits > 0 ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 6, marginLeft: 2 }}>
+              <Icon.tent size={12} color={c.outing} strokeWidth={2.2} />
+              <Text style={{ fontSize: 12, fontWeight: '600', color: c.outing }}>
+                {tr({ en: `Been here before · visit #${priorVisits + 1}`, ko: `전에 왔던 곳 · ${priorVisits + 1}번째` })}
+              </Text>
+            </View>
+          ) : null}
+        </View>
 
         {/* 지역 — (동행이 있던 자리) */}
         <Field
