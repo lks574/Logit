@@ -1,10 +1,12 @@
 # Prebuild
 
-**한 줄 정의**: `npx expo prebuild` — app.json(app.config.js)의 설정과 [[Config Plugin]]들을 읽어 `ios/`와 `android/` 네이티브 프로젝트 전체를 **생성**하는 Expo 명령. [[CNG]] 철학의 실행 도구.
+> [!abstract] 한 줄 정의
+> `npx expo prebuild` — app.json(app.config.js)의 설정과 [[Config Plugin]]들을 읽어 `ios/`와 `android/` 네이티브 프로젝트 전체를 **생성**하는 Expo 명령. [[CNG]] 철학의 실행 도구.
 
-**iOS/AOS로 치면**: 프로젝트 제너레이터. Xcode의 "New Project" 템플릿 생성을 매번, 결정적으로(deterministic), 내 설정 파일 기반으로 다시 돌리는 것. `xcodegen`이나 `tuist generate`로 .xcodeproj를 생성물 취급하는 워크플로우를 아는 사람이라면 정확히 그 감각이다.
+> [!info] iOS/AOS로 치면
+> 프로젝트 제너레이터. Xcode의 "New Project" 템플릿 생성을 매번, 결정적으로(deterministic), 내 설정 파일 기반으로 다시 돌리는 것. `xcodegen`이나 `tuist generate`로 .xcodeproj를 생성물 취급하는 워크플로우를 아는 사람이라면 정확히 그 감각이다.
 
-## 설명
+## 📖 설명
 
 Expo 프로젝트의 소스 트리를 처음 보면 네이티브 개발자는 당황한다 — `ios/` 폴더도 `android/` 폴더도 없다. 앱 이름, 번들 ID, 권한 문구, 아이콘, 스플래시 같은 것들이 전부 `app.json` 한 파일에 선언되어 있을 뿐이다.
 
@@ -27,5 +29,5 @@ prebuild가 하는 일:
 
 [[EAS]] 클라우드 빌드는 `ios/`가 없으면 빌드 전에 prebuild를 자동 실행하므로, 로컬에서 매번 직접 돌릴 필요는 없다.
 
-## 관련
+## 🔗 관련
 [[CNG]] · [[Config Plugin]] · [[Autolinking]] · [[EAS]] · [[Managed Workflow]] · [[Bare Workflow]] · [[Dev Client]]

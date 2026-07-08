@@ -1,10 +1,12 @@
 # Brownfield
 
-**한 줄 정의**: **이미 존재하는 네이티브 앱**에 React Native를 라이브러리처럼 삽입해, 일부 화면·기능만 RN으로 만드는 통합 방식. 앱의 주인은 여전히 네이티브이고 RN은 세입자다. 반대말은 [[Greenfield]].
+> [!abstract] 한 줄 정의
+> **이미 존재하는 네이티브 앱**에 React Native를 라이브러리처럼 삽입해, 일부 화면·기능만 RN으로 만드는 통합 방식. 앱의 주인은 여전히 네이티브이고 RN은 세입자다. 반대말은 [[Greenfield]].
 
-**iOS/AOS로 치면**: 앱 일부 화면만 SwiftUI로 전환할 때 `UIHostingController`로 감싸 UIKit 내비게이션에 끼워 넣는 것, Compose를 `ComposeView`로 기존 View 계층에 넣는 것과 정확히 같은 패턴이다. 호스팅 컨테이너만 RN 것으로 바뀐다.
+> [!info] iOS/AOS로 치면
+> 앱 일부 화면만 SwiftUI로 전환할 때 `UIHostingController`로 감싸 UIKit 내비게이션에 끼워 넣는 것, Compose를 `ComposeView`로 기존 View 계층에 넣는 것과 정확히 같은 패턴이다. 호스팅 컨테이너만 RN 것으로 바뀐다.
 
-## 설명
+## 📖 설명
 
 수년 된 대형 네이티브 앱을 통째로 RN으로 재작성하는 것은 비현실적이다. brownfield는 그 대안으로, 기존 앱 구조를 유지한 채 특정 화면(설정, 프로모션, 커뮤니티 등)부터 RN으로 만들어 점진적으로 도입한다. 페이스북 앱 자체가 원조 brownfield였고, 대형 서비스들의 RN 도입은 대부분 이 형태로 시작한다.
 
@@ -26,5 +28,5 @@
 
 네이티브 시니어에게는 사실 가장 익숙하게 진입할 수 있는 지형이다 — 앱의 뼈대, 빌드, 수명 주기가 전부 익숙한 네이티브 영역에 남아 있고, RN은 잘 정의된 경계 뒤의 렌더링 엔진으로 취급할 수 있기 때문이다.
 
-## 관련
+## 🔗 관련
 [[Greenfield]] · [[Bare Workflow]] · [[Metro]] · [[Bundle]] · [[Hermes]] · [[React Navigation]] · [[Autolinking]]

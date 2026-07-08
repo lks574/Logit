@@ -1,10 +1,12 @@
 # Re-render
 
-**한 줄 정의**: [[State]]가 바뀌었을 때 React가 컴포넌트 **함수 전체를 다시 실행**해 새 UI 기술(엘리먼트 트리)을 얻는 과정. 함수 재실행이 곧바로 네이티브 뷰를 다시 그리는 것은 아니다.
+> [!abstract] 한 줄 정의
+> [[State]]가 바뀌었을 때 React가 컴포넌트 **함수 전체를 다시 실행**해 새 UI 기술(엘리먼트 트리)을 얻는 과정. 함수 재실행이 곧바로 네이티브 뷰를 다시 그리는 것은 아니다.
 
-**iOS/AOS로 치면**: Compose의 recomposition과 거의 동일한 개념. SwiftUI로 치면 상태 변경 시 `body`가 재평가되는 것. `setNeedsDisplay`/`invalidate()` 같은 네이티브 draw 무효화와는 층위가 다르다.
+> [!info] iOS/AOS로 치면
+> Compose의 recomposition과 거의 동일한 개념. SwiftUI로 치면 상태 변경 시 `body`가 재평가되는 것. `setNeedsDisplay`/`invalidate()` 같은 네이티브 draw 무효화와는 층위가 다르다.
 
-## 설명
+## 📖 설명
 
 React 컴포넌트는 "state → UI 기술"을 리턴하는 함수다. state가 바뀌면 React는 그 함수를 다시 호출한다. 이때 함수 본문의 지역 변수 선언, 계산, [[JSX]] 리턴까지 **전부 다시 실행**된다. 이것이 리렌더다.
 
@@ -27,5 +29,5 @@ React 컴포넌트는 "state → UI 기술"을 리턴하는 함수다. state가 
 
 디버깅 시에는 React DevTools의 highlight updates나 `console.log`를 컴포넌트 함수 최상단에 찍어 리렌더 빈도를 확인할 수 있다.
 
-## 관련
+## 🔗 관련
 [[State]] · [[Props]] · [[Reconciliation]] · [[Memoization]] · [[Fabric]] · [[Shadow Tree]]

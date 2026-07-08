@@ -1,5 +1,6 @@
 # Claude Code RN 워크플로
 
+> [!abstract] 한 줄 요약
 > RN을 배우면서, 그리고 RN으로 개발하면서 Claude Code를 어떻게 쓰는 게 효과적인가.
 
 ## 왜 RN에서 특히 중요한가
@@ -72,6 +73,6 @@ RN에서 "동작 확인"은 시뮬레이터/실기기가 필요해 비용이 크
 - **node_modules 수정 제안 수락**: 올바른 경로는 patch-package/pnpm patch.
   Claude가 제안해도 거절하고 정석을 요구할 것.
 
-## 관련 노트
+## 🔗 관련 노트
 
 [[Expo Go]] · [[Dev Client]] · [[EAS]] · [99-실습-프로젝트](../99-실습-프로젝트/README.md)

@@ -1,10 +1,12 @@
 # Hermes
 
-**한 줄 정의**: React Native 앱을 위해 Meta가 만든 경량 JavaScript 엔진으로, JS를 빌드 타임에 바이트코드로 미리 컴파일(AOT)해서 앱 시작 속도와 메모리 사용량을 개선한다.
+> [!abstract] 한 줄 정의
+> React Native 앱을 위해 Meta가 만든 경량 JavaScript 엔진으로, JS를 빌드 타임에 바이트코드로 미리 컴파일(AOT)해서 앱 시작 속도와 메모리 사용량을 개선한다.
 
-**iOS/AOS로 치면**: iOS에서 Swift 코드가 빌드 타임에 기계어로 컴파일되어 배포되는 것과 발상이 같다. Android로 치면 ART가 설치 시점에 dex를 AOT 컴파일하는 것과 유사하다. "런타임에 해석/최적화하던 일을 미리 해둔다"는 아이디어.
+> [!info] iOS/AOS로 치면
+> iOS에서 Swift 코드가 빌드 타임에 기계어로 컴파일되어 배포되는 것과 발상이 같다. Android로 치면 ART가 설치 시점에 dex를 AOT 컴파일하는 것과 유사하다. "런타임에 해석/최적화하던 일을 미리 해둔다"는 아이디어.
 
-## 설명
+## 📖 설명
 
 RN 앱의 JS 코드는 어딘가에서 실행되어야 한다. 브라우저가 없으니 앱 안에 JS 엔진을 내장하는데, 과거에는 iOS의 JavaScriptCore(JSC, Safari 엔진)를 썼다. Hermes는 이를 대체하는 RN 전용 엔진이며, 현재 RN과 Expo의 기본 엔진이다.
 
@@ -27,5 +29,5 @@ Hermes는 C++로 작성되어 [[JSI]]와 자연스럽게 결합하며, [[New Arc
 
 Expo SDK 57 기준 Hermes가 기본값이며, 특별한 이유가 없으면 바꾸지 않는다.
 
-## 관련
+## 🔗 관련
 [[JSI]] · [[New Architecture]] · [[Bundle]] · [[Metro]] · [[Bridgeless]]

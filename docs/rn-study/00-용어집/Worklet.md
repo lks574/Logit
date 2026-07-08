@@ -1,10 +1,12 @@
 # Worklet
 
-**한 줄 정의**: [[Reanimated]]가 JS 스레드가 아닌 **UI 스레드의 별도 JS 런타임**에서 실행하는 작은 JS 함수. 매 프레임 돌아야 하는 애니메이션·제스처 코드를 담는 단위다.
+> [!abstract] 한 줄 정의
+> [[Reanimated]]가 JS 스레드가 아닌 **UI 스레드의 별도 JS 런타임**에서 실행하는 작은 JS 함수. 매 프레임 돌아야 하는 애니메이션·제스처 코드를 담는 단위다.
 
-**iOS/AOS로 치면**: "메인(UI) 스레드에서 실행되도록 마샬링되는 작은 클로저". `DispatchQueue.main`에 넘기는 클로저나 Choreographer 프레임 콜백에 비유할 수 있는데, 결정적 차이는 **다른 언어 런타임으로 복사되어 넘어가는 코드**라는 점이다.
+> [!info] iOS/AOS로 치면
+> "메인(UI) 스레드에서 실행되도록 마샬링되는 작은 클로저". `DispatchQueue.main`에 넘기는 클로저나 Choreographer 프레임 콜백에 비유할 수 있는데, 결정적 차이는 **다른 언어 런타임으로 복사되어 넘어가는 코드**라는 점이다.
 
-## 설명
+## 📖 설명
 
 RN에서 JS는 기본적으로 한 스레드([[Hermes]] 런타임)에서 돈다. [[Reanimated]]는 부드러운 애니메이션을 위해 UI 스레드에 **두 번째 JS 런타임**을 하나 더 띄워 놓는데, 이 런타임에서 실행할 함수 조각이 worklet이다.
 
@@ -28,5 +30,5 @@ const style = useAnimatedStyle(() => {
 
 worklet 개념은 Reanimated에서 출발해 범용화되고 있다 — 제스처 처리(react-native-gesture-handler), 스크롤 연동 애니메이션 등이 모두 이 메커니즘 위에 있고, worklet 런타임을 독립 패키지로 분리하는 작업도 진행되어 왔다 (현재 패키지 구성은 공식 문서 확인).
 
-## 관련
+## 🔗 관련
 [[Reanimated]] · [[JSI]] · [[Hermes]] · [[State]] · [[Stale Closure]]

@@ -1,10 +1,12 @@
 # Greenfield
 
-**한 줄 정의**: 기존 코드 없이 **처음부터 React Native로 시작하는** 앱. RN이 앱의 엔트리 포인트와 전체 UI를 소유한다. 기존 네이티브 앱에 RN을 심는 [[Brownfield]]의 반대말.
+> [!abstract] 한 줄 정의
+> 기존 코드 없이 **처음부터 React Native로 시작하는** 앱. RN이 앱의 엔트리 포인트와 전체 UI를 소유한다. 기존 네이티브 앱에 RN을 심는 [[Brownfield]]의 반대말.
 
-**iOS/AOS로 치면**: 새 프로젝트를 SwiftUI 100% / Compose 100%로 시작하는 것과 같은 결정. "앱의 루트가 어느 프레임워크 것인가"라는 소유권 질문에서, greenfield는 루트가 RN이다.
+> [!info] iOS/AOS로 치면
+> 새 프로젝트를 SwiftUI 100% / Compose 100%로 시작하는 것과 같은 결정. "앱의 루트가 어느 프레임워크 것인가"라는 소유권 질문에서, greenfield는 루트가 RN이다.
 
-## 설명
+## 📖 설명
 
 greenfield(미개발 부지)/brownfield(재개발 부지)는 건설 용어에서 온 일반 소프트웨어 용어지만, RN 커뮤니티에서는 특히 **RN 통합 방식의 양대 분류**로 굳어졌다. 아키텍처 논의, 라이브러리 README("brownfield 지원 여부"), 채용 공고에까지 흔히 등장하므로 대화에 끼려면 필수 어휘다.
 
@@ -27,5 +29,5 @@ Greenfield RN 앱의 구조:
 
 한 가지 더: greenfield로 시작했더라도 나중에 특정 화면을 네이티브로 구현해 섞는 것은 가능하다 (RN 화면에서 네이티브 뷰 컴포넌트를 쓰거나, 네이티브 화면을 모듈로 띄우거나). greenfield/brownfield는 앱의 "루트 소유권"에 대한 분류이지, 화면 단위 기술 선택을 영구히 고정하는 것은 아니다.
 
-## 관련
+## 🔗 관련
 [[Brownfield]] · [[Managed Workflow]] · [[Bare Workflow]] · [[CNG]] · [[Expo Router]] · [[OTA Update]]

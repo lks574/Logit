@@ -1,10 +1,12 @@
 # EAS
 
-**한 줄 정의**: Expo Application Services. Expo가 운영하는 클라우드 서비스 묶음으로, 핵심은 **Build**(클라우드 네이티브 빌드), **Submit**(스토어 자동 제출), **Update**([[OTA Update]] 배포)의 세 축이다.
+> [!abstract] 한 줄 정의
+> Expo Application Services. Expo가 운영하는 클라우드 서비스 묶음으로, 핵심은 **Build**(클라우드 네이티브 빌드), **Submit**(스토어 자동 제출), **Update**([[OTA Update]] 배포)의 세 축이다.
 
-**iOS/AOS로 치면**: Xcode Cloud + fastlane(gym/deliver) + App Store Connect 업로드 파이프라인을 하나의 호스팅 서비스로 묶은 것. CI에서 아카이브 만들고 서명하고 TestFlight/스토어에 올리던 그 파이프라인의 관리형(managed) 버전.
+> [!info] iOS/AOS로 치면
+> Xcode Cloud + fastlane(gym/deliver) + App Store Connect 업로드 파이프라인을 하나의 호스팅 서비스로 묶은 것. CI에서 아카이브 만들고 서명하고 TestFlight/스토어에 올리던 그 파이프라인의 관리형(managed) 버전.
 
-## 설명
+## 📖 설명
 
 **EAS Build** — 클라우드에서 iOS/Android 바이너리를 빌드한다. `eas build` 명령이 프로젝트를 업로드하면, 클라우드의 macOS/Linux 빌더가 [[Prebuild]](네이티브 프로젝트가 없는 [[CNG]] 프로젝트의 경우) → 의존성 설치 → Xcode/Gradle 빌드를 수행하고 .ipa/.aab를 산출한다.
 
@@ -26,5 +28,5 @@
 
 EAS는 그 과정을 대신해 주는 편의 서비스이지 Expo 사용의 전제 조건이 아니다.
 
-## 관련
+## 🔗 관련
 [[OTA Update]] · [[Prebuild]] · [[CNG]] · [[Dev Client]] · [[Bundle]] · [[Expo Go]]

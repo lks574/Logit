@@ -1,8 +1,9 @@
 # Turbo Native Module 작성
 
+> [!abstract] 한 줄 요약
 > JS에서 부를 수 있는 네이티브 API를 만드는 정공법: **TS로 스펙을 쓰면 [[Codegen]]이 네이티브 인터페이스를 생성하고, 그 인터페이스를 Swift/Objective-C++·Kotlin으로 구현해 등록한다.** 네이티브 개발자가 RN 팀에 가장 빨리 기여할 수 있는 영역이다 — 구현부는 여러분이 이미 아는 세계다.
 
-## iOS-AOS 대응 개념
+## 🔁 iOS-AOS 대응 개념
 
 | RN 개념 | iOS 대응 | Android 대응 |
 |---|---|---|
@@ -13,7 +14,7 @@
 | [[JSI]] 호출 | 프로세스 내 직접 함수 호출 (IPC 아님) | 동일 — AIDL/Binder 같은 직렬화 경계 없음 |
 | 이벤트 emit | `NotificationCenter`/delegate 콜백의 역할 | listener/callback의 역할 |
 
-## 왜 이렇게 설계됐나
+## 🧭 왜 이렇게 설계됐나
 
 구세대 Native Module([[Bridge]] 시대)은 JS↔네이티브 사이에 **타입 계약이 없었다**. JS가 문자열 이름으로 메서드를 부르고 인자를 JSON 직렬화해 큐로 넘겼기 때문에, 타입 불일치는 런타임에야 터졌고 모든 호출이 비동기+직렬화 비용을 냈다.
 
@@ -24,7 +25,7 @@
 
 [[New Architecture]]([[Bridgeless]])에서는 이것이 유일한 네이티브 모듈 경로다.
 
-## 동작 원리 — 전체 흐름
+## ⚙️ 동작 원리 — 전체 흐름
 
 ```mermaid
 flowchart LR
@@ -40,7 +41,7 @@ flowchart LR
 4. **등록**: RN 런타임이 "이 이름의 모듈은 이 클래스"를 찾을 수 있게 연결한다.
 5. **JS 호출**: `TurboModuleRegistry.getEnforcing<Spec>()`으로 얻은 객체의 메서드를 부르면 [[JSI]]를 타고 네이티브 구현이 실행된다.
 
-## 코드 예시 — 최소 모듈 (RN 0.76+)
+## 💻 코드 예시 — 최소 모듈 (RN 0.76+)
 
 간단한 키-값 저장 모듈. 동기 1개 + 비동기 1개 + 이벤트 1개.
 
@@ -154,7 +155,7 @@ export interface Spec extends TurboModule {
 
 네이티브에서는 생성된 `emitOnValueChanged(...)` 계열 메서드를 호출하면 된다 — delegate 콜백 대신 "구독 가능한 스트림을 노출한다"는 감각. JS에서는 `SimpleStorage.onValueChanged((v) => ...)`로 구독하고 반환된 subscription을 해제한다. 정확한 시그니처는 버전별로 다듬어지는 중이니 [공식 문서의 이벤트 섹션](https://reactnative.dev/docs/turbo-native-modules-introduction)을 기준으로 할 것.
 
-## 함정 (Pitfalls)
+## ⚠️ 함정 (Pitfalls)
 
 - **스펙 파일 네이밍 규칙이 강제다**: 모듈 스펙 파일명은 `Native`로 시작해야 한다 (`NativeSimpleStorage.ts`). [[Codegen]]이 이 접두사로 스펙 파일을 찾는다. 규칙을 어기면 에러가 아니라 **조용히 아무것도 생성되지 않는다.**
 - **스펙 변경 후 codegen 재실행을 잊는 것**: TS 스펙을 고쳐도 JS만 다시 번들되지 네이티브 인터페이스는 그대로다. iOS는 `pod install`을 다시 돌려야 하고, Android는 Gradle 빌드가 다시 생성한다. "스펙 바꿨는데 반영이 안 돼요"의 90%가 이것. [[Metro]] 리로드로는 절대 해결되지 않는다.
@@ -163,6 +164,6 @@ export interface Spec extends TurboModule {
 - **스레딩 가정**: 모듈 메서드는 메인 스레드에서 불린다는 보장이 없다. UIKit/View 조작이 필요하면 명시적으로 메인 스레드로 hop 해야 한다 — 네이티브 개발자에겐 익숙한 규칙이지만, "RN이 알아서 해주겠지"라고 가정하기 쉽다.
 - **앱 로컬 모듈 vs 라이브러리 모듈의 등록 방식 차이**: 위 예시는 앱 안에 직접 만드는 경우. npm 라이브러리로 배포하려면 [[Autolinking]] 규약(podspec, `react-native.config.js` 등)을 갖춰야 한다 — [[04-Autolinking과-라이브러리-평가]] 참고.
 
-## 관련 노트
+## 🔗 관련 노트
 
 [[Turbo Module]] · [[Codegen]] · [[JSI]] · [[New Architecture]] · [[Bridgeless]] · [[Bridge]] · 다음: [[02-Fabric-Native-Component]] · 더 쉬운 대안: [[03-Expo-Modules-API]]

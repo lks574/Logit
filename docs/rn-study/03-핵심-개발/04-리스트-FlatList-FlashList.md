@@ -1,8 +1,9 @@
 # 리스트 — FlatList와 FlashList
 
+> [!abstract] 한 줄 요약
 > ScrollView는 전부 렌더, [[FlatList]]는 보이는 것만 마운트하는 가상화 — 단 RecyclerView처럼 셀을 "재활용"하는 게 아니라 마운트/언마운트하며, 진짜 재활용이 필요하면 FlashList를 쓴다.
 
-## iOS/AOS 대응 개념
+## 🔁 iOS/AOS 대응 개념
 
 | RN | iOS | Android |
 |---|---|---|
@@ -14,13 +15,13 @@
 | `SectionList` | grouped `UITableView` | sticky header 붙은 리스트 |
 | `React.memo`한 항목 컴포넌트 | 셀 prepareForReuse 최적화 감각에 대응 | `@Stable` 파라미터로 skip 유도 |
 
-## 왜 이렇게 설계됐나
+## 🧭 왜 이렇게 설계됐나
 
 모바일 리스트의 역사는 "수천 개 항목을 어떻게 메모리에 다 안 올리고 그리나"의 역사다. UIKit/Android의 답은 **셀 재활용**(화면 밖으로 나간 셀 객체를 새 데이터로 재구성). React의 답은 원래 "그냥 다 렌더"였는데 모바일에서는 불가능하므로, RN은 **가상화(virtualization)**를 얹었다: 화면 근처(window) 항목만 React 컴포넌트로 마운트하고, 멀어지면 언마운트한다. React의 선언형 모델(컴포넌트 = 상태의 함수)을 유지하면서 메모리를 억제하는 절충안이다.
 
 그러나 마운트/언마운트는 재활용보다 비싸다 — 빠르게 스크롤하면 컴포넌트 생성·[[Yoga]] 레이아웃·네이티브 뷰 생성이 스크롤 속도를 못 따라가 **빈 화면(blank cell)**이 보인다. Shopify의 FlashList는 이 지점을 공략했다: 화면 밖 항목의 **네이티브 뷰를 파괴하지 않고 새 데이터로 재활용**해서(RecyclerView와 같은 전략) 같은 API 모양으로 훨씬 나은 스크롤 성능을 낸다. FlashList v2는 New Architecture([[Fabric]]) 전용으로 재작성되었고, 현재 생태계에서 "리스트는 기본으로 FlashList"가 통용되는 흐름이다.
 
-## 동작 원리
+## ⚙️ 동작 원리
 
 ### ScrollView vs FlatList
 
@@ -98,7 +99,7 @@ const LogRow = React.memo(function LogRow({ log, onPress }: Props) {
 
 단, memo는 props 참조가 안정적일 때만 작동한다. 부모가 매 렌더 새로 만드는 인라인 람다/객체를 넘기면 비교가 항상 실패해 무의미해진다 — 그래서 콜백은 `useCallback`으로 고정해서 내린다. Compose에서 unstable 파라미터가 skip을 깨는 것과 정확히 같은 구조의 문제다.
 
-## 코드 예시
+## 💻 코드 예시
 
 RN 0.76+ / TypeScript. FlatList + memo 항목 + useCallback + 무한 스크롤 뼈대.
 
@@ -164,7 +165,7 @@ const styles = StyleSheet.create({
 
 토글 시 흐름: `toggle` → `logs` 배열 교체 → FlatList 리렌더 → 각 항목은 memo 비교 → **`log` 객체 참조가 바뀐 한 행만** 리렌더. 이것이 diffable data source의 "변경된 셀만 reload"에 해당하는 결과를 선언형으로 얻는 방법이다.
 
-## 함정 (Pitfalls)
+## ⚠️ 함정 (Pitfalls)
 
 - **`keyExtractor`에 index 사용**: 삽입/삭제/정렬 시 [[Reconciliation]]이 "0번은 여전히 0번"이라고 믿어, 항목 컴포넌트의 state·애니메이션이 엉뚱한 데이터에 붙는다. 삭제했는데 아랫줄이 체크되어 있는 버그가 전형. 항목 고유 id를 쓸 것 — 서버에 id가 없으면 생성 시점에 만들어 붙인다.
 - **항목 내부에 상태 저장**: 스크롤로 언마운트되면 소실(FlatList), 재활용으로 오염(FlashList). 상태는 리스트 데이터로 올린다.
@@ -175,6 +176,6 @@ const styles = StyleSheet.create({
 - **`onEndReached` 중복 호출**: 로딩 중 재진입을 막는 가드(`isLoading` 체크)를 넣지 않으면 같은 페이지를 여러 번 요청한다.
 - **성능 튜닝 props를 감으로 조정**: `windowSize`를 늘리면 blank cell은 줄지만 메모리가 는다. 계측(프로파일링) 없이 만지지 말고, 그 전에 항목 컴포넌트 경량화·memo·FlashList 전환부터.
 
-## 관련 노트
+## 🔗 관련 노트
 
 [[FlatList]] · [[Re-render]] · [[Reconciliation]] · [[Memoization]] · [[Yoga]] · [[Fabric]] · 이전: [[03-스타일링과-Flexbox]] · 다음: [[05-내비게이션]]

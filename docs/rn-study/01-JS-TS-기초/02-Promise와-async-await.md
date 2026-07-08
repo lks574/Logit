@@ -1,8 +1,9 @@
 # Promise와 async/await
 
+> [!abstract] 한 줄 요약
 > Swift async/await·Kotlin coroutines와 문법은 닮았는데, 왜 실행 모델은 전혀 다르며 무엇을 조심해야 하는가?
 
-## iOS/AOS 대응 개념
+## 🔁 iOS/AOS 대응 개념
 
 | JS 개념 | iOS (Swift) | Android (Kotlin) | 차이 |
 |---|---|---|---|
@@ -17,13 +18,13 @@
 | 취소 | `Task.cancel()` + 협조적 취소 | `Job.cancel()` | **Promise에는 취소 개념이 없다** (`AbortController`는 별도 규약) |
 | unhandled rejection | 컴파일러가 `try` 강제 | `CoroutineExceptionHandler` | JS는 컴파일 타임 강제가 없어 조용히 샌다 |
 
-## 왜 이렇게 설계됐나
+## 🧭 왜 이렇게 설계됐나
 
 초기 JS 비동기는 전부 콜백이었다. 콜백은 (1) 중첩이 깊어지고, (2) 에러 전파 경로가 제각각이고, (3) "언젠가 완료되는 값"을 변수처럼 다룰 수 없었다. Promise는 이 셋을 해결하기 위해 **"미래의 값(또는 에러)을 담는 일급 객체"**로 도입됐고(ES2015 표준화), async/await(ES2017)는 그 위에 얹힌 문법 설탕이다 — Kotlin coroutines가 콜백 기반 API 위에 suspend를 얹은 것과 같은 궤적이다.
 
 Swift/Kotlin과 달리 스레드 풀을 도입하지 않은 이유는 단순하다: 이벤트 루프 + 싱글 스레드 모델([[01-이벤트루프와-싱글스레드]])을 유지하면 락 없이 동시성을 표현할 수 있기 때문이다. Promise는 "다른 스레드에서 실행"이 아니라 **"완료 시 마이크로태스크 큐에 콜백을 넣는 예약"**이다.
 
-## 동작 원리
+## ⚙️ 동작 원리
 
 ### Promise의 3가지 상태
 
@@ -56,7 +57,7 @@ Promise.any([a, b])           → 가장 먼저 fulfill된 것. 전부 reject면
 
 주의: `Promise.all`이 reject돼도 **나머지 Promise는 취소되지 않고 계속 실행된다**. 결과만 버려질 뿐이다. structured concurrency(자식 취소 전파)가 없다는 것이 Swift TaskGroup/Kotlin coroutineScope과의 결정적 차이다.
 
-## 코드 예시
+## 💻 코드 예시
 
 ```typescript
 // 콜백 → Promise → async/await 진화
@@ -134,7 +135,7 @@ void analytics.track('screen_view', { name: 'Home' });
 analytics.track('screen_view', { name: 'Home' }).catch(() => {});
 ```
 
-## 함정 (Pitfalls)
+## ⚠️ 함정 (Pitfalls)
 
 - **await 빠뜨림 — 조용한 버그의 왕.** `savePreferences(prefs)` 앞에 `await`를 빼먹어도 **컴파일 에러도, 런타임 에러도 없다.** 함수는 실행되지만 완료를 기다리지 않고 다음 줄로 넘어가며, 그 안에서 throw된 에러는 try/catch를 그냥 통과한다. Swift에서는 `await` 없이 async 함수를 호출하는 것 자체가 컴파일 에러라 이 부류의 버그가 원천 차단되지만 JS/TS는 아니다. 방어책: ESLint `@typescript-eslint/no-floating-promises` 규칙을 반드시 켤 것.
 - **try/catch가 못 잡는 경우.** `try { fetchUser(id).then(...) } catch {}` — Promise 내부의 reject는 동기 catch로 잡히지 않는다. `await`했을 때만 try/catch로 흘러온다. `.then()` 체인에서는 `.catch()`로 잡아야 한다.
@@ -144,7 +145,7 @@ analytics.track('screen_view', { name: 'Home' }).catch(() => {});
 - **executor 안의 throw만 reject가 된다.** `new Promise` executor에서 *비동기 콜백 내부*에서 throw하면 reject로 연결되지 않고 그냥 샌다. executor 안에서는 반드시 `reject(e)`를 명시적으로 호출.
 - **스레드 풀 착각 재차 주의.** `await heavyCalc()`라고 써도 `heavyCalc`가 동기 연산이면 JS 스레드를 그대로 점유한다. await는 마법이 아니라 "Promise가 settle될 때까지 양보"일 뿐이다.
 
-## 관련 노트
+## 🔗 관련 노트
 
 - [[01-이벤트루프와-싱글스레드]] — Promise 콜백이 마이크로태스크로 실행되는 무대
 - [[03-클로저와-스코프]] — 비동기 콜백이 변수를 캡처하는 방식

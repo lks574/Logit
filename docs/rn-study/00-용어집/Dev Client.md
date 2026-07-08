@@ -1,10 +1,12 @@
 # Dev Client
 
-**한 줄 정의**: **내 프로젝트의 네이티브 코드가 전부 포함된 개발 전용 앱 빌드**(expo-dev-client 패키지 탑재). [[Expo Go]]와 달리 어떤 네이티브 라이브러리든 쓸 수 있으면서, JS는 [[Metro]]에서 받아 [[Fast Refresh]]로 개발한다.
+> [!abstract] 한 줄 정의
+> **내 프로젝트의 네이티브 코드가 전부 포함된 개발 전용 앱 빌드**(expo-dev-client 패키지 탑재). [[Expo Go]]와 달리 어떤 네이티브 라이브러리든 쓸 수 있으면서, JS는 [[Metro]]에서 받아 [[Fast Refresh]]로 개발한다.
 
-**iOS/AOS로 치면**: 평소 Xcode/Android Studio에서 돌리는 Debug 빌드와 같다 — 내 코드가 다 들어간 진짜 내 앱. 차이는 JS 부분이 바이너리에 고정되지 않고 dev 서버에서 실시간으로 로드되며, 개발자 메뉴·서버 선택 UI가 붙어 있다는 것.
+> [!info] iOS/AOS로 치면
+> 평소 Xcode/Android Studio에서 돌리는 Debug 빌드와 같다 — 내 코드가 다 들어간 진짜 내 앱. 차이는 JS 부분이 바이너리에 고정되지 않고 dev 서버에서 실시간으로 로드되며, 개발자 메뉴·서버 선택 UI가 붙어 있다는 것.
 
-## 설명
+## 📖 설명
 
 RN 개발의 핵심 이점은 "JS 수정은 재빌드 없이 즉시 반영"이다. 이를 극단화한 것이 [[Expo Go]] — 미리 빌드된 공용 앱에 내 JS만 얹는 방식이다.
 
@@ -27,5 +29,5 @@ Dev Client는 그 벽을 없앤 절충안이다. `expo-dev-client` 패키지를 
 
 Expo SDK 57 / 실전 프로젝트 기준, **개발은 Dev Client로 하는 것이 표준**이고 Expo Go는 학습·프로토타입용이다. 이 vault의 프로젝트(Logit)도 Expo Go 불가 → Dev Client 기반이다.
 
-## 관련
+## 🔗 관련
 [[Expo Go]] · [[Metro]] · [[Fast Refresh]] · [[Prebuild]] · [[EAS]] · [[Config Plugin]] · [[Autolinking]]

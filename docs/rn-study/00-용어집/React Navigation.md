@@ -1,10 +1,12 @@
 # React Navigation
 
-**한 줄 정의**: React Native의 사실상 표준 내비게이션 라이브러리. 화면 스택, 탭, 드로어, 모달 등 앱 내비게이션 구조 전반을 담당한다.
+> [!abstract] 한 줄 정의
+> React Native의 사실상 표준 내비게이션 라이브러리. 화면 스택, 탭, 드로어, 모달 등 앱 내비게이션 구조 전반을 담당한다.
 
-**iOS/AOS로 치면**: `UINavigationController` + `UITabBarController` + present/dismiss를 라이브러리 하나로 묶은 것. Android로는 Jetpack Navigation(NavHost + NavController) + BottomNavigationView에 해당한다.
+> [!info] iOS/AOS로 치면
+> `UINavigationController` + `UITabBarController` + present/dismiss를 라이브러리 하나로 묶은 것. Android로는 Jetpack Navigation(NavHost + NavController) + BottomNavigationView에 해당한다.
 
-## 설명
+## 📖 설명
 
 RN 코어에는 내비게이션이 **포함되어 있지 않다.** 화면 전환은 전적으로 라이브러리 영역이고, 그 표준이 React Navigation이다. 커뮤니티 주도로 개발되며 Expo·RN 공식 문서 모두 이걸 기본으로 안내한다.
 
@@ -37,5 +39,5 @@ const Stack = createNativeStackNavigator();
 
 주의점: 화면 컴포넌트는 기본적으로 스택에 있는 동안 언마운트되지 않는다(뒤로 가기 시 파괴). `useEffect`는 화면 이탈/복귀가 아니라 마운트/언마운트에 묶이므로, 화면 포커스 기준 로직에는 `useFocusEffect` 같은 전용 [[Hook]]을 쓴다 — `viewWillAppear` 대응물이 필요할 때 찾게 되는 API다.
 
-## 관련
+## 🔗 관련
 [[Expo Router]] · [[Reanimated]] · [[Hook]] · [[State]] · [[Re-render]]

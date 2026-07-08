@@ -1,10 +1,12 @@
 # Metro
 
-**한 줄 정의**: RN 전용 JavaScript 번들러 겸 개발 서버. 수천 개의 JS/TS 모듈을 하나의 [[Bundle]]로 묶고, 개발 중에는 HTTP로 코드를 서빙하며 [[Fast Refresh]]를 구동한다.
+> [!abstract] 한 줄 정의
+> RN 전용 JavaScript 번들러 겸 개발 서버. 수천 개의 JS/TS 모듈을 하나의 [[Bundle]]로 묶고, 개발 중에는 HTTP로 코드를 서빙하며 [[Fast Refresh]]를 구동한다.
 
-**iOS/AOS로 치면**: JS 세계의 빌드 시스템. Xcode 빌드 시스템/Gradle이 소스를 컴파일·링크해 바이너리를 만들듯, Metro는 JS 소스를 변환·연결해 번들을 만든다. dev 서버 역할까지 겸한다는 점에서는 "빌드 시스템 + 핫 리로드 데몬"의 결합체.
+> [!info] iOS/AOS로 치면
+> JS 세계의 빌드 시스템. Xcode 빌드 시스템/Gradle이 소스를 컴파일·링크해 바이너리를 만들듯, Metro는 JS 소스를 변환·연결해 번들을 만든다. dev 서버 역할까지 겸한다는 점에서는 "빌드 시스템 + 핫 리로드 데몬"의 결합체.
 
-## 설명
+## 📖 설명
 
 `npx expo start`를 치면 터미널에 뜨는 그 서버가 Metro다.
 
@@ -26,5 +28,5 @@ Metro의 파이프라인은 3단계다.
 
 정리하면 Metro는 "개발 중에는 코드를 실시간 서빙하는 서버, 릴리즈 때는 번들을 찍어내는 빌드 도구"라는 두 얼굴을 가진 RN의 JS 빌드 인프라다.
 
-## 관련
+## 🔗 관련
 [[Bundle]] · [[Fast Refresh]] · [[Hermes]] · [[JSX]] · [[Dev Client]] · [[Monorepo]]

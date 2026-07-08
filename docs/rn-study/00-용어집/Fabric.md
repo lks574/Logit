@@ -1,10 +1,12 @@
 # Fabric
 
-**한 줄 정의**: [[New Architecture]]의 렌더링 시스템. C++로 작성된 코어가 React 트리를 [[Shadow Tree]]로 변환·레이아웃 계산하고, 그 결과를 각 플랫폼의 네이티브 뷰(UIView / android.view.View)로 반영한다.
+> [!abstract] 한 줄 정의
+> [[New Architecture]]의 렌더링 시스템. C++로 작성된 코어가 React 트리를 [[Shadow Tree]]로 변환·레이아웃 계산하고, 그 결과를 각 플랫폼의 네이티브 뷰(UIView / android.view.View)로 반영한다.
 
-**iOS/AOS로 치면**: UIKit의 렌더 파이프라인(레이아웃 → 커밋 → 화면 반영)이나 Compose의 Composition → Layout → Drawing 단계에 해당하는 RN 내부 구현. 개발자가 직접 호출하는 API라기보다 "프레임워크의 렌더링 엔진"이다.
+> [!info] iOS/AOS로 치면
+> UIKit의 렌더 파이프라인(레이아웃 → 커밋 → 화면 반영)이나 Compose의 Composition → Layout → Drawing 단계에 해당하는 RN 내부 구현. 개발자가 직접 호출하는 API라기보다 "프레임워크의 렌더링 엔진"이다.
 
-## 설명
+## 📖 설명
 
 RN에서 `<View>`, `<Text>` 같은 컴포넌트를 선언하면 최종적으로 진짜 UIView/View 인스턴스가 만들어져야 한다. 이 "React 선언 → 네이티브 뷰" 변환을 담당하는 것이 렌더러이고, 신 아키텍처의 렌더러가 Fabric이다. 구 아키텍처에서는 이 역할을 UIManager라는 모듈이 [[Bridge]] 너머에서 비동기로 수행했다.
 
@@ -26,5 +28,5 @@ Fabric의 구조적 특징은 **코어가 C++ 단일 구현**이라는 점이다
 
 다만 렌더링 성능 이슈를 파고들거나, 네이티브 뷰를 래핑하는 라이브러리를 만들거나, "왜 이 라이브러리는 New Arch에서 안 돌지?"를 판단할 때 이 그림이 필요하다.
 
-## 관련
+## 🔗 관련
 [[Shadow Tree]] · [[Yoga]] · [[JSI]] · [[New Architecture]] · [[Turbo Module]] · [[Codegen]] · [[Reconciliation]]

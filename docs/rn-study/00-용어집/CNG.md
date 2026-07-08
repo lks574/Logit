@@ -1,10 +1,12 @@
 # CNG
 
-**한 줄 정의**: Continuous Native Generation. `ios/`·`android/` 네이티브 프로젝트를 손으로 관리하는 소스가 아니라 **설정(app.json + [[Config Plugin]])에서 언제든 다시 생성하는 산출물**로 취급하는 Expo의 철학.
+> [!abstract] 한 줄 정의
+> Continuous Native Generation. `ios/`·`android/` 네이티브 프로젝트를 손으로 관리하는 소스가 아니라 **설정(app.json + [[Config Plugin]])에서 언제든 다시 생성하는 산출물**로 취급하는 Expo의 철학.
 
-**iOS/AOS로 치면**: "xcodeproj를 커밋하지 말고 xcodegen/tuist로 생성하자"의 전면 확장판. 혹은 Infrastructure as Code — 서버를 손으로 만지는 대신 선언 파일에서 매번 재생성하는 Terraform식 사고를 네이티브 프로젝트에 적용한 것.
+> [!info] iOS/AOS로 치면
+> "xcodeproj를 커밋하지 말고 xcodegen/tuist로 생성하자"의 전면 확장판. 혹은 Infrastructure as Code — 서버를 손으로 만지는 대신 선언 파일에서 매번 재생성하는 Terraform식 사고를 네이티브 프로젝트에 적용한 것.
 
-## 설명
+## 📖 설명
 
 전통적 RN 프로젝트에서 `ios/`와 `android/`는 소스 코드다. 팀원들이 직접 수정하고, git에 커밋하고, 충돌을 머지한다.
 
@@ -26,5 +28,5 @@ CNG는 관점을 뒤집는다. 네이티브 프로젝트에 대한 모든 요구
 
 Expo SDK 57 기준, CNG + [[Prebuild]] + [[EAS]] 빌드 조합이 Expo가 권장하는 표준 워크플로우다.
 
-## 관련
+## 🔗 관련
 [[Prebuild]] · [[Config Plugin]] · [[Managed Workflow]] · [[Bare Workflow]] · [[EAS]] · [[Autolinking]]

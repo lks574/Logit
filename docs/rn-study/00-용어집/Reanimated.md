@@ -1,10 +1,12 @@
 # Reanimated
 
-**한 줄 정의**: 애니메이션 로직을 JS 스레드가 아닌 **UI 스레드에서 실행**하는 RN 애니메이션 라이브러리 (react-native-reanimated). JS 스레드가 바빠도 애니메이션이 60fps로 끊기지 않는 것이 존재 이유다.
+> [!abstract] 한 줄 정의
+> 애니메이션 로직을 JS 스레드가 아닌 **UI 스레드에서 실행**하는 RN 애니메이션 라이브러리 (react-native-reanimated). JS 스레드가 바빠도 애니메이션이 60fps로 끊기지 않는 것이 존재 이유다.
 
-**iOS/AOS로 치면**: Core Animation(레이어 트리에 커밋하면 렌더 서버가 알아서 진행) / Android의 `ValueAnimator`·Compose 애니메이션 API에 해당하는 층. "애니메이션 진행을 앱 로직 스레드에서 분리한다"는 원리가 같다.
+> [!info] iOS/AOS로 치면
+> Core Animation(레이어 트리에 커밋하면 렌더 서버가 알아서 진행) / Android의 `ValueAnimator`·Compose 애니메이션 API에 해당하는 층. "애니메이션 진행을 앱 로직 스레드에서 분리한다"는 원리가 같다.
 
-## 설명
+## 📖 설명
 
 RN 앱의 JS 코드는 단일 JS 스레드에서 돈다. 프레임마다 JS가 뷰 속성을 갱신하는 방식으로 애니메이션을 만들면, JS 스레드가 다른 일(네트워크 응답 파싱, [[Re-render]], 리스트 렌더)로 바쁜 순간 프레임이 떨어진다. 네이티브에서 메인 스레드를 막으면 UI가 버벅이는 것과 같은 문제 구조인데, RN은 스레드가 하나 더 있어서 "JS는 바쁜데 화면은 부드러워야 하는" 상황이 자주 생긴다.
 
@@ -36,5 +38,5 @@ const style = useAnimatedStyle(() => ({
 
 `offset.value` 대입부터 스프링 진행, 스타일 반영까지 전 과정이 UI 스레드에서 일어난다. React 렌더 사이클과 분리된 "값 → 스타일" 전용 파이프라인이라고 이해하면 된다.
 
-## 관련
+## 🔗 관련
 [[Worklet]] · [[JSI]] · [[Re-render]] · [[Fabric]] · [[React Navigation]]

@@ -1,8 +1,9 @@
 # Autolinking과 라이브러리 평가
 
+> [!abstract] 한 줄 요약
 > `npm install` 한 패키지의 **네이티브 코드가 어떻게 내 Xcode/Gradle 빌드에 자동으로 편입되는가**([[Autolinking]]) — 그리고 그 자동화 때문에 더 중요해진 질문: **이 라이브러리, 내 앱에 들여도 되는가**를 평가하는 법. 네이티브 개발자의 최종 병기는 "소스를 직접 읽고 판단할 수 있다"는 것이다.
 
-## iOS-AOS 대응 개념
+## 🔁 iOS-AOS 대응 개념
 
 | RN 개념 | iOS 대응 | Android 대응 |
 |---|---|---|
@@ -12,13 +13,13 @@
 | JS-only 패키지 | (네이티브 대응물 없음 — 리소스만 있는 SPM 패키지 느낌) | 동일 |
 | reactnative.directory | CocoaPods 검색 + 품질 지표 대시보드 | Android Arsenal의 역할 + 지표 |
 
-## 왜 이렇게 설계됐나
+## 🧭 왜 이렇게 설계됐나
 
 RN 초기에는 네이티브 코드가 있는 라이브러리를 설치하면 **수동 링킹**을 했다: Xcode 프로젝트에 파일 끌어다 넣고, Header Search Path 고치고, Gradle에 `include` 추가하고, `MainApplication`의 패키지 목록에 한 줄 추가하고... README마다 "Manual Installation" 섹션이 한 페이지씩 있었고, 오타 하나로 빌드가 깨졌다.
 
 RN 0.60(2019)에서 [[Autolinking]]이 도입되며 이 절차가 사라졌다. 설계 아이디어는 단순하다: **패키지 스스로 "나 네이티브 코드 있어요"를 규약된 형태로 선언하게 하고, 빌드 시스템이 `node_modules`를 스캔해 자동으로 연결한다.** npm이라는 JS 세계의 의존성 그래프와 CocoaPods/Gradle이라는 네이티브 세계의 의존성 그래프를 잇는 다리다.
 
-## 동작 원리
+## ⚙️ 동작 원리
 
 ### iOS — `pod install`이 하는 일
 
@@ -137,7 +138,7 @@ JS 개발자 다수에게 라이브러리의 `ios/` 디렉토리는 불투명한
 4. **네이티브 소스 훑기** (5분, 네이티브 포함일 때만) — `ios/`·`android/` 열어서 코드 위생 확인. 여기서 걸리는 라이브러리는 스타 수와 무관하게 보류.
 5. 통과 시: 설치 → `pod install` → [[Dev Client]] 재빌드 → 스모크 테스트. 실패 시 되돌리기 쉬운 지금 시점에 판단.
 
-## 함정 (Pitfalls)
+## ⚠️ 함정 (Pitfalls)
 
 - **`npm install` 후 재빌드 없이 실행**: 네이티브 포함 라이브러리 설치 → [[Metro]]만 재시작 → 런타임에 "module not found / null" 크래시. 진단 순서는 항상: `pod install` 다시 → 네이티브 재빌드 → 그래도 안 되면 그때 코드 의심. RN에서 가장 흔한 "귀신 버그"의 정체가 대부분 이것이다.
 - **[[Expo Go]]에서 네이티브 라이브러리 테스트**: 링크는 빌드 시점 일이므로 이미 빌드된 Expo Go에는 없는 모듈이다. [[Dev Client]]를 다시 빌드해야 한다.
@@ -146,6 +147,6 @@ JS 개발자 다수에게 라이브러리의 `ios/` 디렉토리는 불투명한
 - **transitive JS 의존성의 네이티브 코드**: 내가 설치한 A가 내부적으로 네이티브 포함 B에 의존하면 B도 자동 링크된다. 앱의 네이티브 표면이 자신도 모르게 넓어진다 — 주기적으로 `Podfile.lock` diff를 리뷰 대상에 넣을 가치가 있다.
 - **다운로드 수 신앙**: 주간 다운로드 수십만이어도 New Architecture 미대응으로 죽어가는 라이브러리가 실제로 여럿 있었다. 위 체크리스트의 2·3번이 항상 우선이다.
 
-## 관련 노트
+## 🔗 관련 노트
 
 [[Autolinking]] · [[New Architecture]] · [[Codegen]] · [[Expo Modules API]] · [[Config Plugin]] · [[Expo Go]] · [[Dev Client]] · 이전: [[03-Expo-Modules-API]] · 프로젝트 유형 결정: [[03-의사결정-매트릭스|의사결정 매트릭스]]

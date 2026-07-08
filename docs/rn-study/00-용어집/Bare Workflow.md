@@ -1,10 +1,12 @@
 # Bare Workflow
 
-**한 줄 정의**: `ios/`·`android/` 네이티브 프로젝트를 git에 커밋하고 **개발자가 직접 소유·수정**하는 RN 개발 방식. [[Managed Workflow]]([[CNG]])의 반대편으로, 최대 자유도와 최대 유지보수 비용을 함께 가진다.
+> [!abstract] 한 줄 정의
+> `ios/`·`android/` 네이티브 프로젝트를 git에 커밋하고 **개발자가 직접 소유·수정**하는 RN 개발 방식. [[Managed Workflow]]([[CNG]])의 반대편으로, 최대 자유도와 최대 유지보수 비용을 함께 가진다.
 
-**iOS/AOS로 치면**: 그냥 평소의 네이티브 개발이다. Xcode 프로젝트와 Gradle 스크립트가 저장소에 있고, 원하는 대로 편집한다. 다만 그 안에 RN 런타임과 JS [[Bundle]]이 들어있을 뿐이다.
+> [!info] iOS/AOS로 치면
+> 그냥 평소의 네이티브 개발이다. Xcode 프로젝트와 Gradle 스크립트가 저장소에 있고, 원하는 대로 편집한다. 다만 그 안에 RN 런타임과 JS [[Bundle]]이 들어있을 뿐이다.
 
-## 설명
+## 📖 설명
 
 Bare workflow에서는 네이티브 프로젝트가 소스 오브 트루스다. Xcode에서 build phase를 추가하고, entitlement를 켜고, Gradle 설정을 고치고, AppDelegate에 코드를 넣는 — 네이티브 개발자에게 완전히 익숙한 작업을 그대로 한다. RN 커뮤니티 CLI로 만든 프로젝트(`ios/`·`android/` 커밋)가 전형적인 bare이며, Expo 도구를 쓰면서도 네이티브 디렉토리를 커밋하면 역시 bare로 분류된다. Expo의 대부분 라이브러리와 [[EAS]] Build는 bare 프로젝트에서도 동작한다.
 
@@ -26,5 +28,5 @@ Bare workflow에서는 네이티브 프로젝트가 소스 오브 트루스다. 
 
 요약 비교: managed(CNG)는 "선언에서 생성, 업그레이드 쉬움, 임의 수정 불가", bare는 "직접 소유, 무엇이든 수정 가능, 업그레이드는 수동 병합". 판단 질문은 하나다 — "Config Plugin으로 표현할 수 없는 네이티브 수정이 정말 있는가?"
 
-## 관련
+## 🔗 관련
 [[Managed Workflow]] · [[CNG]] · [[Prebuild]] · [[Config Plugin]] · [[Brownfield]] · [[EAS]] · [[Autolinking]]

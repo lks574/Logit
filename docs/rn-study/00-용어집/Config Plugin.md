@@ -1,10 +1,12 @@
 # Config Plugin
 
-**한 줄 정의**: Info.plist, AndroidManifest.xml, Podfile, build.gradle 등 네이티브 프로젝트 파일에 가할 수정을 **JS 함수로 선언**해 두면, [[Prebuild]] 시점에 자동 적용되는 Expo의 확장 메커니즘.
+> [!abstract] 한 줄 정의
+> Info.plist, AndroidManifest.xml, Podfile, build.gradle 등 네이티브 프로젝트 파일에 가할 수정을 **JS 함수로 선언**해 두면, [[Prebuild]] 시점에 자동 적용되는 Expo의 확장 메커니즘.
 
-**iOS/AOS로 치면**: "라이브러리 README의 수동 설치 안내(plist에 키 추가, Manifest에 권한 추가, Gradle에 한 줄…)를 코드로 자동화한 것". 빌드 설정을 코드로 다룬다는 점에서 fastlane 액션이나 Gradle 커스텀 플러그인과 같은 부류다.
+> [!info] iOS/AOS로 치면
+> "라이브러리 README의 수동 설치 안내(plist에 키 추가, Manifest에 권한 추가, Gradle에 한 줄…)를 코드로 자동화한 것". 빌드 설정을 코드로 다룬다는 점에서 fastlane 액션이나 Gradle 커스텀 플러그인과 같은 부류다.
 
-## 설명
+## 📖 설명
 
 [[CNG]] 철학에서는 `ios/`와 `android/`를 직접 수정하지 않는다. 그런데 현실의 앱은 네이티브 설정 수정이 끊임없이 필요하다 — 카메라 권한 문구, 푸시 엔타이틀먼트, Firebase 설정 파일, 특정 SDK가 요구하는 Gradle 옵션.
 
@@ -27,5 +29,5 @@
 
 그래서 Config Plugin을 쓰기 시작하면 [[Dev Client]] 기반 개발이 사실상 필수가 된다.
 
-## 관련
+## 🔗 관련
 [[Prebuild]] · [[CNG]] · [[Dev Client]] · [[Expo Go]] · [[Expo Modules API]] · [[EAS]]

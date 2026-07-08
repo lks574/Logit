@@ -1,8 +1,9 @@
 # TypeScript 핵심
 
+> [!abstract] 한 줄 요약
 > Swift/Kotlin의 명목적 타입 시스템에 익숙한 개발자가 TS의 구조적 타이핑을 어떻게 받아들여야 하며, "타입이 런타임에 없다"는 것은 무슨 뜻인가?
 
-## iOS/AOS 대응 개념
+## 🔁 iOS/AOS 대응 개념
 
 | TS 개념 | iOS (Swift) | Android (Kotlin) | 차이 |
 |---|---|---|---|
@@ -18,7 +19,7 @@
 | utility types | 대응 없음 (매크로로 일부) | 대응 없음 | 타입을 타입으로 계산하는 기능 |
 | 컴파일 결과 | 바이너리 (타입 정보 일부 유지) | dex (제네릭 erasure) | **TS는 타입을 전부 지우고 JS만 남김** |
 
-## 왜 이렇게 설계됐나
+## 🧭 왜 이렇게 설계됐나
 
 TS의 임무는 "이미 존재하는 방대한 JS 생태계에 *점진적으로* 타입을 입히는 것"이었다. JS는 duck typing의 세계라, "이 객체가 `UserLike`인가?"의 자연스러운 답은 "선언했는가"가 아니라 "**그 모양(속성들)을 갖췄는가**"다. 그래서 TS는 구조적 타이핑을 택했다.
 
@@ -30,7 +31,7 @@ TS의 임무는 "이미 존재하는 방대한 JS 생태계에 *점진적으로*
 
 Swift/Kotlin에서 "컴파일이 되면 타입은 진실"이던 감각을, TS에서는 "**컴파일이 되면 코드 내부는 일관적. 단, 외부에서 들어오는 데이터는 별개**"로 조정해야 한다.
 
-## 동작 원리
+## ⚙️ 동작 원리
 
 ### 구조적 타이핑 — 정면 대비
 
@@ -130,7 +131,7 @@ type Frozen         = Readonly<Workout>;           // 전 속성 readonly
 
 utility types는 "기존 타입에서 새 타입을 **계산**"한다. Swift/Kotlin엔 대응물이 없다(코드 생성/매크로로 흉내). 서버 모델 하나를 정의하고 화면별 파생 타입을 찍어내는 데 쓴다.
 
-## 코드 예시
+## 💻 코드 예시
 
 런타임 보장이 없다는 것 — API 경계의 정석 처리:
 
@@ -161,7 +162,7 @@ async function fetchUser(id: string): Promise<User> {
 // 실전에서는 이 수작업 가드를 zod 스키마 (z.object({...}).parse(body)) 로 대체하는 것이 표준
 ```
 
-## 함정 (Pitfalls)
+## ⚠️ 함정 (Pitfalls)
 
 - **구조적 타이핑발 오탐 부재.** 같은 구조의 다른 의미 타입(`Meters` vs `Seconds`, `UserId` vs `PostId`)이 뒤섞여도 에러가 없다. Swift에서 typealias가 아닌 struct로 감싸던 값들이 TS에선 전부 호환돼버린다. 중요한 ID 타입은 branded type(`string & { __brand: 'UserId' }`) 고려.
 - **`as` 캐스트는 검증이 아니다.** Swift `as!`처럼 크래시라도 나면 다행인데, TS의 `as`는 런타임에 아무것도 안 한다. 틀린 캐스트는 한참 뒤 엉뚱한 곳에서 터진다. `as`가 필요해 보이면 대개 타입 가드나 제네릭으로 풀 수 있다.
@@ -171,7 +172,7 @@ async function fetchUser(id: string): Promise<User> {
 - **strict 모드 확인.** `tsconfig.json`의 `"strict": true`가 꺼진 프로젝트의 TS는 절반짜리다. `strictNullChecks` 없는 TS는 optional 안전성이 통째로 사라진다.
 - **컴파일 통과 ≠ 배포 가능.** RN에서 타입 에러가 있어도 [[Metro]]는 [[Bundle]]을 만들어준다(Babel이 타입을 검사 없이 벗겨내기 때문). 타입 검사는 별도로 `tsc --noEmit`을 CI에 걸어야 강제된다.
 
-## 관련 노트
+## 🔗 관련 노트
 
 - [[02-Promise와-async-await]] — `Promise<T>`와 catch의 unknown
 - [[04-모듈-시스템]] — `import type`, 타입의 모듈 경계

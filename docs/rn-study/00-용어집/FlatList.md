@@ -1,10 +1,12 @@
 # FlatList
 
-**한 줄 정의**: RN 코어의 가상화(virtualized) 리스트 컴포넌트. 화면 근처의 항목만 렌더하고 멀리 벗어난 항목은 렌더 트리에서 내려서, 항목 수천 개짜리 리스트도 메모리·성능을 유지한다.
+> [!abstract] 한 줄 정의
+> RN 코어의 가상화(virtualized) 리스트 컴포넌트. 화면 근처의 항목만 렌더하고 멀리 벗어난 항목은 렌더 트리에서 내려서, 항목 수천 개짜리 리스트도 메모리·성능을 유지한다.
 
-**iOS/AOS로 치면**: `UICollectionView`/`UITableView`, `RecyclerView`. Compose로는 `LazyColumn`, SwiftUI로는 `List`/`LazyVStack`. "보이는 것만 만든다"는 목표가 같다.
+> [!info] iOS/AOS로 치면
+> `UICollectionView`/`UITableView`, `RecyclerView`. Compose로는 `LazyColumn`, SwiftUI로는 `List`/`LazyVStack`. "보이는 것만 만든다"는 목표가 같다.
 
-## 설명
+## 📖 설명
 
 `ScrollView`는 자식 전체를 한 번에 렌더한다 — `UIScrollView`에 서브뷰 1000개를 다 addSubview하는 것과 같아서 데이터가 많으면 못 쓴다. FlatList는 데이터 배열과 항목 렌더 함수를 받아, 뷰포트 주변 윈도우 안의 항목만 실제로 렌더한다:
 
@@ -29,5 +31,5 @@
 
 내부적으로 FlatList는 `VirtualizedList` 위의 편의 래퍼이며, [[New Architecture]]/[[Fabric]] 환경에서도 그대로 동작한다.
 
-## 관련
+## 🔗 관련
 [[Reconciliation]] · [[Memoization]] · [[Re-render]] · [[Props]] · [[Fabric]]

@@ -1,10 +1,12 @@
 # Autolinking
 
-**한 줄 정의**: `npm install`로 설치한 패키지에 네이티브 코드가 포함되어 있으면, 이를 iOS의 CocoaPods와 Android의 Gradle 설정에 **자동으로 연결**해 주는 메커니즘.
+> [!abstract] 한 줄 정의
+> `npm install`로 설치한 패키지에 네이티브 코드가 포함되어 있으면, 이를 iOS의 CocoaPods와 Android의 Gradle 설정에 **자동으로 연결**해 주는 메커니즘.
 
-**iOS/AOS로 치면**: "npm 패키지 설치 = Podfile에 pod 추가 + settings.gradle에 모듈 추가"를 사람이 아니라 도구가 해주는 것. SPM이 Package.swift의 의존성을 자동 해석해 링크하는 경험과 비슷한데, 그것이 **패키지 매니저 경계(npm→CocoaPods/Gradle)를 넘어** 일어난다.
+> [!info] iOS/AOS로 치면
+> "npm 패키지 설치 = Podfile에 pod 추가 + settings.gradle에 모듈 추가"를 사람이 아니라 도구가 해주는 것. SPM이 Package.swift의 의존성을 자동 해석해 링크하는 경험과 비슷한데, 그것이 **패키지 매니저 경계(npm→CocoaPods/Gradle)를 넘어** 일어난다.
 
-## 설명
+## 📖 설명
 
 RN 라이브러리는 상당수가 하이브리드다 — JS 코드와 함께 iOS용 Swift/Objective-C, Android용 Kotlin/Java 코드를 품고 있다(카메라, 지도, 애니메이션 라이브러리 등).
 
@@ -26,5 +28,5 @@ JS 부분은 [[Metro]]가 [[Bundle]]에 넣어주면 되지만, 네이티브 부
 
 트러블슈팅 단서: 설치는 됐는데 런타임에 "Native module cannot be null" 류의 에러가 나면, autolinking이 반영되기 전의 바이너리를 실행 중일 가능성이 크다 — 네이티브 재빌드가 첫 번째 처방이다.
 
-## 관련
+## 🔗 관련
 [[Prebuild]] · [[Dev Client]] · [[Expo Go]] · [[Turbo Module]] · [[Expo Modules API]] · [[Metro]]

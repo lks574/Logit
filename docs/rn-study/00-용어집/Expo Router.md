@@ -1,10 +1,12 @@
 # Expo Router
 
-**한 줄 정의**: `app/` 디렉토리의 **파일 구조가 곧 앱의 라우트**가 되는 파일 기반(file-based) 라우팅 라이브러리. [[React Navigation]] 위에 구축되어 있으며, 모든 화면이 자동으로 딥링크 가능해진다.
+> [!abstract] 한 줄 정의
+> `app/` 디렉토리의 **파일 구조가 곧 앱의 라우트**가 되는 파일 기반(file-based) 라우팅 라이브러리. [[React Navigation]] 위에 구축되어 있으며, 모든 화면이 자동으로 딥링크 가능해진다.
 
-**iOS/AOS로 치면**: 네이티브에 직접적인 대응물이 없는 웹(Next.js) 유래 개념이다. 굳이 비유하면 "스토리보드의 세그 정의 + Universal Link 라우팅 테이블을 파일 시스템이 자동 생성해주는 것". 내부 동작은 결국 [[React Navigation]]의 stack/tab이므로 UINavigationController/Jetpack Navigation 위의 편의 계층이라 보면 된다.
+> [!info] iOS/AOS로 치면
+> 네이티브에 직접적인 대응물이 없는 웹(Next.js) 유래 개념이다. 굳이 비유하면 "스토리보드의 세그 정의 + Universal Link 라우팅 테이블을 파일 시스템이 자동 생성해주는 것". 내부 동작은 결국 [[React Navigation]]의 stack/tab이므로 UINavigationController/Jetpack Navigation 위의 편의 계층이라 보면 된다.
 
-## 설명
+## 📖 설명
 
 전통적인 방식([[React Navigation]] 직접 사용)에서는 화면 목록과 네비게이터 구조를 코드로 등록한다. Expo Router는 이 등록을 없애고 **파일 시스템을 라우팅 설정으로 사용**한다:
 
@@ -32,5 +34,5 @@ app/
 
 단점/주의: 파일 이름 컨벤션(`(그룹)`, `[param]`, `_layout`, `+`)을 외워야 하고, 라우팅이 파일 시스템에 묶이므로 완전히 동적인 네비게이터 구성에는 React Navigation 직접 사용보다 유연성이 떨어질 수 있다.
 
-## 관련
+## 🔗 관련
 [[React Navigation]] · [[Expo Go]] · [[Dev Client]] · [[Metro]] · [[Managed Workflow]]

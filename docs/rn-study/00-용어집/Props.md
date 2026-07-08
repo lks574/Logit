@@ -1,10 +1,12 @@
 # Props
 
-**한 줄 정의**: 부모 컴포넌트가 자식 컴포넌트에 내려주는 입력값 묶음(properties). 자식 입장에서는 **읽기 전용**이며, 데이터는 항상 부모→자식 한 방향으로만 흐른다.
+> [!abstract] 한 줄 정의
+> 부모 컴포넌트가 자식 컴포넌트에 내려주는 입력값 묶음(properties). 자식 입장에서는 **읽기 전용**이며, 데이터는 항상 부모→자식 한 방향으로만 흐른다.
 
-**iOS/AOS로 치면**: SwiftUI 뷰의 이니셜라이저 파라미터(`ProfileView(user: user)`), Compose 함수의 인자(`Profile(user = user)`). 정확히 같은 역할이다.
+> [!info] iOS/AOS로 치면
+> SwiftUI 뷰의 이니셜라이저 파라미터(`ProfileView(user: user)`), Compose 함수의 인자(`Profile(user = user)`). 정확히 같은 역할이다.
 
-## 설명
+## 📖 설명
 
 React 컴포넌트는 함수이고, props는 그 함수의 인자다. [[JSX]]에서 태그 속성처럼 쓴 것들이 하나의 객체로 묶여 전달된다.
 
@@ -33,5 +35,5 @@ props가 바뀌면 (정확히는 부모가 리렌더되면) 자식 컴포넌트 
 
 성능 관점에서 하나만 기억하면 된다: React는 기본적으로 props가 바뀌었는지 **얕은 비교조차 하지 않고** 부모가 리렌더되면 자식도 리렌더한다. 이를 막고 싶을 때 `React.memo`로 감싸는데, 이때는 props의 참조 동일성이 중요해진다 → [[Memoization]].
 
-## 관련
+## 🔗 관련
 [[State]] · [[JSX]] · [[Re-render]] · [[Reconciliation]] · [[Memoization]]
