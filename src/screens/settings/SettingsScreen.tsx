@@ -337,36 +337,6 @@ export default function SettingsScreen() {
           </Card>
         </View>
 
-        {/* 건강 데이터 연동 */}
-        <View>
-          <SectionLabel text={tr({ en: 'Health data', ko: '건강 데이터 연동' })} />
-          <Card>
-            <SettingsRow
-              icon={
-                <Glyph size={18} color={c.error} strokeWidth={1.8}>
-                  <Path d="M20.8 5.6a5.5 5.5 0 0 0-8.8 1 5.5 5.5 0 0 0-8.8-1c-2.2 2.2-2 5.6.4 8L12 21l8.4-7.4c2.4-2.4 2.6-5.8.4-8z" />
-                </Glyph>
-              }
-              label={tr({ en: 'Apple Health / Health Connect', ko: 'Apple 건강 / Health Connect' })}
-              right={
-                <View
-                  style={{
-                    backgroundColor: c.surfaceAlt,
-                    borderRadius: 6,
-                    paddingVertical: 4,
-                    paddingHorizontal: 9,
-                  }}
-                >
-                  <T style={{ fontSize: 11, fontWeight: '600', color: c.text2 }}>{tr({ en: 'Coming soon', ko: '곧 지원' })}</T>
-                </View>
-              }
-            />
-          </Card>
-          <T style={{ fontSize: 11, color: c.text3, marginHorizontal: 4, marginTop: 7 }}>
-            {tr({ en: 'Automatic distance and heart-rate sync will arrive in a later update.', ko: '자동 거리·심박 동기화는 후속 업데이트에서 제공됩니다.' })}
-          </T>
-        </View>
-
         {/* 앱 */}
         <View>
           <SectionLabel text={tr({ en: 'App', ko: '앱' })} />

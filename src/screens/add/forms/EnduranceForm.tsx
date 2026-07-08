@@ -197,46 +197,6 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
           </Pressable>
         ) : null}
 
-        {/* HealthKit / Health Connect — disabled placeholder (3.1) */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 10,
-            backgroundColor: c.surface,
-            borderWidth: 1,
-            borderStyle: 'dashed',
-            borderColor: c.border,
-            borderRadius: 12,
-            paddingVertical: 11,
-            paddingHorizontal: 13,
-          }}
-        >
-          <View
-            style={{
-              width: 30,
-              height: 30,
-              borderRadius: 8,
-              backgroundColor: c.surfaceAlt,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <Glyph size={17} color={c.text2} strokeWidth={1.8}>
-              <Path d="M19 14c-1.5 1.6-3.6 3.3-7 6-3.4-2.7-5.5-4.4-7-6-2.5-2.7-2-6 1-7 1.8-.6 3.6 0 4.6 1.2.6.7.7.9 1.4.9s.8-.2 1.4-.9C15.4 7 17.2 6.4 19 7c3 1 3.5 4.3 1 7z" />
-            </Glyph>
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'Import from health app', ko: '건강 앱에서 불러오기' })}</Text>
-            <Text style={{ fontSize: 11, color: c.text3, marginTop: 1 }}>
-              {tr({ en: 'HealthKit · Health Connect · coming later', ko: 'HealthKit · Health Connect · 후속 지원' })}
-            </Text>
-          </View>
-          <View style={{ backgroundColor: c.surfaceAlt, borderRadius: 6, paddingVertical: 4, paddingHorizontal: 9 }}>
-            <Text style={{ fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Coming soon', ko: '준비 중' })}</Text>
-          </View>
-        </View>
-
         {/* 핵심 수치 · 필수 — 거리 / 시간 (3.1) */}
         <View>
           <Text
