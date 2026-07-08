@@ -1,14 +1,16 @@
-import React, { useMemo } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Screen } from '../../components/primitives';
 import { Glyph, Path, Icon } from '../../components/Glyph';
 import { PrimaryButton } from '../../components/auth-ui';
+import { Segmented } from '../../components/controls';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStore } from '../../store/StoreContext';
-import { statsHub, StatsCategory } from '../../store/selectors';
+import { statsHub, StatsCategory, StatsPeriod, retroHighlights, periodRange, dayDiff } from '../../store/selectors';
 import { TemplateType } from '../../theme/tokens';
 import { activities, colorsFor, activityLabel } from '../../data/activities';
+import { monthDay } from '../../lib/date';
 import { tr, Msg } from '../../i18n/i18n';
 
 // #RRGGBB 두 색을 pct%로 섞음(color-mix 대체) — 히트맵 레벨 색.
@@ -44,23 +46,46 @@ export default function StatsScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const { records, customActivities, today } = useStore();
-  const hub = statsHub(records, 'all', today);
+  const [period, setPeriod] = useState<StatsPeriod>('all');
+  const hub = statsHub(records, period, today);
+  const highlights = retroHighlights(records, today);
+
+  // "3일 전" 같은 상대 표기 — 오래된 건 날짜로.
+  const agoLabel = (iso: string) => {
+    const d = dayDiff(iso, today);
+    if (d <= 0) return tr({ en: 'today', ko: '오늘' });
+    if (d === 1) return tr({ en: 'yesterday', ko: '어제' });
+    if (d < 7) return tr({ en: `${d}d ago`, ko: `${d}일 전` });
+    if (d < 28) return tr({ en: `${Math.floor(d / 7)}w ago`, ko: `${Math.floor(d / 7)}주 전` });
+    return monthDay(iso);
+  };
 
   const heatColor = (level: number) =>
     level === 0 ? c.surfaceAlt : level === 1 ? mix(c.accent, c.surfaceAlt, 30) : level === 2 ? mix(c.accent, c.surfaceAlt, 55) : c.accent;
 
-  // 기록이 있는 활동을 템플릿별로 묶어 횟수 내림차순.
-  const grouped = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const r of records) counts[r.activity] = (counts[r.activity] ?? 0) + 1;
-    const g: Partial<Record<TemplateType, { name: string; count: number }[]>> = {};
-    Object.keys(counts).forEach((name) => {
+  // 선택 기간으로 좁힌 기록을 활동별(횟수·마지막 기록일)로 묶고, 섹션은 기록 수 합계 내림차순
+  // — 고정 템플릿 순서가 아니라 내가 자주 쓰는 순서로 보이게.
+  const sortedSections = useMemo(() => {
+    const { start, end } = periodRange(period, today);
+    const inRange = records.filter((r) => r.dateISO >= start && r.dateISO <= end);
+    const agg = new Map<string, { count: number; lastISO: string }>();
+    for (const r of inRange) {
+      const e = agg.get(r.activity) ?? { count: 0, lastISO: '' };
+      e.count += 1;
+      if (r.dateISO > e.lastISO) e.lastISO = r.dateISO;
+      agg.set(r.activity, e);
+    }
+    const g: Partial<Record<TemplateType, { name: string; count: number; lastISO: string }[]>> = {};
+    for (const [name, e] of agg) {
       const tmpl = activities[name]?.template ?? customActivities.find((a) => a.name === name)?.template ?? 'free';
-      (g[tmpl] ??= []).push({ name, count: counts[name] });
-    });
+      (g[tmpl] ??= []).push({ name, count: e.count, lastISO: e.lastISO });
+    }
     Object.values(g).forEach((arr) => arr!.sort((a, b) => b.count - a.count));
-    return g;
-  }, [records, customActivities]);
+    const total = (items: { count: number }[]) => items.reduce((n, i) => n + i.count, 0);
+    return SECTIONS.map((sec) => ({ sec, items: g[sec.template] ?? [] }))
+      .filter((x) => x.items.length > 0)
+      .sort((a, b) => total(b.items) - total(a.items));
+  }, [records, customActivities, period, today]);
 
   const iconOf = (name: string) => (activities[name] ? Icon[activities[name].icon] : Icon.yoga);
 
@@ -99,9 +124,21 @@ export default function StatsScreen() {
       </View>
 
       <View style={{ paddingHorizontal: 18, gap: 9 }}>
-        {/* 전체 활동 요약 */}
+        {/* 기간 필터 — 히어로·활동별이 이 기간에 연동됨 */}
+        <Segmented<StatsPeriod>
+          options={[
+            { key: 'all', label: tr({ en: 'All', ko: '전체' }) },
+            { key: 'month', label: tr({ en: 'Month', ko: '월간' }) },
+            { key: 'quarter', label: tr({ en: 'Quarter', ko: '분기' }) },
+            { key: 'year', label: tr({ en: 'Year', ko: '연간' }) },
+          ]}
+          value={period}
+          onChange={setPeriod}
+        />
+
+        {/* 기간 요약 */}
         <View style={{ backgroundColor: c.accent, borderRadius: 16, padding: 14 }}>
-          <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>{tr({ en: 'All time', ko: '전체 활동' })}</Text>
+          <Text style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>{hub.tag}</Text>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 15, marginTop: 8 }}>
             <View>
               <Text style={{ fontSize: 28, fontWeight: '700', color: '#fff', letterSpacing: -0.5 }}>{hub.count}</Text>
@@ -115,11 +152,49 @@ export default function StatsScreen() {
               <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', marginTop: 3 }}>{tr({ en: 'Active days', ko: '활동일' })}</Text>
             </View>
             <View style={{ marginLeft: 'auto', alignItems: 'flex-end' }}>
-              <Text style={{ fontSize: 21, fontWeight: '700', color: '#fff' }}>🔥 {hub.streak}</Text>
-              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', marginTop: 3 }}>{tr({ en: 'Streak', ko: '연속 기록' })}</Text>
+              <Text style={{ fontSize: 21, fontWeight: '700', color: '#fff' }}>🔥{hub.streak}</Text>
+              <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', marginTop: 3 }}>{tr({ en: 'Streak', ko: '연속' })}</Text>
             </View>
           </View>
         </View>
+
+        {/* 회고 하이라이트 — 자격 있는 후보 전부를 좌우 스크롤 배너로. 없으면 미표시. */}
+        {highlights.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            snapToInterval={288}
+            decelerationRate="fast"
+            contentContainerStyle={{ gap: 8, paddingHorizontal: 18 }}
+            style={{ marginHorizontal: -18 }}
+          >
+            {highlights.map((h, i) => (
+              <View
+                key={i}
+                style={{
+                  width: 280,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  backgroundColor: c.accentSoft,
+                  borderWidth: 1,
+                  borderColor: c.border,
+                  borderRadius: 14,
+                  paddingVertical: 12,
+                  paddingHorizontal: 13,
+                }}
+              >
+                <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
+                  <Text style={{ fontSize: 20 }}>{h.emoji}</Text>
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '700', color: c.text }}>{h.title}</Text>
+                  <Text numberOfLines={1} style={{ fontSize: 11.5, color: c.text2, marginTop: 2 }}>{h.sub}</Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        ) : null}
 
         {/* 활동 캘린더 */}
         <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 13 }}>
@@ -151,9 +226,7 @@ export default function StatsScreen() {
           <View style={{ marginHorizontal: 2 }}>
             <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'By activity', ko: '활동별' })}</Text>
           </View>
-          {SECTIONS.map((sec) => {
-            const items = grouped[sec.template] ?? [];
-            if (items.length === 0) return null;
+          {sortedSections.map(({ sec, items }) => {
             const { color, soft } = colorsFor(sec.template, c);
             return (
               <View key={sec.template} style={{ gap: 8 }}>
@@ -169,14 +242,15 @@ export default function StatsScreen() {
                     return (
                       <View key={it.name} style={{ width: '31%' }}>
                         <Pressable
-                          onPress={() => nav.navigate('CategoryStats', { category: TEMPLATE_CATEGORY[sec.template], activity: it.name })}
-                          style={{ flex: 1, alignItems: 'center', gap: 5, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 4 }}
+                          onPress={() => nav.navigate('CategoryStats', { category: TEMPLATE_CATEGORY[sec.template], activity: it.name, period })}
+                          style={{ flex: 1, alignItems: 'center', gap: 4, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 4 }}
                         >
                           <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
                             <Ico size={17} color={color} />
                           </View>
                           <Text numberOfLines={1} style={{ fontSize: 11.5, fontWeight: '600', color: c.text }}>{activityLabel(it.name)}</Text>
                           <Text style={{ fontSize: 10, color: c.text3 }}>{tr({ en: `${it.count}×`, ko: `${it.count}회` })}</Text>
+                          <Text style={{ fontSize: 9.5, color: c.text3 }}>{agoLabel(it.lastISO)}</Text>
                         </Pressable>
                       </View>
                     );

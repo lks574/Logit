@@ -85,6 +85,90 @@ const parsePaceSec = (r: StoredRecord): number | null => {
 export const formatPace = (sec: number) => `${Math.floor(sec / 60)}′${String(Math.round(sec % 60)).padStart(2, '0')}″`;
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
+// 회고 하이라이트 — 앱의 회고 특색을 한 줄로. 자격 있는 후보를 모두 모아 배열로 반환
+// (통계에서 좌우 스크롤 배너로 표시). 후보가 없으면 빈 배열.
+type Highlight = { emoji: string; title: string; sub: string };
+export function retroHighlights(records: StoredRecord[], today: string): Highlight[] {
+  const cands: Highlight[] = [];
+
+  // 최다 관람 작품(2회 이상)
+  const topBy = (key: string, tpl: TemplateType) => {
+    const m = new Map<string, number>();
+    for (const r of records) {
+      if (r.template !== tpl) continue;
+      const v = r.fields?.[key];
+      if (v) m.set(v, (m.get(v) ?? 0) + 1);
+    }
+    let best = '';
+    let bestN = 0;
+    for (const [v, n] of m) if (n > bestN) ((best = v), (bestN = n));
+    return { best, bestN };
+  };
+  const work = topBy('작품', 'spectate');
+  if (work.bestN >= 2) {
+    cands.push({
+      emoji: '🎭',
+      title: tr({ en: `${work.bestN} views of ${work.best}`, ko: `〈${work.best}〉 ${work.bestN}번째 관람` }),
+      sub: tr({ en: 'A favorite worth revisiting', ko: '다시 찾은 최애 작품' }),
+    });
+  }
+
+  // 최다 관람 배우(2회 이상)
+  const actorCounts = new Map<string, number>();
+  for (const r of records) {
+    if (r.template !== 'spectate') continue;
+    const cast = r.fields?.출연진;
+    if (!cast) continue;
+    for (const entry of cast.split(/\s·\s|,/)) {
+      const parts = entry.trim().split('·');
+      const actor = parts[parts.length - 1].trim();
+      if (actor) actorCounts.set(actor, (actorCounts.get(actor) ?? 0) + 1);
+    }
+  }
+  let topActor = '';
+  let topActorN = 0;
+  for (const [a, n] of actorCounts) if (n > topActorN) ((topActor = a), (topActorN = n));
+  if (topActorN >= 2) {
+    cands.push({
+      emoji: '⭐',
+      title: tr({ en: `Saw ${topActor} ${topActorN} times`, ko: `${topActor} ${topActorN}번 관람` }),
+      sub: tr({ en: 'Your most-watched performer', ko: '가장 많이 본 배우' }),
+    });
+  }
+
+  // 이번 달 최장 거리
+  const ym = today.slice(0, 7);
+  const maxKm = Math.round(Math.max(0, ...records.filter((r) => r.template === 'endurance' && r.dateISO.startsWith(ym)).map(parseKm)) * 10) / 10;
+  if (maxKm > 0) {
+    cands.push({
+      emoji: '🏃',
+      title: tr({ en: `${maxKm}km — longest this month`, ko: `이번 달 최장 거리 ${maxKm}km` }),
+      sub: tr({ en: 'Your farthest run this month', ko: '이번 달 가장 멀리 달린 기록' }),
+    });
+  }
+
+  // 연속 기록(3일 이상)
+  const streak = countStreak(new Set(records.map((r) => r.dateISO)), today);
+  if (streak >= 3) {
+    cands.push({
+      emoji: '🔥',
+      title: tr({ en: `${streak}-day streak`, ko: `${streak}일 연속 기록` }),
+      sub: tr({ en: "Don't break the chain", ko: '흐름을 이어가 볼까요' }),
+    });
+  }
+
+  // 누적 기록 마일스톤(5개 이상) — 다른 후보가 없을 때의 기본값 역할도.
+  if (records.length >= 5) {
+    cands.push({
+      emoji: '📈',
+      title: tr({ en: `${records.length} records so far`, ko: `지금까지 ${records.length}개 기록` }),
+      sub: tr({ en: 'Every log adds up', ko: '차곡차곡 쌓이는 중' }),
+    });
+  }
+
+  return cands;
+}
+
 // ==== 통계 개편 (허브 + 카테고리 세부) ====
 
 export type StatsPeriod = 'month' | 'quarter' | 'year' | 'all';
@@ -97,27 +181,9 @@ const CATEGORY_TEMPLATE: Record<StatsCategory, TemplateType> = {
   outing: 'outing',
   free: 'free',
 };
-// 허브 표시 순서.
-export const STATS_CATEGORIES: StatsCategory[] = ['cardio', 'strength', 'match', 'performance', 'outing', 'free'];
-
 // 캠핑 등 기간 기록의 박 수(dateISO ~ fields.마지막일).
-const nightsOf = (r: StoredRecord) => {
-  const end = r.fields?.마지막일;
-  if (!end) return 0;
-  const s = Date.parse(r.dateISO + 'T00:00:00Z');
-  const e = Date.parse(end + 'T00:00:00Z');
-  if (Number.isNaN(s) || Number.isNaN(e)) return 0;
-  return Math.max(0, Math.round((e - s) / 86400000));
-};
-
 const isoPlusDays = (fromISO: string, i: number) => isoMinusDays(fromISO, -i);
 const parseVolumeKg = (s?: string) => (s ? parseFloat(s.replace(/[^0-9.]/g, '')) || 0 : 0); // "4,250kg" → 4250
-const parseDurSec = (s?: string) => {
-  if (!s) return 0;
-  const parts = s.split(':').map((x) => parseInt(x, 10));
-  if (parts.some((n) => Number.isNaN(n))) return 0;
-  return parts.reduce((a, p) => a * 60 + p, 0); // "27:12"→1632, "1:01:35"→3695
-};
 
 // 기간 범위 + 라벨. month=이번 달, quarter=이번 분기, year=올해.
 export function periodRange(period: StatsPeriod, today: string): { start: string; end: string; tag: string } {
@@ -152,24 +218,7 @@ function heatmapCells(records: StoredRecord[], today: string) {
   return cells;
 }
 
-// 카테고리 최근 5개월 월별 건수(스파크라인/막대용).
-function monthlyCounts(recs: StoredRecord[], today: string, valueOf?: (r: StoredRecord) => number) {
-  const ty = +today.slice(0, 4);
-  const tm = +today.slice(5, 7);
-  const out: { month: number; value: number; active: boolean }[] = [];
-  for (let k = 4; k >= 0; k--) {
-    const m0 = tm - 1 - k;
-    const y = ty + Math.floor(m0 / 12);
-    const m = ((m0 % 12) + 12) % 12 + 1;
-    const prefix = `${y}-${String(m).padStart(2, '0')}`;
-    const inMonth = recs.filter((r) => r.dateISO.startsWith(prefix));
-    const value = valueOf ? inMonth.reduce((a, r) => a + valueOf(r), 0) : inMonth.length;
-    out.push({ month: m, value: Math.round(value * 10) / 10, active: y === ty && m === tm });
-  }
-  return out;
-}
-
-// 허브: 기간 요약 + 히트맵 + 카테고리 리스트.
+// 허브: 기간 요약 + 히트맵.
 export function statsHub(records: StoredRecord[], period: StatsPeriod, today: string) {
   const { start, end, tag } = periodRange(period, today);
   const inRange = records.filter((r) => r.dateISO >= start && r.dateISO <= end);
@@ -177,184 +226,7 @@ export function statsHub(records: StoredRecord[], period: StatsPeriod, today: st
   const activeDays = new Set(inRange.map((r) => r.dateISO)).size;
   const streak = countStreak(new Set(records.map((r) => r.dateISO)), today);
 
-  const cats = STATS_CATEGORIES.map((key) => {
-    const tpl = CATEGORY_TEMPLATE[key];
-    const rs = inRange.filter((r) => r.template === tpl);
-    let subtitle: string;
-    if (key === 'cardio') {
-      const km = Math.round(rs.reduce((a, r) => a + parseKm(r), 0) * 10) / 10;
-      subtitle = tr({ en: `${rs.length}× · ${km}km`, ko: `${rs.length}회 · ${km}km` });
-    } else if (key === 'strength') {
-      const t = Math.round((rs.reduce((a, r) => a + parseVolumeKg(r.fields?.총볼륨), 0) / 1000) * 10) / 10;
-      subtitle = tr({ en: `${rs.length}× · ${t}t`, ko: `${rs.length}회 · ${t}t` });
-    } else if (key === 'match') {
-      const rec = rs.filter((r) => r.fields?.결과).length;
-      const w = rs.filter((r) => r.fields?.결과 === '승').length;
-      subtitle =
-        rec > 0
-          ? tr({ en: `${rs.length}× · Win ${Math.round((w / rec) * 100)}%`, ko: `${rs.length}회 · 승률 ${Math.round((w / rec) * 100)}%` })
-          : tr({ en: `${rs.length}×`, ko: `${rs.length}회` });
-    } else if (key === 'performance') {
-      const rated = rs.map((r) => r.rating).filter((x): x is number => !!x);
-      const avgR = rated.length ? Math.round(avg(rated) * 10) / 10 : 0;
-      subtitle = tr({
-        en: `${rs.length}${avgR ? ` · ★ ${avgR}` : ''}`,
-        ko: `${rs.length}편${avgR ? ` · 평점 ${avgR}` : ''}`,
-      });
-    } else if (key === 'outing') {
-      const regionN = new Set(rs.map((r) => r.fields?.지역).filter(Boolean)).size;
-      subtitle = tr({
-        en: `${rs.length}×${regionN ? ` · ${regionN} regions` : ''}`,
-        ko: `${rs.length}회${regionN ? ` · ${regionN}개 지역` : ''}`,
-      });
-    } else {
-      const bookN = new Set(rs.filter((r) => r.activity === '독서').map((r) => r.fields?.제목).filter(Boolean)).size;
-      subtitle = tr({
-        en: `${rs.length}×${bookN ? ` · ${bookN} books` : ''}`,
-        ko: `${rs.length}회${bookN ? ` · 책 ${bookN}권` : ''}`,
-      });
-    }
-    const spark = monthlyCounts(records.filter((r) => r.template === tpl), today).map((x) => x.value);
-    return { key, template: tpl, count: rs.length, subtitle, spark };
-  });
-
-  return { tag, count, activeDays, streak, heatmap: heatmapCells(records, today), cats };
-}
-
-// 카테고리 세부 통계. activity 주면 그 종목(장르/활동) 하나로 좁힌다.
-export function categoryStats(records: StoredRecord[], category: StatsCategory, period: StatsPeriod, today: string, activity?: string) {
-  const tpl = CATEGORY_TEMPLATE[category];
-  const { start, end } = periodRange(period, today);
-  let all = records.filter((r) => r.template === tpl);
-  if (activity) all = all.filter((r) => r.activity === activity);
-  const inRange = all.filter((r) => r.dateISO >= start && r.dateISO <= end);
-
-  if (category === 'cardio') {
-    const km = monthlyCounts(all, today, parseKm).map((x) => ({ month: x.month, km: x.value, active: x.active }));
-    const totalKm = Math.round(inRange.reduce((a, r) => a + parseKm(r), 0) * 10) / 10;
-    const paceSecs = inRange.map(parsePaceSec).filter((x): x is number => x != null);
-    const avgPaceSec = paceSecs.length ? Math.round(avg(paceSecs)) : null;
-    // 월별 평균 페이스(추이, 최근 5개월) — 값 없는 달은 null.
-    const ty = +today.slice(0, 4);
-    const tm = +today.slice(5, 7);
-    const paceLine: { month: number; sec: number | null }[] = [];
-    for (let k = 4; k >= 0; k--) {
-      const m0 = tm - 1 - k;
-      const y = ty + Math.floor(m0 / 12);
-      const m = ((m0 % 12) + 12) % 12 + 1;
-      const prefix = `${y}-${String(m).padStart(2, '0')}`;
-      const secs = all
-        .filter((r) => r.dateISO.startsWith(prefix))
-        .map(parsePaceSec)
-        .filter((x): x is number => x != null);
-      paceLine.push({ month: m, sec: secs.length ? Math.round(avg(secs)) : null });
-    }
-    const hr = inRange.map((r) => parseVolumeKg(r.fields?.평균심박)).filter((x) => x > 0);
-    const avgHr = hr.length ? Math.round(avg(hr)) : null;
-    const maxKm = Math.max(0, ...inRange.map(parseKm));
-    const totalSec = inRange.reduce((a, r) => a + parseDurSec(r.fields?.시간), 0);
-    return {
-      category,
-      count: inRange.length,
-      monthlyKm: km,
-      totalKm,
-      avgPace: avgPaceSec != null ? formatPace(avgPaceSec) : null,
-      avgHr,
-      maxKm: Math.round(maxKm * 10) / 10,
-      totalHours: Math.round(totalSec / 360) / 10, // 시간(소수1)
-      paceLine,
-    };
-  }
-
-  if (category === 'strength') {
-    const totalT = Math.round((inRange.reduce((a, r) => a + parseVolumeKg(r.fields?.총볼륨), 0) / 1000) * 10) / 10;
-    const workouts = inRange.length;
-    const partCounts = new Map<string, number>();
-    for (const r of inRange) {
-      const part = r.fields?.부위;
-      if (part) partCounts.set(part, (partCounts.get(part) ?? 0) + 1);
-    }
-    const maxPart = Math.max(1, ...partCounts.values());
-    const bodyParts = [...partCounts.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 6)
-      .map(([part, n]) => ({ part, count: n, pct: Math.round((n / maxPart) * 100) }));
-    return { category, count: workouts, totalT, workouts, bodyParts };
-  }
-
-  if (category === 'match') {
-    const wins = inRange.filter((r) => r.fields?.결과 === '승').length;
-    const draws = inRange.filter((r) => r.fields?.결과 === '무').length;
-    const losses = inRange.filter((r) => r.fields?.결과 === '패').length;
-    const resultRecorded = wins + draws + losses;
-    const winRate = resultRecorded ? Math.round((wins / resultRecorded) * 100) : 0;
-    const bySportMap = new Map<string, number>();
-    for (const r of inRange) bySportMap.set(r.activity, (bySportMap.get(r.activity) ?? 0) + 1);
-    const bySport = [...bySportMap.entries()].sort((a, b) => b[1] - a[1]).map(([activity, count]) => ({ activity, count }));
-    return { category, count: inRange.length, wins, draws, losses, resultRecorded, winRate, bySport };
-  }
-
-  if (category === 'outing') {
-    const totalNights = inRange.reduce((a, r) => a + nightsOf(r), 0);
-    const byActMap = new Map<string, number>();
-    const byRegionMap = new Map<string, number>();
-    for (const r of inRange) {
-      byActMap.set(r.activity, (byActMap.get(r.activity) ?? 0) + 1);
-      const region = r.fields?.지역?.trim();
-      if (region) byRegionMap.set(region, (byRegionMap.get(region) ?? 0) + 1);
-    }
-    const byActivity = [...byActMap.entries()].sort((a, b) => b[1] - a[1]).map(([activity, count]) => ({ activity, count }));
-    const byRegion = [...byRegionMap.entries()].sort((a, b) => b[1] - a[1]).map(([region, count]) => ({ region, count }));
-    return { category, count: inRange.length, totalNights, regionCount: byRegion.length, byRegion, byActivity };
-  }
-
-  if (category === 'free') {
-    const books = inRange.filter((r) => r.activity === '독서');
-    const bookCount = new Set(books.map((r) => r.fields?.제목).filter(Boolean)).size;
-    const byActMap = new Map<string, number>();
-    for (const r of inRange) byActMap.set(r.activity, (byActMap.get(r.activity) ?? 0) + 1);
-    const byActivity = [...byActMap.entries()].sort((a, b) => b[1] - a[1]).map(([activity, count]) => ({ activity, count }));
-    return { category, count: inRange.length, bookCount, byActivity };
-  }
-
-  // performance
-  const count = inRange.length;
-  const rated = inRange.map((r) => r.rating).filter((x): x is number => !!x);
-  const avgRating = rated.length ? Math.round(avg(rated) * 10) / 10 : null;
-  // 장르 분포 (activity별).
-  const genreCounts = new Map<string, number>();
-  for (const r of inRange) genreCounts.set(r.activity, (genreCounts.get(r.activity) ?? 0) + 1);
-  const genres = [...genreCounts.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([genre, n]) => ({ genre, count: n, pct: count ? Math.round((n / count) * 100) : 0 }));
-  // 최다 작품/배우/극장.
-  const top = (key: '작품' | '공연장') => {
-    const m = new Map<string, number>();
-    for (const r of inRange) {
-      const v = r.fields?.[key];
-      if (v) m.set(v, (m.get(v) ?? 0) + 1);
-    }
-    let best = '';
-    let bestN = 0;
-    for (const [v, n] of m) if (n > bestN) ((best = v), (bestN = n));
-    return { value: best, n: bestN };
-  };
-  const actorCounts = new Map<string, number>();
-  for (const r of inRange) {
-    const cast = r.fields?.출연진;
-    if (!cast) continue;
-    for (const entry of cast.split(/\s·\s|,/)) {
-      const parts = entry.trim().split('·');
-      const actor = parts[parts.length - 1].trim();
-      if (actor) actorCounts.set(actor, (actorCounts.get(actor) ?? 0) + 1);
-    }
-  }
-  let topActor = '';
-  let topActorN = 0;
-  for (const [a, n] of actorCounts) if (n > topActorN) ((topActor = a), (topActorN = n));
-  const topWork = top('작품');
-  const topVenue = top('공연장');
-  return { category, count, avgRating, genres, topWork, topActor, topVenue };
+  return { tag, count, activeDays, streak, heatmap: heatmapCells(records, today) };
 }
 
 // 단독 세부 화면의 "최신순 기록" 리스트. 기간·(옵션)종목으로 좁혀 날짜 내림차순.
@@ -472,15 +344,4 @@ export function subtypeSections(records: StoredRecord[], category: StatsCategory
     rank: null,
     cols: [{ title: tr({ en: 'Top weekday', ko: '요일 TOP' }), rows: weekdayCol() }],
   };
-}
-
-// 카테고리 세부 → "세부 종목" 리스트. 등록된 모든 종목(0건 포함)을 기간 내 횟수로.
-export function subtypesForCategory(records: StoredRecord[], category: StatsCategory, period: StatsPeriod, today: string) {
-  const tpl = CATEGORY_TEMPLATE[category];
-  const { start, end } = periodRange(period, today);
-  const inRange = records.filter((r) => r.template === tpl && r.dateISO >= start && r.dateISO <= end);
-  return Object.values(activities)
-    .filter((a) => a.template === tpl)
-    .map((a) => ({ activity: a.name, count: inRange.filter((r) => r.activity === a.name).length }))
-    .sort((a, b) => b.count - a.count);
 }
