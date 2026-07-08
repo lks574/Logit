@@ -19,7 +19,10 @@ import ActivitySelectScreen from '../screens/add/ActivitySelectScreen';
 import AddActivityScreen from '../screens/add/AddActivityScreen';
 import RecordFormScreen from '../screens/add/RecordFormScreen';
 import StatsScreen from '../screens/stats/StatsScreen';
+import MyScreen from '../screens/settings/MyScreen';
 import SettingsScreen from '../screens/settings/SettingsScreen';
+import FeedbackScreen from '../screens/settings/FeedbackScreen';
+import RoadmapScreen from '../screens/settings/RoadmapScreen';
 import ProfileEditScreen from '../screens/settings/ProfileEditScreen';
 import DetailScreen from '../screens/shared/DetailScreen';
 import CategoryStatsScreen from '../screens/stats/CategoryStatsScreen';
@@ -34,7 +37,7 @@ function MainTabs() {
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Calendar" component={CalendarScreen} />
       <Tab.Screen name="Stats" component={StatsScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="My" component={MyScreen} />
     </Tab.Navigator>
   );
 }
@@ -55,6 +58,9 @@ function AppStack() {
       <Stack.Screen name="Detail" component={DetailScreen} />
       <Stack.Screen name="CategoryStats" component={CategoryStatsScreen} />
       <Stack.Screen name="Plans" component={PlansScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="Feedback" component={FeedbackScreen} />
+      <Stack.Screen name="Roadmap" component={RoadmapScreen} />
     </Stack.Navigator>
   );
 }

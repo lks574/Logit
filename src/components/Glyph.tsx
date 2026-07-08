@@ -114,6 +114,18 @@ export const Icon = {
       <Path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z" />
     </Glyph>
   ),
+  user: (p: IconProps) => (
+    <Glyph {...p}>
+      <Circle cx="12" cy="8" r="4" />
+      <Path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" />
+    </Glyph>
+  ),
+  mail: (p: IconProps) => (
+    <Glyph {...p}>
+      <Rect x="3" y="5" width="18" height="14" rx="2.5" />
+      <Path d="M4 7l8 6 8-6" />
+    </Glyph>
+  ),
   trash: (p: IconProps) => (
     <Glyph {...p}>
       <Path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" />

@@ -14,7 +14,7 @@ const TABS: { key: string; label: Msg; icon: IconName }[] = [
   { key: 'Home', label: { en: 'Home', ko: '홈' }, icon: 'home' },
   { key: 'Calendar', label: { en: 'Calendar', ko: '캘린더' }, icon: 'calendar' },
   { key: 'Stats', label: { en: 'Stats', ko: '통계' }, icon: 'chart' },
-  { key: 'Settings', label: { en: 'Settings', ko: '설정' }, icon: 'settings' },
+  { key: 'My', label: { en: 'My', ko: '마이' }, icon: 'user' },
 ];
 
 export function BottomTabBar({ state, navigation }: BottomTabBarProps) {

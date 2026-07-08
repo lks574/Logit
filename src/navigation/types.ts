@@ -13,6 +13,9 @@ export type RootStackParamList = {
   AddActivity: undefined;
   Plans: undefined;
   ProfileEdit: undefined;
+  Settings: undefined;
+  Feedback: undefined;
+  Roadmap: undefined;
 };
 
 export type AuthStackParamList = {
@@ -26,5 +29,5 @@ export type TabParamList = {
   Home: undefined;
   Calendar: { dateISO?: string } | undefined;
   Stats: undefined;
-  Settings: undefined;
+  My: undefined;
 };
