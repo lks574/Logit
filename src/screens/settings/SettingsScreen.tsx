@@ -6,6 +6,7 @@ import { Glyph, Path, Circle, Icon } from '../../components/Glyph';
 import { Segmented } from '../../components/controls';
 import { SettingsRow } from '../../components/Field';
 import { ActionSheet } from '../../components/ActionSheet';
+import { LegalModal } from '../../components/LegalModal';
 import { useStore } from '../../store/StoreContext';
 import { useAuth } from '../../auth/AuthContext';
 import { exportData, importData } from '../../lib/dataTransfer';
@@ -35,6 +36,7 @@ export default function SettingsScreen() {
   const { user, logout } = useAuth();
   const initial = (profile.name.trim()[0] ?? '?').toUpperCase();
   const [sheet, setSheet] = React.useState<SheetState>({ kind: 'none' });
+  const [legal, setLegal] = React.useState(false);
 
   const errMessage = (e: unknown) =>
     e instanceof Error ? e.message : tr({ en: 'An unknown error occurred.', ko: '알 수 없는 오류가 발생했습니다.' });
@@ -379,6 +381,16 @@ export default function SettingsScreen() {
                 onChange={setLangMode}
               />
             </ControlRow>
+            <Divider />
+            <SettingsRow
+              icon={
+                <Glyph size={18} color={c.text2} strokeWidth={1.8}>
+                  <Path d="M9 12h6M9 16h6M9 8h3M6 3h9l3 3v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+                </Glyph>
+              }
+              label={tr({ en: 'Terms & Privacy', ko: '약관 및 개인정보' })}
+              onPress={() => setLegal(true)}
+            />
           </Card>
         </View>
 
@@ -429,6 +441,7 @@ export default function SettingsScreen() {
         cancelLabel={sheetView.cancelLabel}
         onCancel={() => setSheet({ kind: 'none' })}
       />
+      <LegalModal visible={legal} onClose={() => setLegal(false)} />
     </Screen>
   );
 }

@@ -8,6 +8,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { authErrorMessage } from '../../auth/errors';
 import { useTheme } from '../../theme/ThemeContext';
 import { tr } from '../../i18n/i18n';
+import { LegalModal } from '../../components/LegalModal';
 
 const PW_OK = (pw: string) => pw.length >= 8 && /[A-Za-z]/.test(pw) && /[0-9]/.test(pw);
 const EMAIL_OK = (e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e.trim());
@@ -21,6 +22,7 @@ export default function SignUpScreen() {
   const [email, setEmail] = React.useState('');
   const [password, setPassword] = React.useState('');
   const [agreed, setAgreed] = React.useState(false);
+  const [legal, setLegal] = React.useState(false);
   const [error, setError] = React.useState<string>();
   const [loading, setLoading] = React.useState(false);
 
@@ -106,12 +108,14 @@ export default function SignUpScreen() {
           </View>
           <Text style={{ flex: 1, fontSize: 12.5, color: c.text2, lineHeight: 19 }}>
             {tr({ en: 'I agree to the ', ko: '' })}
-            <Text style={{ color: c.text, fontWeight: '600' }}>{tr({ en: 'Terms of Service', ko: '이용약관' })}</Text>
+            <Text style={{ color: c.accent, fontWeight: '600', textDecorationLine: 'underline' }} onPress={() => setLegal(true)}>{tr({ en: 'Terms of Service', ko: '이용약관' })}</Text>
             {tr({ en: ' and ', ko: ' 및 ' })}
-            <Text style={{ color: c.text, fontWeight: '600' }}>{tr({ en: 'Privacy Policy', ko: '개인정보 처리방침' })}</Text>
+            <Text style={{ color: c.accent, fontWeight: '600', textDecorationLine: 'underline' }} onPress={() => setLegal(true)}>{tr({ en: 'Privacy Policy', ko: '개인정보 처리방침' })}</Text>
             {tr({ en: '.', ko: '에 동의합니다.' })}
           </Text>
         </Pressable>
+
+        <LegalModal visible={legal} onClose={() => setLegal(false)} />
 
         {error ? <Text style={{ fontSize: 12, color: c.error }}>{error}</Text> : null}
 
