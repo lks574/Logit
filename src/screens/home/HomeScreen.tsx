@@ -202,7 +202,15 @@ export default function HomeScreen() {
               }}
             >
               {upcoming.map((p, i) => (
-                <PlanRow key={p.id} plan={p} today={today} c={c} first={i === 0} showDivider={i > 0} />
+                <PlanRow
+                  key={p.id}
+                  plan={p}
+                  today={today}
+                  c={c}
+                  first={i === 0}
+                  showDivider={i > 0}
+                  onConvert={() => nav.navigate('RecordForm', { activity: p.activity, template: p.template, planId: p.id })}
+                />
               ))}
             </Pressable>
           </>
@@ -336,12 +344,14 @@ function PlanRow({
   c,
   first,
   showDivider,
+  onConvert,
 }: {
   plan: StoredPlan;
   today: string;
   c: ReturnType<typeof useTheme>['c'];
   first: boolean;
   showDivider: boolean;
+  onConvert: () => void;
 }) {
   const act = activities[plan.activity];
   const colors = colorsFor(act?.template ?? plan.template, c);
@@ -390,6 +400,16 @@ function PlanRow({
             <Text style={{ fontSize: 10, fontWeight: '700', color: c.team }}>D-{d}</Text>
           </View>
         )}
+        {/* 기록으로 전환 — 기록 추가 화면을 약속 데이터로 프리필해 띄운다 */}
+        <Pressable
+          onPress={onConvert}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={tr({ en: `Convert ${activityLabel(plan.activity)} to record`, ko: `${activityLabel(plan.activity)} 기록으로 전환` })}
+          style={{ width: 30, height: 30, borderRadius: 15, borderWidth: 1.5, borderColor: c.accent, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Icon.check size={15} color={c.accent} strokeWidth={2.6} />
+        </Pressable>
       </View>
     </>
   );

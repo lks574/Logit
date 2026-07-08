@@ -10,6 +10,7 @@ import { Screen } from '../../../components/primitives';
 import { activities, colorsFor } from '../../../data/activities';
 import { useStore } from '../../../store/StoreContext';
 import { resetToHome } from '../../../navigation/nav';
+import { runningCalories } from '../../../lib/calories';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
@@ -28,20 +29,20 @@ const MOODS = [
   { emoji: '😄', label: '최고', name: { en: 'Great', ko: '최고' } },
 ];
 
-export default function EnduranceForm({ activity, recordId }: { activity: string; recordId?: string }) {
+export default function EnduranceForm({ activity, recordId, plan }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord, records } = useStore();
+  const { addRecord, updateRecord, getRecord, records, completePlan, profile } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
-  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? nowDateISO());
-  const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? nowTimeLabel());
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? nowDateISO());
+  const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? plan?.timeLabel ?? nowTimeLabel());
   const [open, setOpen] = React.useState(editing); // 세부 입력 disclosure (open when editing)
   const [rating, setRating] = React.useState(record?.rating ?? 0);
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
-  const [memo, setMemo] = React.useState(record?.memo ?? '');
-  const [place, setPlace] = React.useState(record?.fields?.장소 ?? '');
+  const [memo, setMemo] = React.useState(record?.memo ?? plan?.memo ?? '');
+  const [place, setPlace] = React.useState(record?.fields?.장소 ?? plan?.place ?? '');
   const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
   const [mood, setMood] = React.useState<number>(() => MOODS.findIndex((m) => m.label === record?.fields?.기분));
 
@@ -57,28 +58,28 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
   const [분, set분] = React.useState(t0.mm);
   const [초, set초] = React.useState(t0.ss);
   const [고도, set고도] = React.useState(stripUnit(record?.fields?.고도));
-  const [칼로리, set칼로리] = React.useState(stripUnit(record?.fields?.칼로리));
   const [평균심박, set평균심박] = React.useState(stripUnit(record?.fields?.평균심박));
 
   // 탭하면 포커스되도록 각 입력에 ref
   const 거리Ref = React.useRef<TextInput>(null);
   const 분Ref = React.useRef<TextInput>(null);
   const 고도Ref = React.useRef<TextInput>(null);
-  const 칼로리Ref = React.useRef<TextInput>(null);
   const 심박Ref = React.useRef<TextInput>(null);
   const placeRef = React.useRef<TextInput>(null);
   const memoRef = React.useRef<TextInput>(null);
 
-  // 평균 페이스 = 시간 ÷ 거리(km). 자동 모드일 때만 계산값으로 채운다.
+  // 평균 속도 = 거리(km) ÷ 시간(h) = km·3600/초. "1시간에 몇 km"를 km/h·소수 1자리로.
   const km = parseFloat((거리.match(/[\d.]+/) || ['0'])[0]) || 0;
   const totalSec = (parseInt(분 || '0', 10) || 0) * 60 + (parseInt(초 || '0', 10) || 0);
-  const autoPace =
-    km > 0 && totalSec > 0
-      ? (() => {
-          const spk = Math.round(totalSec / km);
-          return `${Math.floor(spk / 60)}:${String(spk % 60).padStart(2, '0')}`;
-        })()
-      : '';
+  const autoSpeed = km > 0 && totalSec > 0 ? ((km * 3600) / totalSec).toFixed(1) : '';
+
+  // 칼로리 자동 계산 — 런닝머신과 동일한 ACSM 방식(속도·경사·체중). 체중은 프로필에서.
+  const autoCal = runningCalories({
+    km,
+    totalSec,
+    elevationM: parseFloat(고도) || undefined,
+    weightKg: profile.weightKg,
+  });
 
   const template = activities[activity]?.template ?? 'endurance';
   const { color, soft } = colorsFor(template, c);
@@ -103,8 +104,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
     set분(t.mm);
     set초(t.ss);
     set고도(stripUnit(f.고도));
-    set칼로리(stripUnit(f.칼로리));
-    set평균심박(stripUnit(f.평균심박));
+    set평균심박(stripUnit(f.평균심박)); // 칼로리는 거리·시간·체중에서 자동 계산
     if (f.장소) setPlace(f.장소);
   };
 
@@ -124,9 +124,9 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
     const fieldEntries: [string, string][] = [
       ['거리', 거리],
       ['시간', 시간val],
-      ['페이스', autoPace],
+      ['속도', autoSpeed ? `${autoSpeed}km/h` : ''],
       ['고도', 고도 ? `${고도}m` : ''],
-      ['칼로리', 칼로리 ? `${칼로리}kcal` : ''],
+      ['칼로리', autoCal != null ? `${autoCal}kcal` : ''],
       ['평균심박', 평균심박 ? `${평균심박}bpm` : ''],
       ['장소', place],
       ['기분', mood >= 0 ? MOODS[mood].label : ''],
@@ -153,6 +153,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
       nav.goBack();
     } else {
       addRecord(payload);
+      if (plan) completePlan(plan.id); // 약속 → 기록 전환: 저장 시 약속 완료 처리
       resetToHome(nav);
     }
   };
@@ -273,7 +274,7 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
           </View>
         </View>
 
-        {/* 상세 수치 — 평균 페이스(자동)/고도/칼로리/평균 심박 (3.1) */}
+        {/* 상세 수치 — 평균 속도(자동)/고도/칼로리/평균 심박 (3.1) */}
         <View>
           <Text
             style={{
@@ -296,12 +297,12 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
             }}
           >
             <DetailRow>
-              <Text style={{ fontSize: 14, color: c.text }}>{tr({ en: 'Avg pace', ko: '평균 페이스' })}</Text>
+              <Text style={{ fontSize: 14, color: c.text }}>{tr({ en: 'Avg speed', ko: '평균 속도' })}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: autoPace ? c.text : c.text3, textAlign: 'right', minWidth: 52 }}>
-                  {autoPace || tr({ en: 'Auto', ko: '자동' })}
+                <Text style={{ fontSize: 15, fontWeight: '600', color: autoSpeed ? c.text : c.text3, textAlign: 'right', minWidth: 52 }}>
+                  {autoSpeed || tr({ en: 'Auto', ko: '자동' })}
                 </Text>
-                <Text style={{ fontSize: 13, color: c.text3 }}>/km</Text>
+                <Text style={{ fontSize: 13, color: c.text3 }}>km/h</Text>
                 <View style={{ backgroundColor: soft, borderRadius: 5, paddingVertical: 2, paddingHorizontal: 6 }}>
                   <Text style={{ fontSize: 10, fontWeight: '600', color }}>{tr({ en: 'Auto', ko: '자동' })}</Text>
                 </View>
@@ -324,20 +325,24 @@ export default function EnduranceForm({ activity, recordId }: { activity: string
               </View>
             </DetailRow>
             <View style={{ height: 1, backgroundColor: c.border }} />
-            <DetailRow onPress={() => 칼로리Ref.current?.focus()}>
+            <DetailRow onPress={profile.weightKg ? undefined : () => nav.navigate('ProfileEdit')}>
               <Text style={{ fontSize: 14, color: c.text }}>{tr({ en: 'Calories', ko: '칼로리' })}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <TextInput
-                  ref={칼로리Ref}
-                  value={칼로리}
-                  onChangeText={(v) => set칼로리(v.replace(/[^\d.]/g, ''))}
-                  keyboardType="numeric"
-                  placeholder="328"
-                  placeholderTextColor={c.text3}
-                  style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 44 }}
-                />
-                <Text style={{ fontSize: 13, color: c.text3 }}>kcal</Text>
-              </View>
+              {profile.weightKg ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: autoCal != null ? c.text : c.text3, textAlign: 'right', minWidth: 44 }}>
+                    {autoCal != null ? autoCal : tr({ en: 'Auto', ko: '자동' })}
+                  </Text>
+                  <Text style={{ fontSize: 13, color: c.text3 }}>kcal</Text>
+                  <View style={{ backgroundColor: soft, borderRadius: 5, paddingVertical: 2, paddingHorizontal: 6 }}>
+                    <Text style={{ fontSize: 10, fontWeight: '600', color }}>{tr({ en: 'Auto', ko: '자동' })}</Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={{ fontSize: 12, color: c.accent, fontWeight: '600' }}>{tr({ en: 'Set weight', ko: '체중 입력' })}</Text>
+                  <Icon.chevronRight size={14} color={c.accent} strokeWidth={2.2} />
+                </View>
+              )}
             </DetailRow>
             <View style={{ height: 1, backgroundColor: c.border }} />
             <DetailRow onPress={() => 심박Ref.current?.focus()}>

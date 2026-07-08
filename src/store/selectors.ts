@@ -74,15 +74,13 @@ function countStreak(days: Set<string>, today: string): number {
 }
 
 const parseKm = (r: StoredRecord) => parseFloat(r.fields?.거리 ?? '') || 0;
-// "5′14″" → seconds. Tolerates ' and " variants.
-const parsePaceSec = (r: StoredRecord): number | null => {
-  const p = r.fields?.페이스;
-  if (!p) return null;
-  const m = p.match(/(\d+)\D+(\d+)/);
-  if (!m) return null;
-  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+// "11.5km/h" → km/h(number). 숫자 부분만 파싱.
+const parseSpeed = (r: StoredRecord): number | null => {
+  const s = r.fields?.속도;
+  if (!s) return null;
+  const m = s.match(/[\d.]+/);
+  return m ? parseFloat(m[0]) : null;
 };
-export const formatPace = (sec: number) => `${Math.floor(sec / 60)}′${String(Math.round(sec % 60)).padStart(2, '0')}″`;
 const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
 
 // 회고 하이라이트 — 앱의 회고 특색을 한 줄로. 자격 있는 후보를 모두 모아 배열로 반환
@@ -305,12 +303,12 @@ export function subtypeSections(records: StoredRecord[], category: StatsCategory
   }
   if (category === 'cardio') {
     const totalKm = Math.round(rs.reduce((a, r) => a + parseKm(r), 0) * 10) / 10;
-    const paceSecs = rs.map(parsePaceSec).filter((x): x is number => x != null);
+    const speeds = rs.map(parseSpeed).filter((x): x is number => x != null);
     return {
       summary: [
         { label: tr({ en: 'Count', ko: '횟수' }), value: String(rs.length), unit: tr({ en: '×', ko: '회' }) },
         { label: tr({ en: 'Distance', ko: '거리' }), value: String(totalKm), unit: 'km' },
-        { label: tr({ en: 'Avg pace', ko: '평균 페이스' }), value: paceSecs.length ? formatPace(Math.round(avg(paceSecs))) : '—' },
+        { label: tr({ en: 'Avg speed', ko: '평균 속도' }), value: speeds.length ? avg(speeds).toFixed(1) : '—', unit: speeds.length ? 'km/h' : undefined },
       ],
       rank: { title: tr({ en: 'By course', ko: '코스별' }), rows: rankBy((r) => r.fields?.장소) },
       cols: [{ title: tr({ en: 'Top weekday', ko: '요일 TOP' }), rows: weekdayCol() }],

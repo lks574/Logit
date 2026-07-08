@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useMemo, useRef, useState 
 import { seed } from './seed';
 import { deletePhoto } from '../lib/photos';
 import { nowDateISO } from '../lib/date';
+import { syncPlanReminder, cancelPlanReminder } from '../lib/notifications';
 import { CustomActivity, Profile, StoredPlan, StoredRecord, StoreState } from './types';
 
 // Offline-first store: single source of truth in memory, persisted to
@@ -35,7 +36,6 @@ type StoreValue = {
   addPlan: (p: Omit<StoredPlan, 'id'>) => StoredPlan;
   addActivity: (a: CustomActivity) => void;
   completePlan: (id: string) => void;
-  completePlanAsRecord: (id: string) => StoredRecord | null;
   updateRecord: (id: string, patch: Partial<Omit<StoredRecord, 'id'>>) => void;
   updatePlan: (id: string, patch: Partial<Omit<StoredPlan, 'id'>>) => void;
   deletePlan: (id: string) => void;
@@ -51,7 +51,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
   const [persistError, setPersistError] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const completing = useRef<Set<string>>(new Set()); // 약속→기록 전환 in-flight 가드(더블탭)
 
   // Rehydrate once.
   useEffect(() => {
@@ -136,6 +135,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       addPlan: (p) => {
         const plan: StoredPlan = { ...p, id: uid('p') };
         setState((s) => ({ ...s, plans: [...s.plans, plan] }));
+        void syncPlanReminder(plan); // 로컬 알림 예약(1시간 전). best-effort.
         return plan;
       },
       addActivity: (a) => {
@@ -147,33 +147,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       completePlan: (id) => {
         setState((s) => ({ ...s, plans: s.plans.map((p) => (p.id === id ? { ...p, done: true } : p)) }));
-      },
-      // 약속 → 기록 전환: 약속을 완료 처리하면서 그 정보로 새 Record를 생성한다.
-      // (README: "약속 카드의 체크 버튼 → 완료(기록으로 전환) 흐름") 세부 수치는
-      // 비어있는 채로 생성되고, 사용자가 상세에서 수정으로 채울 수 있다.
-      completePlanAsRecord: (id) => {
-        const plan = state.plans.find((p) => p.id === id);
-        // stale-closure state로 done을 검사하므로, 렌더 전 연타를 in-flight ref로 막는다.
-        if (!plan || plan.done || completing.current.has(id)) return null;
-        completing.current.add(id);
-        const rec: StoredRecord = {
-          id: uid('r'),
-          activity: plan.activity,
-          template: plan.template,
-          dateISO: plan.dateISO,
-          timeLabel: plan.timeLabel ?? '',
-          meta: plan.place || undefined,
-          memo: plan.memo,
-          photos: [],
-          sync: 'pending',
-        };
-        setState((s) => ({
-          ...s,
-          records: [rec, ...s.records],
-          plans: s.plans.map((p) => (p.id === id ? { ...p, done: true } : p)),
-        }));
-        markSynced(rec.id);
-        return rec;
+        void cancelPlanReminder(id); // 완료된 약속은 알림 취소
       },
       updateRecord: (id, patch) => {
         setState((s) => ({
@@ -186,9 +160,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           ...s,
           plans: s.plans.map((p) => (p.id === id ? { ...p, ...patch } : p)),
         }));
+        const prev = state.plans.find((p) => p.id === id);
+        if (prev) void syncPlanReminder({ ...prev, ...patch }); // 날짜·시간·알림 변경 시 재예약/취소
       },
       deletePlan: (id) => {
         setState((s) => ({ ...s, plans: s.plans.filter((p) => p.id !== id) }));
+        void cancelPlanReminder(id);
       },
       deleteRecord: (id) => {
         // 이 레코드가 소유한 사진 파일 정리(고아 파일 방지). best-effort.

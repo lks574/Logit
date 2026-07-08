@@ -50,20 +50,20 @@ function DateBox({ label, iso, active, onPress, c }: { label: string; iso: strin
   );
 }
 
-export default function CampingForm({ activity, recordId }: { activity: string; recordId?: string }) {
+export default function CampingForm({ activity, recordId, plan }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord, records } = useStore();
+  const { addRecord, updateRecord, getRecord, records, completePlan } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
-  const [startISO, setStartISO] = React.useState(record?.dateISO ?? nowDateISO());
-  const [endISO, setEndISO] = React.useState(record?.fields?.마지막일 ?? record?.dateISO ?? nowDateISO());
+  const [startISO, setStartISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? nowDateISO());
+  const [endISO, setEndISO] = React.useState(record?.fields?.마지막일 ?? record?.dateISO ?? plan?.dateISO ?? nowDateISO());
   const [region, setRegion] = React.useState(record?.fields?.지역 ?? '');
-  const [camp, setCamp] = React.useState(record?.fields?.장소 ?? '');
+  const [camp, setCamp] = React.useState(record?.fields?.장소 ?? plan?.place ?? '');
   const [tags, setTags] = React.useState(record?.fields?.분류 ?? '');
   const [rating, setRating] = React.useState(record?.rating ?? 0);
-  const [memo, setMemo] = React.useState(record?.memo ?? '');
+  const [memo, setMemo] = React.useState(record?.memo ?? plan?.memo ?? '');
   const [picking, setPicking] = React.useState<'start' | 'end' | null>(null);
 
   // 재방문 힌트 — 같은 장소(캠핑장/맛집/방문지)를 전에 기록했는지(자기 자신 제외).
@@ -119,6 +119,7 @@ export default function CampingForm({ activity, recordId }: { activity: string; 
       nav.goBack();
     } else {
       addRecord(payload);
+      if (plan) completePlan(plan.id); // 약속 → 기록 전환: 저장 시 약속 완료 처리
       resetToHome(nav);
     }
   };

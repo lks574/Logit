@@ -19,7 +19,7 @@ type TemplateDef = {
 
 // The 5 record templates (6.1 활동 직접 추가). name / example sports / icon per prompt.
 const TEMPLATES: TemplateDef[] = [
-  { id: 'endurance', name: { en: 'Distance · Time', ko: '거리·시간형' }, example: { en: 'Distance · Time · Pace', ko: '거리 · 시간 · 페이스' }, icon: Icon.running },
+  { id: 'endurance', name: { en: 'Distance · Time', ko: '거리·시간형' }, example: { en: 'Distance · Time · Speed', ko: '거리 · 시간 · 속도' }, icon: Icon.running },
   { id: 'setrep', name: { en: 'Sets · Reps', ko: '세트·횟수형' }, example: { en: 'Exercise · Sets · Reps · Level', ko: '종목 · 세트 · 반복 · 난이도' }, icon: Icon.dumbbell },
   { id: 'match', name: { en: 'Match', ko: '대전·경기형' }, example: { en: 'Opponent · Score · Result', ko: '상대 · 스코어 · 승패' }, icon: Icon.soccer },
   { id: 'spectate', name: { en: 'Performance', ko: '관람·공연형' }, example: { en: 'Venue · Seat · Rating', ko: '장소 · 좌석 · 평점' }, icon: Icon.performance },

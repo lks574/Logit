@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { Glyph, Path } from './Glyph';
+import { useHoldRepeat } from './controls';
 import { tr } from '../i18n/i18n';
 
 // 별 하나를 fill(0..1)만큼 채워 그린다: 빈 별 위에 채운 별을 width로 클립.
@@ -47,6 +48,9 @@ export function RatingInput({
 }) {
   const { c } = useTheme();
   const [w, setW] = React.useState(0);
+  // ± 버튼: 단순 탭=0.1, 롱프레스=연속 변경.
+  const dec = useHoldRepeat(() => onChange(clampRating(value - 0.1)));
+  const inc = useHoldRepeat(() => onChange(clampRating(value + 0.1)));
   // 드래그/탭 x좌표 → 평점. 전체 폭(별+간격)을 0~5로 매핑.
   const fromX = (x: number) => {
     if (w <= 0) return value;
@@ -73,7 +77,7 @@ export function RatingInput({
       {/* 현재 평점 좌우 ±0.1 (드래그가 잘 안 될 때 대비) */}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
         <Pressable
-          onPress={() => onChange(clampRating(value - 0.1))}
+          {...dec}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={tr({ en: 'Decrease 0.1', ko: '0.1 낮추기' })}
@@ -85,7 +89,7 @@ export function RatingInput({
           {value.toFixed(1)}
         </Text>
         <Pressable
-          onPress={() => onChange(clampRating(value + 0.1))}
+          {...inc}
           hitSlop={8}
           accessibilityRole="button"
           accessibilityLabel={tr({ en: 'Increase 0.1', ko: '0.1 높이기' })}

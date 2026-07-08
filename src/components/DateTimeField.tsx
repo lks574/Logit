@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Glyph, Path, Rect, Circle } from './Glyph';
-import { Segmented } from './controls';
+import { Segmented, Wheel } from './controls';
 import { MiniMonthPicker } from './MiniMonthPicker';
 import { useTheme } from '../theme/ThemeContext';
 import { tr } from '../i18n/i18n';
@@ -59,17 +59,6 @@ export function DateTimeField({
     paddingHorizontal: 13,
   };
 
-  const Wheel = ({ value, onDec, onInc }: { value: string; onDec: () => void; onInc: () => void }) => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <Pressable onPress={onDec} style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: 16, color: c.text2 }}>−</Text>
-      </Pressable>
-      <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, minWidth: 40, textAlign: 'center' }}>{value}</Text>
-      <Pressable onPress={onInc} style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: 15, color: c.text2 }}>＋</Text>
-      </Pressable>
-    </View>
-  );
 
   return (
     <View style={{ gap: 8 }}>
@@ -129,7 +118,7 @@ export function DateTimeField({
           />
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' }}>
             <Wheel value={tr({ en: `${h12} h`, ko: `${h12}시` })} onDec={() => setTime({ h12: h12 === 1 ? 12 : h12 - 1 })} onInc={() => setTime({ h12: h12 === 12 ? 1 : h12 + 1 })} />
-            <Wheel value={tr({ en: `${String(minute).padStart(2, '0')} m`, ko: `${String(minute).padStart(2, '0')}분` })} onDec={() => setTime({ minute: (minute + 55) % 60 })} onInc={() => setTime({ minute: (minute + 5) % 60 })} />
+            <Wheel value={tr({ en: `${String(minute).padStart(2, '0')} m`, ko: `${String(minute).padStart(2, '0')}분` })} onDec={() => setTime({ minute: (minute + 59) % 60 })} onInc={() => setTime({ minute: (minute + 1) % 60 })} />
           </View>
         </View>
       ) : null}

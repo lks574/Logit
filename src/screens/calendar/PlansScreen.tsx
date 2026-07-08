@@ -23,6 +23,9 @@ export default function PlansScreen() {
   const { today, plans } = useStore();
   const [seg, setSeg] = React.useState<Seg>('upcoming');
 
+  // 약속 → 기록 전환: 기록 추가 화면을 약속 데이터로 프리필해 띄운다(저장 시 기록 생성 + 약속 완료).
+  const convertToRecord = (p: StoredPlan) => nav.navigate('RecordForm', { activity: p.activity, template: p.template, planId: p.id });
+
   const up = upcomingPlans(plans, today); // undone, future, asc
   const past = plans
     .filter((p) => p.done || dday(p.dateISO, today) < 0)
@@ -55,9 +58,9 @@ export default function PlansScreen() {
     const d = dday(p.dateISO, today);
     const meta = [dateLabel(p.dateISO), displayTimeLabel(p.timeLabel), p.place].filter(Boolean).join(' · ');
     return (
-      <Pressable
-        onPress={() => nav.navigate('AddPlan', { planId: p.id })}
-        style={({ pressed }) => ({
+      // 카드 열기(수정)와 기록 전환 체크를 형제 Pressable로 분리 (중첩 시 체크 탭이 부모로 먹힘).
+      <View
+        style={{
           flexDirection: 'row',
           alignItems: 'center',
           gap: 11,
@@ -67,27 +70,43 @@ export default function PlansScreen() {
           borderRadius: 14,
           paddingVertical: 11,
           paddingHorizontal: 13,
-          opacity: pressed ? 0.9 : 1,
-        })}
+        }}
       >
-        <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
-          <IconCmp size={19} color={color} />
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{activityLabel(p.activity)}</Text>
-            {p.memo ? <Text numberOfLines={1} style={{ fontSize: 10, color: c.text3, flexShrink: 1 }}>· {p.memo}</Text> : null}
+        <Pressable
+          onPress={() => nav.navigate('AddPlan', { planId: p.id })}
+          style={({ pressed }) => ({ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 11, opacity: pressed ? 0.9 : 1 })}
+        >
+          <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
+            <IconCmp size={19} color={color} />
           </View>
-          <Text numberOfLines={1} style={{ fontSize: 11.5, color: c.text2, marginTop: 2 }}>{meta}</Text>
-        </View>
-        {p.done ? (
-          <Tag label={tr({ en: 'Done', ko: '완료' })} color={c.success} soft={withAlpha(c.success, 14)} />
-        ) : d < 0 ? (
-          <Tag label={tr({ en: 'Past', ko: '지남' })} color={c.text3} soft={c.surfaceAlt} />
-        ) : (
-          <DdayBadge days={d} color={color} />
-        )}
-      </Pressable>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{activityLabel(p.activity)}</Text>
+              {p.memo ? <Text numberOfLines={1} style={{ fontSize: 10, color: c.text3, flexShrink: 1 }}>· {p.memo}</Text> : null}
+            </View>
+            <Text numberOfLines={1} style={{ fontSize: 11.5, color: c.text2, marginTop: 2 }}>{meta}</Text>
+          </View>
+          {p.done ? (
+            <Tag label={tr({ en: 'Done', ko: '완료' })} color={c.success} soft={withAlpha(c.success, 14)} />
+          ) : d < 0 ? (
+            <Tag label={tr({ en: 'Past', ko: '지남' })} color={c.text3} soft={c.surfaceAlt} />
+          ) : (
+            <DdayBadge days={d} color={color} />
+          )}
+        </Pressable>
+        {/* 미완료 약속만 기록 전환 가능 */}
+        {!p.done ? (
+          <Pressable
+            onPress={() => convertToRecord(p)}
+            hitSlop={8}
+            accessibilityRole="button"
+            accessibilityLabel={tr({ en: `Convert ${activityLabel(p.activity)} to record`, ko: `${activityLabel(p.activity)} 기록으로 전환` })}
+            style={{ width: 32, height: 32, borderRadius: 16, borderWidth: 1.5, borderColor: c.accent, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Icon.check size={16} color={c.accent} strokeWidth={2.6} />
+          </Pressable>
+        ) : null}
+      </View>
     );
   };
 

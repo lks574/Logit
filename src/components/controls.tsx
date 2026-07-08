@@ -3,6 +3,59 @@ import { Pressable, Text, View } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { tr } from '../i18n/i18n';
 
+// useHoldRepeat — onPressIn 시 즉시 1회 실행, 계속 누르면 딜레이 후 반복.
+// 단순 탭 = 1스텝, 롱프레스 = 연속 변경. Pressable에 {...} 스프레드로 붙인다.
+// action은 매 렌더 최신값을 ref에 담아, 누르는 동안 갱신된 상태를 반영한다.
+export function useHoldRepeat(action: () => void, { delay = 400, interval = 70 } = {}) {
+  const to = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  const iv = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  const act = React.useRef(action);
+  act.current = action;
+  const stop = React.useCallback(() => {
+    if (to.current) clearTimeout(to.current);
+    if (iv.current) clearInterval(iv.current);
+    to.current = null;
+    iv.current = null;
+  }, []);
+  React.useEffect(() => stop, [stop]); // 언마운트 시 타이머 정리
+  const start = React.useCallback(() => {
+    act.current(); // 즉시 1회 (단순 탭 = 1)
+    to.current = setTimeout(() => {
+      iv.current = setInterval(() => act.current(), interval);
+    }, delay);
+  }, [delay, interval]);
+  return { onPressIn: start, onPressOut: stop };
+}
+
+// Wheel — −/value/＋ 스텝퍼. 단순 탭=1스텝, 롱프레스=연속 변경(useHoldRepeat).
+// top-level 컴포넌트라 부모 리렌더에도 리마운트되지 않아 롱프레스 타이머가 유지된다.
+export function Wheel({
+  value,
+  onDec,
+  onInc,
+  minWidth = 40,
+}: {
+  value: string;
+  onDec: () => void;
+  onInc: () => void;
+  minWidth?: number;
+}) {
+  const { c } = useTheme();
+  const dec = useHoldRepeat(onDec);
+  const inc = useHoldRepeat(onInc);
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      <Pressable {...dec} style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 16, color: c.text2 }}>−</Text>
+      </Pressable>
+      <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, minWidth, textAlign: 'center' }}>{value}</Text>
+      <Pressable {...inc} style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 15, color: c.text2 }}>＋</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 // Toggle — 44x26, on = accent. Gallery §07.
 export function Toggle({ value, onChange, color, label }: { value: boolean; onChange?: (v: boolean) => void; color?: string; label?: string }) {
   const { c } = useTheme();

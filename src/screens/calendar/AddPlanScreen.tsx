@@ -4,7 +4,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Screen } from '../../components/primitives';
 import { ScreenHeader } from '../../components/ScreenHeader';
 import { IconButton } from '../../components/Button';
-import { Toggle, Segmented } from '../../components/controls';
+import { Toggle, Segmented, Wheel } from '../../components/controls';
 import { Icon, Glyph, Path, Circle, Rect } from '../../components/Glyph';
 import { MiniMonthPicker } from '../../components/MiniMonthPicker';
 import { useTheme } from '../../theme/ThemeContext';
@@ -154,19 +154,6 @@ export default function AddPlanScreen() {
     );
   };
 
-  // Inline ± stepper (wraps).
-  const Wheel = ({ value, onDec, onInc }: { value: string; onDec: () => void; onInc: () => void }) => (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <Pressable onPress={onDec} style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: 16, color: c.text2 }}>−</Text>
-      </Pressable>
-      <Text style={{ fontSize: 15, fontWeight: '700', color: c.text, minWidth: 34, textAlign: 'center' }}>{value}</Text>
-      <Pressable onPress={onInc} style={{ width: 28, height: 28, borderRadius: 8, backgroundColor: c.surfaceAlt, alignItems: 'center', justifyContent: 'center' }}>
-        <Text style={{ fontSize: 15, color: c.text2 }}>＋</Text>
-      </Pressable>
-    </View>
-  );
-
   const fieldBox = {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
@@ -290,8 +277,8 @@ export default function AddPlanScreen() {
                 onChange={(v) => setAmpm(v as '오전' | '오후')}
               />
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around' }}>
-                <Wheel value={tr({ en: `${h12}h`, ko: `${h12}시` })} onDec={() => setH12((h) => (h === 1 ? 12 : h - 1))} onInc={() => setH12((h) => (h === 12 ? 1 : h + 1))} />
-                <Wheel value={tr({ en: `${String(minute).padStart(2, '0')}m`, ko: `${String(minute).padStart(2, '0')}분` })} onDec={() => setMinute((m) => (m + 55) % 60)} onInc={() => setMinute((m) => (m + 5) % 60)} />
+                <Wheel minWidth={34} value={tr({ en: `${h12}h`, ko: `${h12}시` })} onDec={() => setH12((h) => (h === 1 ? 12 : h - 1))} onInc={() => setH12((h) => (h === 12 ? 1 : h + 1))} />
+                <Wheel minWidth={34} value={tr({ en: `${String(minute).padStart(2, '0')}m`, ko: `${String(minute).padStart(2, '0')}분` })} onDec={() => setMinute((m) => (m + 59) % 60)} onInc={() => setMinute((m) => (m + 1) % 60)} />
               </View>
             </View>
           ) : null}

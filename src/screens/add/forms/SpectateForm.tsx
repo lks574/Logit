@@ -78,10 +78,10 @@ function InputCard({
   );
 }
 
-export default function SpectateForm({ activity, recordId }: { activity: string; recordId?: string }) {
+export default function SpectateForm({ activity, recordId, plan }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord, records } = useStore();
+  const { addRecord, updateRecord, getRecord, records, completePlan } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
@@ -102,10 +102,10 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
 
   // Prefill controlled state from the record when editing.
   // 날짜·시간: 편집이면 저장값, 신규면 현재 날짜/시각.
-  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? nowDateISO());
-  const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? nowTimeLabel());
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? nowDateISO());
+  const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? plan?.timeLabel ?? nowTimeLabel());
   const [title, setTitle] = React.useState(record?.fields?.작품 ?? '');
-  const [venue, setVenue] = React.useState(record?.fields?.공연장 ?? '');
+  const [venue, setVenue] = React.useState(record?.fields?.공연장 ?? plan?.place ?? '');
   const [seat, setSeat] = React.useState(record?.fields?.좌석 ?? '');
   const [round, setRound] = React.useState(() => {
     const raw = record?.fields?.회차;
@@ -120,7 +120,7 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
   const [castDraft, setCastDraft] = React.useState('');
   const [adding, setAdding] = React.useState(false);
   const [rating, setRating] = React.useState(record?.rating ?? 0);
-  const [memo, setMemo] = React.useState(record?.memo ?? '');
+  const [memo, setMemo] = React.useState(record?.memo ?? plan?.memo ?? '');
   const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
 
@@ -185,6 +185,7 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
       nav.goBack();
     } else {
       addRecord(payload);
+      if (plan) completePlan(plan.id); // 약속 → 기록 전환: 저장 시 약속 완료 처리
       resetToHome(nav);
     }
   };

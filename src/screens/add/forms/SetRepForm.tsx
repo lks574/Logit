@@ -58,21 +58,21 @@ function parseRows(saved?: string): SetRow[] {
   return [{ set: '1', reps: '', weight: '', warmup: false }];
 }
 
-export default function SetRepForm({ activity, recordId }: { activity: string; recordId?: string }) {
+export default function SetRepForm({ activity, recordId, plan }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord } = useStore();
+  const { addRecord, updateRecord, getRecord, completePlan } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
-  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? nowDateISO());
-  const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? nowTimeLabel());
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? nowDateISO());
+  const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? plan?.timeLabel ?? nowTimeLabel());
   const [part, setPart] = React.useState(record?.fields?.부위 ?? '');
   const [open, setOpen] = React.useState(editing);
   const [rating, setRating] = React.useState(record?.rating ?? 0);
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
-  const [place, setPlace] = React.useState(record?.fields?.장소 ?? '');
-  const [memo, setMemo] = React.useState(record?.memo ?? '');
+  const [place, setPlace] = React.useState(record?.fields?.장소 ?? plan?.place ?? '');
+  const [memo, setMemo] = React.useState(record?.memo ?? plan?.memo ?? '');
   const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
   const [mood, setMood] = React.useState<number>(() => MOODS.findIndex((m) => m.label === record?.fields?.기분));
   const [운동시간, set운동시간] = React.useState(record?.fields?.운동시간 ?? '');
@@ -144,6 +144,7 @@ export default function SetRepForm({ activity, recordId }: { activity: string; r
       nav.goBack();
     } else {
       addRecord(payload);
+      if (plan) completePlan(plan.id); // 약속 → 기록 전환: 저장 시 약속 완료 처리
       resetToHome(nav);
     }
   };

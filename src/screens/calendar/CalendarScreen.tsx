@@ -21,7 +21,7 @@ import { displayTimeLabel } from '../../lib/date';
 export default function CalendarScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { today, records, plans, completePlanAsRecord } = useStore();
+  const { today, records, plans } = useStore();
   const route = useRoute<any>();
   const paramDate: string | undefined = route.params?.dateISO;
   const [selected, setSelected] = useState<string>(paramDate ?? today); // 선택일 (dateISO)
@@ -336,10 +336,7 @@ export default function CalendarScreen() {
                     title={activityLabel(p.activity)}
                     meta={meta}
                     tag={<Tag label={tr({ en: 'Upcoming', ko: '예정' })} color={c.accent} outline />}
-                    onCheck={() => {
-                      const rec = completePlanAsRecord(p.id);
-                      if (rec) nav.navigate('Detail', { activity: rec.activity, recordId: rec.id });
-                    }}
+                    onCheck={() => nav.navigate('RecordForm', { activity: p.activity, template: p.template, planId: p.id })}
                     onPress={() => nav.navigate('AddPlan', { planId: p.id })}
                   />
                 );

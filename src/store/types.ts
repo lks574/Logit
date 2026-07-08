@@ -41,6 +41,7 @@ export type CustomActivity = {
 export type Profile = {
   name: string;
   email: string;
+  weightKg?: number; // 러닝 칼로리 자동 계산용 체중(kg)
 };
 
 export type StoreState = {

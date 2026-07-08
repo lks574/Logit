@@ -228,7 +228,13 @@ export function normalize(parsed: any): StoreState {
     customActivities: Array.isArray(d.customActivities) ? d.customActivities : [],
     profile:
       d.profile && typeof d.profile === 'object'
-        ? { name: String(d.profile.name ?? ''), email: String(d.profile.email ?? '') }
+        ? {
+            name: String(d.profile.name ?? ''),
+            email: String(d.profile.email ?? ''),
+            ...(Number.isFinite(Number(d.profile.weightKg)) && Number(d.profile.weightKg) > 0
+              ? { weightKg: Number(d.profile.weightKg) }
+              : {}),
+          }
         : { name: '', email: '' },
     // 복원은 이미 사용 중인 앱에 들어오므로 온보딩을 다시 띄우지 않는다(누락 시 true).
     onboardingComplete: d.onboardingComplete ?? true,

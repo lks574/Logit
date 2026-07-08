@@ -111,10 +111,9 @@ export function PlanCard({
 }) {
   const { c } = useTheme();
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={[tr({ en: 'Plan', ko: '약속' }), title, meta].filter(Boolean).join(', ')}
+    // ponytail: 카드 열기(onPress)와 체크 버튼(onCheck)을 형제 Pressable로 분리한다.
+    // 중첩하면 RN 리스폰더에서 체크 탭이 부모 onPress(수정 화면)로 먹혀 기록 전환이 안 됐음.
+    <View
       style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -128,31 +127,38 @@ export function PlanCard({
         paddingHorizontal: 13,
       }}
     >
-      <View
-        style={{
-          width: 38,
-          height: 38,
-          borderRadius: 10,
-          backgroundColor: c.surface,
-          borderWidth: 1,
-          borderColor: withAlpha(c.accent, 30),
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
+      <Pressable
+        onPress={onPress}
+        accessibilityRole={onPress ? 'button' : undefined}
+        accessibilityLabel={[tr({ en: 'Plan', ko: '약속' }), title, meta].filter(Boolean).join(', ')}
+        style={{ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 11 }}
       >
-        {icon}
-      </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Text style={{ fontSize: 15, fontWeight: '600', color: c.text }}>{title}</Text>
-          {tag}
+        <View
+          style={{
+            width: 38,
+            height: 38,
+            borderRadius: 10,
+            backgroundColor: c.surface,
+            borderWidth: 1,
+            borderColor: withAlpha(c.accent, 30),
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {icon}
         </View>
-        {meta ? (
-          <Text numberOfLines={1} style={{ fontSize: 12, color: c.text2, marginTop: 3 }}>
-            {meta}
-          </Text>
-        ) : null}
-      </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={{ fontSize: 15, fontWeight: '600', color: c.text }}>{title}</Text>
+            {tag}
+          </View>
+          {meta ? (
+            <Text numberOfLines={1} style={{ fontSize: 12, color: c.text2, marginTop: 3 }}>
+              {meta}
+            </Text>
+          ) : null}
+        </View>
+      </Pressable>
       <Pressable
         onPress={onCheck}
         hitSlop={8}
@@ -170,7 +176,7 @@ export function PlanCard({
       >
         <Icon.check size={15} color={c.accent} strokeWidth={2.6} />
       </Pressable>
-    </Pressable>
+    </View>
   );
 }
 

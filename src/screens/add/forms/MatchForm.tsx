@@ -20,15 +20,15 @@ import { activityLabel } from '../../../data/activities';
 // the swappable "종목별 핵심 기록" fields (schema in src/data/sports.ts), the score
 // card, and the 결과 segment. 개인전(승/패) vs 팀전(승/무/패). Copy: Logit.dc.html 557–617.
 
-export default function MatchForm({ activity, recordId }: { activity: string; recordId?: string }) {
+export default function MatchForm({ activity, recordId, plan }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord } = useStore();
+  const { addRecord, updateRecord, getRecord, completePlan } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
-  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? nowDateISO());
-  const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? nowTimeLabel());
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? nowDateISO());
+  const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? plan?.timeLabel ?? nowTimeLabel());
 
   // 종목: 편집 시 저장된 fields.종목 우선(칩을 바꿔 저장한 값 보존), 없으면 활동명 기준.
   const [sportKey, setSportKey] = React.useState(
@@ -37,7 +37,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
   const [open, setOpen] = React.useState(editing); // 세부 입력 disclosure (open when editing)
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
   const [rating, setRating] = React.useState(editing ? record?.rating ?? 0 : 0);
-  const [memo, setMemo] = React.useState(record?.memo ?? '');
+  const [memo, setMemo] = React.useState(record?.memo ?? plan?.memo ?? '');
   const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
   const sport = sportFor(sportKey);
 
@@ -153,6 +153,7 @@ export default function MatchForm({ activity, recordId }: { activity: string; re
       nav.goBack();
     } else {
       addRecord(payload);
+      if (plan) completePlan(plan.id); // 약속 → 기록 전환: 저장 시 약속 완료 처리
       resetToHome(nav);
     }
   };

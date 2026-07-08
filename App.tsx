@@ -8,6 +8,7 @@ import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { LanguageProvider, useLang, tr } from './src/i18n/i18n';
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
 import { seed } from './src/store/seed';
+import { registerPushToken } from './src/lib/push';
 
 // 저장 실패(저장 공간 부족 등) 시 전역 배너 — 무음 유실을 사용자에게 알린다.
 function PersistErrorBanner() {
@@ -74,6 +75,15 @@ function AuthProfileSync() {
   return null;
 }
 
+// 로그인 사용자의 원격 push 토큰을 발급·저장(EAS projectId 없으면 조용히 스킵). 로컬 알림과 무관.
+function PushRegistrar() {
+  const { user } = useAuth();
+  React.useEffect(() => {
+    if (user) void registerPushToken(user.uid);
+  }, [user]);
+  return null;
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
@@ -82,6 +92,7 @@ export default function App() {
           <AuthProvider>
             <StoreProvider>
               <AuthProfileSync />
+              <PushRegistrar />
               <Root />
             </StoreProvider>
           </AuthProvider>

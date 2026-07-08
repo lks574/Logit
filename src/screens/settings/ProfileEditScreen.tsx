@@ -17,6 +17,7 @@ export default function ProfileEditScreen() {
   const { updateDisplayName } = useAuth();
 
   const [name, setName] = React.useState(profile.name);
+  const [weight, setWeight] = React.useState(profile.weightKg != null ? String(profile.weightKg) : '');
   const [saving, setSaving] = React.useState(false);
   const email = profile.email;
 
@@ -31,11 +32,18 @@ export default function ProfileEditScreen() {
     } catch {
       // 계정 반영 실패해도 로컬은 저장(오프라인 등). 조용히 진행.
     }
-    updateProfile({ name: trimmed }); // 로컬 프로필
+    const w = parseFloat(weight);
+    updateProfile({ name: trimmed, weightKg: Number.isFinite(w) && w > 0 ? w : undefined }); // 로컬 프로필(체중=칼로리 자동계산용)
     nav.goBack();
   };
 
-  const editableCard = (label: string, value: string, onChangeText: (v: string) => void, placeholder: string) => (
+  const editableCard = (
+    label: string,
+    value: string,
+    onChangeText: (v: string) => void,
+    placeholder: string,
+    opts?: { keyboardType?: 'default' | 'numeric'; unit?: string },
+  ) => (
     <View style={{ gap: 8 }}>
       <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>{label}</Text>
       <View
@@ -46,6 +54,9 @@ export default function ProfileEditScreen() {
           borderRadius: 13,
           paddingVertical: 13,
           paddingHorizontal: 14,
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 8,
         }}
       >
         <TextInput
@@ -54,8 +65,10 @@ export default function ProfileEditScreen() {
           placeholder={placeholder}
           placeholderTextColor={c.text3}
           autoCapitalize="sentences"
-          style={{ fontSize: 15, color: c.text, padding: 0 }}
+          keyboardType={opts?.keyboardType ?? 'default'}
+          style={{ flex: 1, fontSize: 15, color: c.text, padding: 0 }}
         />
+        {opts?.unit ? <Text style={{ fontSize: 14, color: c.text3 }}>{opts.unit}</Text> : null}
       </View>
     </View>
   );
@@ -145,6 +158,13 @@ export default function ProfileEditScreen() {
         </View>
 
         {editableCard(tr({ en: 'Name', ko: '이름' }), name, setName, tr({ en: 'Name', ko: '이름' }))}
+        {editableCard(
+          tr({ en: 'Weight', ko: '체중' }),
+          weight,
+          (v) => setWeight(v.replace(/[^\d.]/g, '')),
+          tr({ en: 'e.g. 70', ko: '예: 70' }),
+          { keyboardType: 'numeric', unit: 'kg' },
+        )}
         {readonlyCard(tr({ en: 'Email', ko: '이메일' }), email)}
       </View>
     </Screen>

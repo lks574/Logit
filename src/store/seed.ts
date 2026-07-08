@@ -17,7 +17,7 @@ export const seed: StoreState = {
       companions: ['민지'],
       photos: [],
       memo: '노을이 좋았다. 마지막 1km 페이스 올림. 다음엔 7km 도전.',
-      fields: { 거리: '5.2km', 시간: '27:12', 페이스: '5′14″', 고도: '42m', 평균심박: '152bpm', 칼로리: '328kcal' },
+      fields: { 거리: '5.2km', 시간: '27:12', 속도: '11.5km/h', 고도: '42m', 평균심박: '152bpm', 칼로리: '328kcal' },
       sync: 'synced',
     },
     {
@@ -45,7 +45,7 @@ export const seed: StoreState = {
       companions: [],
       photos: [],
       memo: '오르막 구간 페이스 유지',
-      fields: { 거리: '7.2km', 시간: '32:40', 페이스: '4′32″', 고도: '180m', 칼로리: '410kcal' },
+      fields: { 거리: '7.2km', 시간: '32:40', 속도: '13.2km/h', 고도: '180m', 칼로리: '410kcal' },
       sync: 'synced',
     },
     {
@@ -73,39 +73,39 @@ export const seed: StoreState = {
       companions: ['민지'],
       photos: [],
       memo: '가볍게 조깅',
-      fields: { 거리: '6.0km', 시간: '31:05', 페이스: '5′11″', 고도: '12m', 칼로리: '360kcal' },
+      fields: { 거리: '6.0km', 시간: '31:05', 속도: '11.6km/h', 고도: '12m', 칼로리: '360kcal' },
       sync: 'synced',
     },
-    // 과거 유산소 기록 — 월별 차트/평균 페이스/최장 거리가 실데이터로 채워지도록.
+    // 과거 유산소 기록 — 월별 차트/평균 속도/최장 거리가 실데이터로 채워지도록.
     {
       id: 'r-running-0520', activity: '런닝', template: 'endurance', dateISO: '2026-05-20', timeLabel: '5월 20일',
       meta: '올림픽공원 · 12.4km · 1:01:35', rating: 5, photos: [], memo: '최장 거리 경신',
-      fields: { 거리: '12.4km', 시간: '61:35', 페이스: '4′58″', 고도: '95m', 칼로리: '820kcal' }, sync: 'synced',
+      fields: { 거리: '12.4km', 시간: '61:35', 속도: '12.1km/h', 고도: '95m', 칼로리: '820kcal' }, sync: 'synced',
     },
     {
       id: 'r-running-0508', activity: '런닝', template: 'endurance', dateISO: '2026-05-08', timeLabel: '5월 8일',
       meta: '한강공원 · 11.0km · 58′40″', rating: 4, photos: [], memo: '',
-      fields: { 거리: '11.0km', 시간: '58:40', 페이스: '5′20″', 고도: '30m', 칼로리: '700kcal' }, sync: 'synced',
+      fields: { 거리: '11.0km', 시간: '58:40', 속도: '11.3km/h', 고도: '30m', 칼로리: '700kcal' }, sync: 'synced',
     },
     {
       id: 'r-cycling-0412', activity: '자전거', template: 'endurance', dateISO: '2026-04-12', timeLabel: '4월 12일',
       meta: '남산 · 9.0km · 40′30″', rating: 4, photos: [], memo: '',
-      fields: { 거리: '9.0km', 시간: '40:30', 페이스: '5′05″', 고도: '210m', 칼로리: '480kcal' }, sync: 'synced',
+      fields: { 거리: '9.0km', 시간: '40:30', 속도: '13.3km/h', 고도: '210m', 칼로리: '480kcal' }, sync: 'synced',
     },
     {
       id: 'r-running-0322', activity: '런닝', template: 'endurance', dateISO: '2026-03-22', timeLabel: '3월 22일',
       meta: '탄천 · 15.0km · 1:22:30', rating: 5, photos: [], memo: '하프 준비',
-      fields: { 거리: '15.0km', 시간: '82:30', 페이스: '5′30″', 고도: '40m', 칼로리: '990kcal' }, sync: 'synced',
+      fields: { 거리: '15.0km', 시간: '82:30', 속도: '10.9km/h', 고도: '40m', 칼로리: '990kcal' }, sync: 'synced',
     },
     {
       id: 'r-running-0310', activity: '런닝', template: 'endurance', dateISO: '2026-03-10', timeLabel: '3월 10일',
       meta: '한강공원 · 10.0km · 56′40″', rating: 4, photos: [], memo: '',
-      fields: { 거리: '10.0km', 시간: '56:40', 페이스: '5′40″', 고도: '20m', 칼로리: '640kcal' }, sync: 'synced',
+      fields: { 거리: '10.0km', 시간: '56:40', 속도: '10.6km/h', 고도: '20m', 칼로리: '640kcal' }, sync: 'synced',
     },
     {
       id: 'r-running-0215', activity: '런닝', template: 'endurance', dateISO: '2026-02-15', timeLabel: '2월 15일',
       meta: '올림픽공원 · 8.0km · 46′00″', rating: 3, photos: [], memo: '',
-      fields: { 거리: '8.0km', 시간: '46:00', 페이스: '5′45″', 고도: '25m', 칼로리: '520kcal' }, sync: 'synced',
+      fields: { 거리: '8.0km', 시간: '46:00', 속도: '10.4km/h', 고도: '25m', 칼로리: '520kcal' }, sync: 'synced',
     },
     {
       id: 'r-play-0503', activity: '연극', template: 'spectate', dateISO: '2026-05-03', timeLabel: '5월 3일',
@@ -120,7 +120,7 @@ export const seed: StoreState = {
     { id: 'p-running-0705', activity: '런닝', template: 'endurance', dateISO: '2026-07-05', timeLabel: '오전 7:00', place: '한강공원', memo: '10km 목표', reminder: false },
   ],
   customActivities: [],
-  profile: { name: '현우', email: 'hyunwoo@flitto.com' },
+  profile: { name: '현우', email: 'hyunwoo@flitto.com', weightKg: 70 },
   onboardingComplete: false,
   preferredActivities: [],
 };
