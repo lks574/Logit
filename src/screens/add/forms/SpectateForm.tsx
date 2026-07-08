@@ -129,6 +129,19 @@ export default function SpectateForm({ activity, recordId }: { activity: string;
     if (uris.length) setPhotos((p) => [...p, ...uris]);
   };
 
+  // 신규 기록: 작품명이 과거 관람과 같으면 회차를 자동 계산(같은 작품 N번 → N+1차).
+  // 회차 접미사 "(2)"는 무시하고 기본 제목으로 비교. 수정 중엔 건드리지 않는다.
+  const baseTitle = (s: string) => s.replace(/\s*\(\d+\)\s*$/, '').trim();
+  React.useEffect(() => {
+    if (editing) return;
+    const base = baseTitle(title);
+    if (!base) { setRound(1); return; }
+    const seen = records.filter(
+      (r) => r.template === 'spectate' && baseTitle(r.fields?.작품 ?? '') === base,
+    ).length;
+    setRound(seen + 1);
+  }, [title, editing, records]);
+
   const castPalette = [c.perf, c.team, c.cardio, c.strength, c.accent, c.warning];
   const castColor = (name: string) => castPalette[castHash(name) % castPalette.length];
 
