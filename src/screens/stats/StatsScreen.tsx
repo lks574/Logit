@@ -11,7 +11,7 @@ import { statsHub, StatsCategory, StatsPeriod, retroHighlights, periodRange, day
 import { TemplateType } from '../../theme/tokens';
 import { activities, colorsFor, activityLabel } from '../../data/activities';
 import { monthDay } from '../../lib/date';
-import { tr, Msg } from '../../i18n/i18n';
+import { tr } from '../../i18n/i18n';
 
 // #RRGGBB 두 색을 pct%로 섞음(color-mix 대체) — 히트맵 레벨 색.
 function mix(a: string, b: string, pct: number): string {
@@ -32,16 +32,6 @@ const TEMPLATE_CATEGORY: Record<TemplateType, StatsCategory> = {
   outing: 'outing',
   free: 'free',
 };
-// 활동별 리스트 섹션 — 기록추가 화면과 동일한 템플릿 그룹핑.
-const SECTIONS: { template: TemplateType; label: Msg }[] = [
-  { template: 'endurance', label: { en: 'Cardio', ko: '유산소' } },
-  { template: 'setrep', label: { en: 'Strength', ko: '근력' } },
-  { template: 'match', label: { en: 'Match', ko: '대전' } },
-  { template: 'spectate', label: { en: 'Performance', ko: '공연' } },
-  { template: 'outing', label: { en: 'Leisure', ko: '여가' } },
-  { template: 'free', label: { en: 'Free', ko: '자유' } },
-];
-
 export default function StatsScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
@@ -63,9 +53,8 @@ export default function StatsScreen() {
   const heatColor = (level: number) =>
     level === 0 ? c.surfaceAlt : level === 1 ? mix(c.accent, c.surfaceAlt, 30) : level === 2 ? mix(c.accent, c.surfaceAlt, 55) : c.accent;
 
-  // 선택 기간으로 좁힌 기록을 활동별(횟수·마지막 기록일)로 묶고, 섹션은 기록 수 합계 내림차순
-  // — 고정 템플릿 순서가 아니라 내가 자주 쓰는 순서로 보이게.
-  const sortedSections = useMemo(() => {
+  // 선택 기간으로 좁힌 기록을 활동별(횟수·마지막 기록일)로 묶어 최신 기록순으로 평탄한 그리드에.
+  const activityTiles = useMemo(() => {
     const { start, end } = periodRange(period, today);
     const inRange = records.filter((r) => r.dateISO >= start && r.dateISO <= end);
     const agg = new Map<string, { count: number; lastISO: string }>();
@@ -75,16 +64,15 @@ export default function StatsScreen() {
       if (r.dateISO > e.lastISO) e.lastISO = r.dateISO;
       agg.set(r.activity, e);
     }
-    const g: Partial<Record<TemplateType, { name: string; count: number; lastISO: string }[]>> = {};
-    for (const [name, e] of agg) {
-      const tmpl = activities[name]?.template ?? customActivities.find((a) => a.name === name)?.template ?? 'free';
-      (g[tmpl] ??= []).push({ name, count: e.count, lastISO: e.lastISO });
-    }
-    Object.values(g).forEach((arr) => arr!.sort((a, b) => b.count - a.count));
-    const total = (items: { count: number }[]) => items.reduce((n, i) => n + i.count, 0);
-    return SECTIONS.map((sec) => ({ sec, items: g[sec.template] ?? [] }))
-      .filter((x) => x.items.length > 0)
-      .sort((a, b) => total(b.items) - total(a.items));
+    return [...agg.entries()]
+      .map(([name, e]) => ({
+        name,
+        count: e.count,
+        lastISO: e.lastISO,
+        template: (activities[name]?.template ?? customActivities.find((a) => a.name === name)?.template ?? 'free') as TemplateType,
+      }))
+      // 최신 기록순(마지막 기록일 내림차순), 같은 날이면 횟수 많은 순.
+      .sort((a, b) => (b.lastISO !== a.lastISO ? b.lastISO.localeCompare(a.lastISO) : b.count - a.count));
   }, [records, customActivities, period, today]);
 
   const iconOf = (name: string) => (activities[name] ? Icon[activities[name].icon] : Icon.yoga);
@@ -221,44 +209,32 @@ export default function StatsScreen() {
           </View>
         </View>
 
-        {/* 활동별 — 기록추가 화면처럼 템플릿 그룹 + 활동 타일. 탭 → 활동 세부 통계 */}
-        <View style={{ marginTop: 2, gap: 14 }}>
+        {/* 활동별 — 최신 기록순 단일 그리드. 탭 → 활동 세부 통계 */}
+        <View style={{ marginTop: 2, gap: 10 }}>
           <View style={{ marginHorizontal: 2 }}>
             <Text style={{ fontSize: 13, fontWeight: '600', color: c.text }}>{tr({ en: 'By activity', ko: '활동별' })}</Text>
           </View>
-          {sortedSections.map(({ sec, items }) => {
-            const { color, soft } = colorsFor(sec.template, c);
-            return (
-              <View key={sec.template} style={{ gap: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <View style={{ width: 8, height: 8, borderRadius: 3, backgroundColor: color }} />
-                  <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>{tr(sec.label)}</Text>
-                  <View style={{ flex: 1 }} />
-                  <Text style={{ fontSize: 11, color: c.text3 }}>{items.length}</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+            {activityTiles.map((it) => {
+              const { color, soft } = colorsFor(it.template, c);
+              const Ico = iconOf(it.name);
+              return (
+                <View key={it.name} style={{ width: '31%' }}>
+                  <Pressable
+                    onPress={() => nav.navigate('CategoryStats', { category: TEMPLATE_CATEGORY[it.template], activity: it.name, period })}
+                    style={{ flex: 1, alignItems: 'center', gap: 4, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 4 }}
+                  >
+                    <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
+                      <Ico size={17} color={color} />
+                    </View>
+                    <Text numberOfLines={1} style={{ fontSize: 11.5, fontWeight: '600', color: c.text }}>{activityLabel(it.name)}</Text>
+                    <Text style={{ fontSize: 10, color: c.text3 }}>{tr({ en: `${it.count}×`, ko: `${it.count}회` })}</Text>
+                    <Text style={{ fontSize: 9.5, color: c.text3 }}>{agoLabel(it.lastISO)}</Text>
+                  </Pressable>
                 </View>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                  {items.map((it) => {
-                    const Ico = iconOf(it.name);
-                    return (
-                      <View key={it.name} style={{ width: '31%' }}>
-                        <Pressable
-                          onPress={() => nav.navigate('CategoryStats', { category: TEMPLATE_CATEGORY[sec.template], activity: it.name, period })}
-                          style={{ flex: 1, alignItems: 'center', gap: 4, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 11, paddingHorizontal: 4 }}
-                        >
-                          <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
-                            <Ico size={17} color={color} />
-                          </View>
-                          <Text numberOfLines={1} style={{ fontSize: 11.5, fontWeight: '600', color: c.text }}>{activityLabel(it.name)}</Text>
-                          <Text style={{ fontSize: 10, color: c.text3 }}>{tr({ en: `${it.count}×`, ko: `${it.count}회` })}</Text>
-                          <Text style={{ fontSize: 9.5, color: c.text3 }}>{agoLabel(it.lastISO)}</Text>
-                        </Pressable>
-                      </View>
-                    );
-                  })}
-                </View>
-              </View>
-            );
-          })}
+              );
+            })}
+          </View>
         </View>
       </View>
     </Screen>
