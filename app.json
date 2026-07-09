@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.sro.logit"
+      "bundleIdentifier": "com.sro.logit",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "package": "com.sro.logit",
@@ -24,8 +25,16 @@
         {
           "action": "VIEW",
           "autoVerify": true,
-          "data": [{ "scheme": "https", "host": "logit-rn-54efa.web.app" }],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "data": [
+            {
+              "scheme": "https",
+              "host": "logit-rn-54efa.web.app"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },
@@ -63,7 +72,8 @@
           "iosAppId": "ca-app-pub-3940256099942544~1458002511"
         }
       ],
-      "expo-notifications"
+      "expo-notifications",
+      "@react-native-firebase/app"
     ]
   }
 }

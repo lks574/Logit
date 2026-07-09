@@ -7,7 +7,8 @@ import { Icon } from '../../components/Glyph';
 import { useTheme } from '../../theme/ThemeContext';
 import { tr } from '../../i18n/i18n';
 import { radius } from '../../theme/tokens';
-import { DEV_STATUS, DevItem } from '../../data/roadmap';
+import { DEV_STATUS, DevItem, DevStatus } from '../../data/roadmap';
+import { fetchDevStatus } from '../../lib/remoteConfig';
 
 // 개발 현황 — "정상 운영 중" + 주요 업데이트를 큰 건 단위로 진행률(%)·예상 시점과 함께 표시.
 // 데이터는 src/data/roadmap.ts.
@@ -15,7 +16,16 @@ export default function RoadmapScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const version = Constants.expoConfig?.version ?? '?';
-  const { operational, updatedAt, items } = DEV_STATUS;
+  // 원격(Remote Config) 개발 현황 — 초기엔 정적값, 마운트 시 원격값으로 갱신(실패 시 정적 유지).
+  const [status, setStatus] = React.useState<DevStatus>(DEV_STATUS);
+  React.useEffect(() => {
+    let alive = true;
+    fetchDevStatus().then((s) => alive && setStatus(s));
+    return () => {
+      alive = false;
+    };
+  }, []);
+  const { operational, updatedAt, items } = status;
 
   const Item = ({ item }: { item: DevItem }) => {
     const pct = Math.max(0, Math.min(100, Math.round(item.progress)));
