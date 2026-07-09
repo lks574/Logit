@@ -1,0 +1,23 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "D9BK789354.com.sro.logit",
+        "paths": [
+          "/record/*",
+          "/plan/*",
+          "/plans",
+          "/stats",
+          "/category/*",
+          "/calendar",
+          "/home",
+          "/my",
+          "/settings",
+          "/feedback",
+          "/roadmap"
+        ]
+      }
+    ]
+  }
+}

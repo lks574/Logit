@@ -131,3 +131,6 @@ Thumbs.db
 
 # Obsidian vault config (per-user workspace state)
 .obsidian/
+
+# Firebase 배포 캐시
+.firebase/

@@ -10,6 +10,7 @@ import { BottomTabBar } from './BottomTabBar';
 import { AuthNavigator } from './AuthNavigator';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import { RootStackParamList, TabParamList } from './types';
+import { linking } from './linking';
 
 import HomeScreen from '../screens/home/HomeScreen';
 import CalendarScreen from '../screens/calendar/CalendarScreen';
@@ -97,6 +98,6 @@ export function RootNavigator() {
   };
 
   return (
-    <NavigationContainer theme={navTheme}>{content()}</NavigationContainer>
+    <NavigationContainer theme={navTheme} linking={linking}>{content()}</NavigationContainer>
   );
 }
