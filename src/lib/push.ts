@@ -1,3 +1,4 @@
+import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -15,15 +16,10 @@ export async function registerPushToken(uid: string): Promise<void> {
   const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? (Constants as any).easConfig?.projectId;
   if (!projectId) return; // EAS 미설정 → Expo push 토큰 발급 불가
   if (!(await ensurePermission())) return;
-  try {
-    const Notifications = require('expo-notifications'); // 네이티브 미탑재 시 throw → catch로 무시
-    const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
-    await setDoc(
-      doc(db, 'pushTokens', uid),
-      { token, platform: Platform.OS, updatedAt: serverTimestamp() },
-      { merge: true },
-    );
-  } catch {
-    // 토큰 발급/저장 실패는 조용히 무시(로컬 알림에 영향 없음).
-  }
+  const token = (await Notifications.getExpoPushTokenAsync({ projectId })).data;
+  await setDoc(
+    doc(db, 'pushTokens', uid),
+    { token, platform: Platform.OS, updatedAt: serverTimestamp() },
+    { merge: true },
+  );
 }
