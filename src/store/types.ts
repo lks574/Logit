@@ -51,4 +51,7 @@ export type StoreState = {
   profile: Profile;
   onboardingComplete: boolean; // 가입 직후 온보딩 1회 노출 게이팅
   preferredActivities: string[]; // 온보딩에서 고른 활동 → 홈 우선 노출(후속)
+  // 마지막 클라우드 백업 시점 데이터의 서명(로컬 전용, 백업 envelope에는 미포함).
+  // 현재 데이터 서명과 다르면 "동기화 안됨". null이면 아직 백업한 적 없음.
+  backupSignature?: string | null;
 };

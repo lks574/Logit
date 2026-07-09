@@ -5,7 +5,7 @@ import { Screen, T, Divider } from '../../components/primitives';
 import { Glyph, Path, Icon } from '../../components/Glyph';
 import { SettingsRow } from '../../components/Field';
 import { ActionSheet } from '../../components/ActionSheet';
-import { useStore } from '../../store/StoreContext';
+import { useStore, useSyncState } from '../../store/StoreContext';
 import { useAuth } from '../../auth/AuthContext';
 import { exportData, importData } from '../../lib/dataTransfer';
 import { backupNow, fetchBackup } from '../../lib/cloudBackup';
@@ -28,9 +28,10 @@ type SheetState =
 export default function MyScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { profile, records, plans, customActivities, onboardingComplete, preferredActivities, replaceAll } =
+  const { profile, records, plans, customActivities, onboardingComplete, preferredActivities, replaceAll, markBackedUp } =
     useStore();
   const { user, logout } = useAuth();
+  const synced = useSyncState() === 'synced';
   const initial = (profile.name.trim()[0] ?? '?').toUpperCase();
   const [sheet, setSheet] = React.useState<SheetState>({ kind: 'none' });
 
@@ -106,6 +107,7 @@ export default function MyScreen() {
     setSheet({ kind: 'message', title: tr({ en: 'Cloud backup', ko: '클라우드 백업' }), message: tr({ en: 'Backing up…', ko: '백업 중…' }) });
     try {
       await backupNow(user.uid, currentState());
+      markBackedUp(); // 현재 데이터 = 클라우드와 동일 → 동기화됨
       setSheet({ kind: 'message', title: tr({ en: 'Backup complete', ko: '백업 완료' }), message: tr({ en: 'Saved to the cloud.', ko: '클라우드에 저장했어요.' }) });
     } catch (e) {
       setSheet({ kind: 'message', title: tr({ en: 'Backup failed', ko: '백업 실패' }), message: errMessage(e) });
@@ -272,7 +274,15 @@ export default function MyScreen() {
             <SettingsRow
               icon={<Glyph size={18} color={c.text2} strokeWidth={1.8}><Path d="M18 10a4 4 0 0 0-.7-7.9A6 6 0 0 0 6 6.5 4.5 4.5 0 0 0 7 15h11a3.5 3.5 0 0 0 0-5z" /></Glyph>}
               label={tr({ en: 'Cloud backup', ko: '클라우드 백업' })}
-              value={tr({ en: 'Back up · Restore', ko: '백업 · 복원' })}
+              value={synced ? tr({ en: 'Synced', ko: '동기화됨' }) : undefined}
+              right={
+                synced ? undefined : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                    <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: c.warning }} />
+                    <T style={{ fontSize: 12, fontWeight: '600', color: c.warning }}>{tr({ en: 'Sync needed', ko: '동기화 필요' })}</T>
+                  </View>
+                )
+              }
               onPress={openCloud}
             />
             <Divider />

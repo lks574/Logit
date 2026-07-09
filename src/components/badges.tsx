@@ -11,7 +11,7 @@ export function SyncStatusBadge({ state }: { state: SyncState }) {
   const { c } = useTheme();
   const map = {
     synced: { dot: c.success, label: tr({ en: 'Synced', ko: '동기화됨' }), text: c.text2 },
-    pending: { dot: c.warning, label: tr({ en: 'Pending', ko: '대기 중' }), text: c.text2 },
+    pending: { dot: c.warning, label: tr({ en: 'Not synced', ko: '동기화 안됨' }), text: c.text2 },
     offline: { dot: c.text3, label: tr({ en: 'Offline', ko: '오프라인' }), text: c.text3 },
   }[state];
   return (

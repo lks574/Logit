@@ -19,6 +19,29 @@ function uid(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.floor(Math.random() * 1e6).toString(36)}`;
 }
 
+// djb2 문자열 해시 → 짧은 base36. 동기화 여부 판정용(암호학적 용도 아님).
+function hashStr(s: string): string {
+  let h = 5381;
+  for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
+// 백업 대상 데이터의 서명. per-record `sync`(비동기로 바뀜)·backupSignature는 제외해
+// 실제 사용자 콘텐츠 변화만 반영한다.
+export function syncSignature(s: StoreState): string {
+  const records = s.records.map(({ sync, ...r }) => r);
+  return hashStr(
+    JSON.stringify({
+      records,
+      plans: s.plans,
+      customActivities: s.customActivities,
+      profile: s.profile,
+      preferredActivities: s.preferredActivities,
+      onboardingComplete: s.onboardingComplete,
+    }),
+  );
+}
+
 type StoreValue = {
   ready: boolean;
   persistError: boolean; // 마지막 저장이 실패했는지(저장 공간 부족 등) → 전역 배너
@@ -29,6 +52,8 @@ type StoreValue = {
   profile: Profile;
   onboardingComplete: boolean;
   preferredActivities: string[];
+  backupSignature: string | null;
+  markBackedUp: () => void; // 클라우드 백업/복원 성공 시 현재 데이터 서명을 저장(→ 동기화됨)
   completeOnboarding: (selected: string[]) => void;
   updateProfile: (patch: Partial<Profile>) => void;
   replaceAll: (next: StoreState) => Promise<void>;
@@ -109,6 +134,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       profile: state.profile,
       onboardingComplete: state.onboardingComplete,
       preferredActivities: state.preferredActivities,
+      backupSignature: state.backupSignature ?? null,
+      // 방금 백업/복원한 데이터의 서명을 저장 → 이후 수정 전까지 "동기화됨".
+      markBackedUp: () => setState((s) => ({ ...s, backupSignature: syncSignature(s) })),
       completeOnboarding: (selected) => {
         setState((s) => ({ ...s, onboardingComplete: true, preferredActivities: selected }));
       },
@@ -187,7 +215,15 @@ export function useStore(): StoreValue {
 }
 
 // Sync badge state: any pending record → 'pending', else 'synced'.
+// 홈 동기화 배지 — 클라우드 백업 기준. 백업한 적 없거나(=null) 백업 이후 데이터가
+// 바뀌었으면 'pending'(동기화 안됨), 백업 시점과 동일하면 'synced'(동기화됨).
 export function useSyncState(): 'synced' | 'pending' | 'offline' {
-  const { records } = useStore();
-  return records.some((r) => r.sync === 'pending') ? 'pending' : 'synced';
+  const { records, plans, customActivities, profile, preferredActivities, onboardingComplete, backupSignature } =
+    useStore();
+  const current = useMemo(
+    () => syncSignature({ records, plans, customActivities, profile, preferredActivities, onboardingComplete } as StoreState),
+    [records, plans, customActivities, profile, preferredActivities, onboardingComplete],
+  );
+  if (!backupSignature) return 'pending'; // 아직 백업 안 함
+  return current === backupSignature ? 'synced' : 'pending';
 }

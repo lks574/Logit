@@ -28,7 +28,9 @@ export type Envelope = {
 
 // 백업 봉투(파일·클라우드 공용). 클라우드는 이 객체를 그대로 Firestore에 저장한다.
 export function buildEnvelope(state: StoreState): Envelope {
-  return { app: APP, version: VERSION, exportedAt: new Date().toISOString(), data: state };
+  // backupSignature는 로컬 동기화 마커라 백업/내보내기에는 담지 않는다.
+  const { backupSignature, ...data } = state;
+  return { app: APP, version: VERSION, exportedAt: new Date().toISOString(), data };
 }
 
 export function buildJSON(state: StoreState): string {

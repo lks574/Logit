@@ -68,9 +68,15 @@ export default function HomeScreen() {
             {tr({ en: 'Log', ko: '기록' })}
           </Text>
         </View>
-        <View style={{ marginTop: 6 }}>
+        <Pressable
+          onPress={() => nav.navigate('My')}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={tr({ en: 'Sync status, go to My', ko: '동기화 상태, 마이로 이동' })}
+          style={{ marginTop: 6 }}
+        >
           <SyncStatusBadge state={sync} />
-        </View>
+        </Pressable>
       </View>
 
       <View style={{ paddingHorizontal: 18, gap: 14 }}>
