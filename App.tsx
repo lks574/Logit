@@ -9,6 +9,7 @@ import { LanguageProvider, useLang, tr } from './src/i18n/i18n';
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
 import { seed } from './src/store/seed';
 import { registerPushToken } from './src/lib/push';
+import { UpdateGate } from './src/components/UpdateGate';
 
 // 저장 실패(저장 공간 부족 등) 시 전역 배너 — 무음 유실을 사용자에게 알린다.
 function PersistErrorBanner() {
@@ -47,7 +48,9 @@ function Root() {
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
       {/* ponytail: 언어 변경 시 key로 네비게이터를 remount해 tr() 텍스트 전체를 갱신한다.
           (위치 초기화 감수 — 드문 액션). 위치 유지가 필요해지면 useLang() 구독 훅으로 전환. */}
-      <RootNavigator key={lang} />
+      <UpdateGate>
+        <RootNavigator key={lang} />
+      </UpdateGate>
       <PersistErrorBanner />
     </>
   );

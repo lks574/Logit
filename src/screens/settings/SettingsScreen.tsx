@@ -1,7 +1,9 @@
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { Linking, Pressable, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Constants from 'expo-constants';
+import { fetchVersionGate } from '../../lib/remoteConfig';
+import { cmpVersion, STORE_URL } from '../../lib/version';
 import { Screen, T, Divider } from '../../components/primitives';
 import { Glyph, Path, Icon } from '../../components/Glyph';
 import { Segmented } from '../../components/controls';
@@ -18,6 +20,15 @@ export default function SettingsScreen() {
   const nav = useNavigation<any>();
   const [legal, setLegal] = React.useState(false);
   const version = Constants.expoConfig?.version ?? '?';
+  // 최신 버전(Remote Config) — 현재 < 최신이면 업데이트 유도.
+  const [latest, setLatest] = React.useState<string | null>(null);
+  React.useEffect(() => {
+    fetchVersionGate().then((g) => setLatest(g.latest));
+  }, []);
+  const updateAvailable = latest != null && cmpVersion(version, latest) < 0;
+  const openStore = () => {
+    if (STORE_URL) Linking.openURL(STORE_URL).catch(() => {});
+  };
 
   const Card = ({ children }: { children: React.ReactNode }) => (
     <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: radius.card, overflow: 'hidden' }}>
@@ -106,7 +117,24 @@ export default function SettingsScreen() {
             <SettingsRow
               icon={<Glyph size={18} color={c.text2} strokeWidth={1.8}><Path d="M12 22a10 10 0 1 1 0-20 10 10 0 0 1 0 20zM12 16v-4M12 8h.01" /></Glyph>}
               label={tr({ en: 'Version', ko: '버전' })}
-              right={<T style={{ fontSize: 13, color: c.text3 }}>{version}</T>}
+              onPress={updateAvailable ? openStore : undefined}
+              right={
+                updateAvailable ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+                    <T style={{ fontSize: 12, color: c.text3 }}>{`v${version}`}</T>
+                    <View style={{ backgroundColor: c.accentSoft, borderRadius: 999, paddingVertical: 3, paddingHorizontal: 9 }}>
+                      <T style={{ fontSize: 11, fontWeight: '700', color: c.accent }}>
+                        {tr({ en: `Update to ${latest}`, ko: `${latest} 업데이트` })}
+                      </T>
+                    </View>
+                  </View>
+                ) : (
+                  <T style={{ fontSize: 13, color: c.text3 }}>
+                    {`v${version}`}
+                    {latest ? ` · ${tr({ en: 'Latest', ko: '최신' })}` : ''}
+                  </T>
+                )
+              }
             />
           </Card>
         </View>
