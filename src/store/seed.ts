@@ -124,3 +124,14 @@ export const seed: StoreState = {
   onboardingComplete: false,
   preferredActivities: [],
 };
+
+// 신규 설치 초기 상태 — 빈 스토어. 프로덕션 새 유저는 이걸로 시작한다(seed 더미 미노출).
+// seed(디자인 목업 데이터)는 개발(__DEV__)에서만 초기값으로 사용. 프로필은 로그인 시 계정에서 채움.
+export const emptyState: StoreState = {
+  records: [],
+  plans: [],
+  customActivities: [],
+  profile: { name: '', email: '' },
+  onboardingComplete: false,
+  preferredActivities: [],
+};

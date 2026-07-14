@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { seed } from './seed';
+import { seed, emptyState } from './seed';
 import { deletePhoto } from '../lib/photos';
 import { nowDateISO } from '../lib/date';
 import { syncPlanReminder, cancelPlanReminder } from '../lib/notifications';
@@ -72,7 +72,8 @@ type StoreValue = {
 const StoreCtx = createContext<StoreValue | null>(null);
 
 export function StoreProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<StoreState>(seed);
+  // 신규 설치: 프로덕션은 빈 스토어, 개발은 seed 더미로 시작.
+  const [state, setState] = useState<StoreState>(__DEV__ ? seed : emptyState);
   const [ready, setReady] = useState(false);
   const [persistError, setPersistError] = useState(false);
 
@@ -82,9 +83,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     AsyncStorage.getItem(KEY)
       .then((raw) => {
         if (!alive) return;
-        // Merge over seed so blobs written before a field existed (e.g. profile)
-        // pick up its default instead of becoming undefined.
-        if (raw) setState({ ...seed, ...JSON.parse(raw) });
+        // Merge over emptyState so blobs written before a field existed (e.g. profile)
+        // pick up its default instead of becoming undefined. (seed 더미가 아닌 빈 기본값 기준)
+        if (raw) setState({ ...emptyState, ...JSON.parse(raw) });
         // ready는 읽기/파싱 성공(빈 저장소 포함) 시에만 올린다. 실패 시 올리지 않아야
         // persist effect가 메모리의 seed로 사용자의 실제 blob을 덮어쓰지 않는다.
         setReady(true);
