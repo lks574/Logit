@@ -22,15 +22,15 @@ const { c, scheme, toggle } = useTheme();
 ## Primitives (`../components/primitives`)
 - `<Screen scroll bg edges contentStyle>` — SafeAreaView + optional ScrollView. Use for
   every full screen. Default bg = `c.bg`. For screens WITH a bottom tab bar (Home, Calendar,
-  Stats, Settings) the tab bar is provided by the navigator — do NOT add one; just don't set
+  Stats, My) the tab bar is provided by the navigator — do NOT add one; just don't set
   bottom edge padding that fights it (use `edges={['top']}`). Modal/pushed screens
   (forms, detail, add*) have their own header row and no tab bar.
 - `<T>` themed Text (default color c.text; pass `c="..."` to override). `<Row gap between center>`. `<Divider>`.
 
 ## Glyph / Icons (`../components/Glyph`)
 - Named registry: `Icon.plus, chevronRight, chevronLeft, chevronDown, close, check, search,
-  home, calendar, chart, settings, edit, trash, bell, refresh, logo, running, dumbbell,
-  soccer, baseball, badminton, tennis, pingpong, jiujitsu, yoga, book, performance`.
+  home, calendar, chart, settings, edit, user, mail, trash, bell, refresh, logo, running, dumbbell,
+  soccer, baseball, badminton, tennis, pingpong, jiujitsu, yoga, book, performance, tent, mappin, utensils`.
   Usage: `<Icon.plus size={18} color={c.accent} strokeWidth={2.4} />`.
 - One-off icons NOT in the registry: inline the SVG paths with `Glyph`:
   ```tsx
@@ -65,8 +65,9 @@ const nav = useNavigation<any>();
 nav.navigate('Detail', { activity: '런닝' });
 nav.goBack();
 ```
-Routes: MainTabs (tabs: Home,Calendar,Add,Stats,Settings), ActivitySelect, RecordForm{activity,template},
-Detail{activity}, AddPlan, AddActivity, Plans, HomeEmpty, StatsEmpty.
+Routes: MainTabs (tabs: Home,Calendar,Add,Stats,My), ActivitySelect, RecordForm{activity,template,recordId?,planId?},
+Detail{activity,recordId?}, AddPlan, AddActivity, Plans, ProfileEdit, Settings, Feedback, Roadmap, CategoryStats, VerifyEmail.
+- 하단탭 '마이'(우상단 기어→Settings). 딥링크: `linking` 설정(`logit://record/:recordId` 등) — `src/navigation/linking.ts`.
 - FAB / "기록 추가" CTA → `nav.navigate('ActivitySelect')`.
 - Activity tile tap in ActivitySelect → `nav.navigate('RecordForm', {activity, template})`.
 - Cancel/close (취소 / ✕) in modal → `nav.goBack()`.

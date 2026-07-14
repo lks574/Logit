@@ -22,7 +22,7 @@
 
 ### 1.2 오프라인 우선
 로컬(AsyncStorage)이 **단일 진실 원천**. 쓰기는 즉시 로컬 반영 → 백그라운드 동기화(후속).
-충돌 정책은 last-write-wins. 동기화 상태는 레코드별 `sync` 필드로 표면화(SyncStatusBadge).
+충돌 정책은 last-write-wins. 동기화 상태는 **클라우드 백업 서명 비교**로 판정(SyncStatusBadge) — §5.
 
 ---
 
@@ -93,7 +93,7 @@ type TemplateType = 'endurance' | 'setrep' | 'match' | 'spectate' | 'free';
 
 | Template | 한글 | 색 (`Palette` 키) | 코어 필드(폼) | 예시 종목 |
 |---|---|---|---|---|
-| `endurance` | 거리·시간형 | `cardio` / `cardioSoft` (#2F8F83) | 거리·시간·페이스·심박 | 런닝, 자전거, 수영 |
+| `endurance` | 거리·시간형 | `cardio` / `cardioSoft` (#2F8F83) | 거리·시간·속도·심박 | 런닝, 자전거, 수영 |
 | `setrep` | 세트·횟수형 | `strength` / `strengthSoft` (#C2724B) | 부위·세트·반복·중량 | 헬스, 클라이밍 |
 | `match` | 대전·경기형 | `team` / `teamSoft` (#4A6FA5) | 상대·스코어·결과·슬롯 | 축구, 배드민턴, 야구 |
 | `spectate` | 관람·공연형 | `perf` / `perfSoft` (#8A6BA8) | 작품·장소·좌석·출연진 | 뮤지컬, 콘서트 |
@@ -125,7 +125,7 @@ type StoredRecord = {
   photos?: string[];              // 이미지 uri (expo-image-picker 결과)
   memo?: string;                  // 자유 메모
   fields?: Record<string, string>;// ★ 템플릿별 유연 필드 (templateFields)
-  sync: 'synced' | 'pending';     // 동기화 상태
+  sync: 'synced' | 'pending';     // 백업 스키마 호환용(동기화 배지는 백업 서명 기준 — §5)
 };
 ```
 
@@ -135,7 +135,7 @@ type StoredRecord = {
 - `meta`는 **비정규화된 표시 문자열**. 카드가 매번 필드를 조립하지 않도록 저장 시 1줄로 만들어 둠
   (읽기 경로 단순화). 상세 화면은 `fields`(정규 데이터)로 표를 그림.
 - `fields`가 **유연 스키마의 핵심**. 템플릿마다 키가 다르다:
-  - endurance → `{ 거리, 시간, 페이스, 고도, 칼로리, 평균심박 }`
+  - endurance → `{ 거리, 시간, 속도, 고도, 칼로리, 평균심박 }` (속도=km/h 자동, 칼로리=ACSM 자동)
   - match → `{ 스코어, 결과, 골, 어시스트 … }` (슬롯이 그대로 키가 됨)
   - spectate → `{ 작품, 공연장, 회차 }`
   DB 스키마 변경 없이 종목·템플릿이 늘어나도 흡수. (README의 `templateFields{}` 제안 그대로.)
@@ -183,15 +183,18 @@ type StoredPlan = {
 
 ---
 
-## 5. 동기화 상태 모델 (offline-first 표면화)
+## 5. 동기화 상태 모델 (클라우드 백업 기준)
 
 ```
-addRecord() → sync: 'pending'  ──(≈1.5s 후)──▶  sync: 'synced'
+클라우드 백업 성공 → markBackedUp(): backupSignature = syncSignature(현재 데이터)
+현재 syncSignature ≠ backupSignature (또는 미백업) → 'pending'(동기화 안됨)
+현재 syncSignature = backupSignature → 'synced'(동기화됨)
 ```
-- 새 레코드는 항상 `pending`으로 생성 → 타이머로 `synced` 전환(백그라운드 동기화 시뮬레이션).
-- `useSyncState()`: 하나라도 `pending`이면 `'pending'`, 아니면 `'synced'`.
-  (`'offline'` 상태는 타입에 존재 — 실제 네트워크 감지는 후속.)
-- 홈 헤더 `SyncStatusBadge`가 이 값을 구독 → 저장 직후 "대기 중" → "동기화됨" 전이가 보인다.
+- `StoreState.backupSignature`(로컬 전용, 백업 envelope 미포함)에 마지막 백업 시점 데이터 서명 저장.
+- `syncSignature(state)`: 백업 대상 데이터(records/plans/customActivities/profile/preferredActivities/onboarding)의 djb2 해시. **per-record `sync` 플래그는 제외**(비동기 변화 오탐 방지).
+- `useSyncState()`: `backupSignature`가 없거나 현재 서명과 다르면 `'pending'`, 같으면 `'synced'`. (`'offline'`은 타입에만 존재.)
+- 홈 헤더 `SyncStatusBadge`(탭→마이) + 마이 클라우드 백업 행("동기화 필요")이 이 값을 구독.
+- ⚠️ 과거의 "레코드별 pending→synced 타이머 시뮬레이션"은 제거됨. `sync` 필드는 백업/가져오기 스키마 호환용으로만 남음.
 
 > 색 단독 금지 원칙: 배지는 항상 **점 + 텍스트** 병행(색맹 안전).
 
