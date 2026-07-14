@@ -104,6 +104,16 @@ npx expo run:ios --device <UDID> --configuration Release
 | "ngrok tunnel took too long" | 네트워크가 ngrok 차단. → 다른 망/핫스팟 |
 | "remote gone away" / "failed to start tunnel" | ngrok 일시 오류. → 기존 ngrok/expo 프로세스 정리 후 재시도 |
 | LAN에서 연결만 하다 실패 | Wi-Fi 기기격리. → 터널 또는 핫스팟 |
+| "does not support the Associated Domains capability" | 유니버설 링크 엔타이틀먼트 = **유료 Apple Developer 계정** 필요. 무료 계정은 불가 → 스킴 딥링크만 사용 |
+| "does not support the Push Notifications capability" / `aps-environment` | 원격 푸시 엔타이틀먼트도 유료 계정 필요. **로컬 알림엔 불필요** → `ios/Logit/Logit.entitlements`를 `<dict/>`로 비우고 재빌드 |
+
+## `@react-native-firebase` · `expo prebuild --clean` 주의 (Remote Config)
+
+Remote Config는 `@react-native-firebase` 네이티브 모듈이라 **`ios/` 재생성(`expo prebuild --clean`)** 이 필요하다(기존 `ios/`엔 `FirebaseApp.configure()`가 안 붙음). clean은 아래를 매번 초기화하므로 재빌드 시 반복 조치가 필요하다:
+
+- **서명 소실** → pbxproj에 재주입: `PRODUCT_BUNDLE_IDENTIFIER = com.sro.logit;` 아래에 `DEVELOPMENT_TEAM = D9BK789354; CODE_SIGN_STYLE = Automatic;` (§1 서명 참고).
+- **`aps-environment` 재삽입**(expo-notifications) → 무료 계정 빌드가 "Push Notifications capability" 에러로 실패 → `ios/Logit/Logit.entitlements`를 `<dict/>`로 비운다. (로컬 알림은 영향 없음.)
+- **`GoogleService-Info.plist`는 .gitignore** → 새 클론/clean 후 레포 루트에 다시 배치(app.json `ios.googleServicesFile`가 참조). Firebase 콘솔 → iOS 앱(`com.sro.logit`)에서 다운로드.
 
 ## 용어 정리
 

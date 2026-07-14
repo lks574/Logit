@@ -223,8 +223,7 @@ export function normalize(parsed: any): StoreState {
     throw badFormat();
   }
   return {
-    // 가져온 기록은 이미 존재하는 데이터이므로 synced로 고정 — 'pending'으로 들어오면
-    // 타이머가 없어 SyncStatusBadge가 영구히 "대기 중"에 걸린다.
+    // sync는 백업 스키마 호환용 필드 — 가져온 기록은 synced로 고정(동기화 배지는 백업 서명 기준).
     records: d.records.map((r: StoredRecord) => ({ ...r, sync: 'synced' as const })),
     plans: d.plans,
     customActivities: Array.isArray(d.customActivities) ? d.customActivities : [],

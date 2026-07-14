@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { seed } from './seed';
 import { deletePhoto } from '../lib/photos';
 import { nowDateISO } from '../lib/date';
@@ -75,7 +75,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<StoreState>(seed);
   const [ready, setReady] = useState(false);
   const [persistError, setPersistError] = useState(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   // Rehydrate once.
   useEffect(() => {
@@ -110,19 +109,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       });
   }, [state, ready]);
 
-  useEffect(() => () => timers.current.forEach(clearTimeout), []);
-
   const value = useMemo<StoreValue>(() => {
-    const markSynced = (id: string) => {
-      const t = setTimeout(() => {
-        setState((s) => ({
-          ...s,
-          records: s.records.map((r) => (r.id === id ? { ...r, sync: 'synced' } : r)),
-        }));
-      }, 1500);
-      timers.current.push(t);
-    };
-
     return {
       ready,
       persistError,
@@ -155,9 +142,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         await AsyncStorage.setItem(KEY, JSON.stringify(next));
       },
       addRecord: (r) => {
-        const rec: StoredRecord = { ...r, id: uid('r'), sync: 'pending' };
+        // sync 필드는 백업 스키마 호환용으로만 남는다(동기화 배지는 백업 서명 기준 useSyncState).
+        const rec: StoredRecord = { ...r, id: uid('r'), sync: 'synced' };
         setState((s) => ({ ...s, records: [rec, ...s.records] }));
-        markSynced(rec.id);
         return rec;
       },
       addPlan: (p) => {
