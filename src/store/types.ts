@@ -8,7 +8,8 @@ export type StoredRecord = {
   id: string;
   activity: string; // activity name → activities registry
   template: TemplateType;
-  dateISO: string; // YYYY-MM-DD (calendar day)
+  dateISO: string; // YYYY-MM-DD (calendar day) — 멀티데이면 시작일
+  endDateISO?: string; // 멀티데이 기록(캠핑·여행 등)의 종료일. 없거나 시작일과 같으면 하루.
   timeLabel: string; // e.g. "오후 6:30" / "어제"
   meta?: string; // one-line card meta e.g. "한강공원 · 5.2km · 27′12″"
   rating?: number;

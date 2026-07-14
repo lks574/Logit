@@ -9,7 +9,7 @@ import { Icon } from '../../components/Glyph';
 import { useTheme } from '../../theme/ThemeContext';
 import { withAlpha } from '../../theme/tokens';
 import { useStore } from '../../store/StoreContext';
-import { recordsOn, plansOn } from '../../store/selectors';
+import { recordsOn, plansOn, recordsCovering, recordEnd } from '../../store/selectors';
 import { activities, colorsFor, activityLabel } from '../../data/activities';
 import { tr } from '../../i18n/i18n';
 import { displayTimeLabel } from '../../lib/date';
@@ -112,7 +112,14 @@ export default function CalendarScreen() {
   }, [records, plans, c]);
 
   // Selected-day agenda (live from store).
-  const dayRecords = recordsOn(records, selected);
+  const dayRecords = recordsCovering(records, selected); // 멀티데이 기록은 걸치는 모든 날에 노출
+  // 멀티데이면 선택일이 며칠차인지, 하루면 기존 시간 라벨.
+  const dayHint = (r: (typeof dayRecords)[number]) => {
+    const end = recordEnd(r);
+    if (end <= r.dateISO) return displayTimeLabel(r.timeLabel);
+    const between = (a: string, b: string) => Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 86400000);
+    return tr({ en: `Day ${between(r.dateISO, selected) + 1}/${between(r.dateISO, end) + 1}`, ko: `${between(r.dateISO, selected) + 1}일차/${between(r.dateISO, end) + 1}일` });
+  };
   const dayPlans = plansOn(plans, selected).filter((p) => !p.done);
   const recordCount = dayRecords.length;
   const planCount = dayPlans.length;
@@ -214,11 +221,20 @@ export default function CalendarScreen() {
             const isSat = col === 6;
             const isSelected = cell.inMonth && cell.dateISO === selected;
 
-            // Live markers: FILLED dot(s) per record (template color), EMPTY ring
-            // if any undone plan exists that day. A day can show both.
-            const dayRecs = recordsOn(records, cell.dateISO);
+            // Live markers: 단일일 기록 = 채운 점, 멀티데이(캠핑·여행) = 걸침 바(밴드),
+            // 미완료 약속 = 빈 링. 한 날에 공존 가능.
             const dayHasPlan = plansOn(plans, cell.dateISO).some((p) => !p.done);
-            const dotColors = dayRecs.map((r) => resolve(r.activity, r.template).color);
+            const dotColors = recordsOn(records, cell.dateISO)
+              .filter((r) => recordEnd(r) === r.dateISO)
+              .map((r) => resolve(r.activity, r.template).color);
+            const bars = recordsCovering(records, cell.dateISO)
+              .filter((r) => recordEnd(r) > r.dateISO)
+              .slice(0, 2)
+              .map((r) => ({
+                color: resolve(r.activity, r.template).color,
+                start: r.dateISO === cell.dateISO,
+                end: recordEnd(r) === cell.dateISO,
+              }));
 
             let numColor = c.text;
             if (!cell.inMonth) numColor = isSat ? withAlpha(c.team, 55) : c.text3;
@@ -239,47 +255,46 @@ export default function CalendarScreen() {
                   width: `${100 / 7}%`,
                   height: 44,
                   alignItems: 'center',
-                  paddingTop: isSelected ? 2 : 5,
-                  gap: isSelected ? 2 : 3,
+                  paddingTop: 5,
                 }}
               >
-                {isSelected ? (
-                  <View
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 12,
-                      backgroundColor: c.accent,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Text style={{ fontSize: 12.5, fontWeight: '700', color: '#fff', lineHeight: 14 }}>
-                      {cell.day}
-                    </Text>
-                  </View>
-                ) : (
-                  <Text style={{ fontSize: 12.5, fontWeight: '500', color: numColor, lineHeight: 14 }}>
-                    {cell.day}
-                  </Text>
-                )}
-                <View style={{ flexDirection: 'row', gap: 2, height: 6, alignItems: 'center' }}>
-                  {dotColors.map((color, mi) => (
+                {/* 숫자: 선택 여부와 무관하게 24px 고정 박스 → 탭 시 레이아웃 안 흔들림 */}
+                <View style={{ height: 24, alignItems: 'center', justifyContent: 'center' }}>
+                  {isSelected ? (
+                    <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
+                      <Text style={{ fontSize: 12.5, fontWeight: '700', color: '#fff', lineHeight: 14 }}>{cell.day}</Text>
+                    </View>
+                  ) : (
+                    <Text style={{ fontSize: 12.5, fontWeight: '500', color: numColor, lineHeight: 14 }}>{cell.day}</Text>
+                  )}
+                </View>
+                {/* 마커 — 셀 하단에 절대 고정 → 선택(원)에 밀리지 않고 밴드가 이웃과 정렬됨.
+                    멀티데이 바는 전체 폭, 시작/종료만 라운드 캡 → 인접일과 연결돼 밴드처럼. */}
+                <View style={{ position: 'absolute', left: 0, right: 0, bottom: 4, gap: 2 }}>
+                  {bars.map((b, bi) => (
                     <View
-                      key={`d${mi}`}
-                      style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: color }}
-                    />
-                  ))}
-                  {dayHasPlan ? (
-                    <View
+                      key={`b${bi}`}
                       style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: 3,
-                        borderWidth: 1.5,
-                        borderColor: c.accent,
+                        height: 4,
+                        backgroundColor: b.color,
+                        marginLeft: b.start ? 4 : 0,
+                        marginRight: b.end ? 4 : 0,
+                        borderTopLeftRadius: b.start ? 2 : 0,
+                        borderBottomLeftRadius: b.start ? 2 : 0,
+                        borderTopRightRadius: b.end ? 2 : 0,
+                        borderBottomRightRadius: b.end ? 2 : 0,
                       }}
                     />
+                  ))}
+                  {dotColors.length || dayHasPlan ? (
+                    <View style={{ flexDirection: 'row', gap: 2, height: 6, alignItems: 'center', justifyContent: 'center' }}>
+                      {dotColors.map((color, mi) => (
+                        <View key={`d${mi}`} style={{ width: 5, height: 5, borderRadius: 2.5, backgroundColor: color }} />
+                      ))}
+                      {dayHasPlan ? (
+                        <View style={{ width: 6, height: 6, borderRadius: 3, borderWidth: 1.5, borderColor: c.accent }} />
+                      ) : null}
+                    </View>
                   ) : null}
                 </View>
               </Pressable>
@@ -319,7 +334,7 @@ export default function CalendarScreen() {
                     soft={soft}
                     icon={<IconCmp size={18} color={color} />}
                     title={activityLabel(r.activity)}
-                    time={displayTimeLabel(r.timeLabel)}
+                    time={dayHint(r)}
                     meta={r.meta}
                     ratingFilled={r.rating}
                     onPress={() => nav.navigate('Detail', { activity: r.activity, recordId: r.id })}

@@ -9,6 +9,7 @@ import { Segmented } from '../../../components/controls';
 import { RatingInput, CompanionField } from '../../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
+import { MiniMonthPicker } from '../../../components/MiniMonthPicker';
 import { activities, activityLabel } from '../../../data/activities';
 import { resetToHome } from '../../../navigation/nav';
 import { useStore } from '../../../store/StoreContext';
@@ -46,6 +47,9 @@ export default function FreeForm({ activity, recordId, plan, initialDate }: { ac
   // PREFILL controlled state from the record when editing; start BLANK on create.
   // 날짜·시간: 편집이면 저장값, 신규면 현재 날짜/시각.
   const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? initialDate ?? nowDateISO());
+  // 여가·나들이(outing) 멀티데이 종료일. '' = 하루. 시작일보다 앞이면 자동 보정.
+  const [endISO, setEndISO] = React.useState(record?.endDateISO ?? record?.fields?.['마지막일'] ?? '');
+  const [endPicking, setEndPicking] = React.useState(false);
   const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? plan?.timeLabel ?? nowTimeLabel());
   const [title, setTitle] = React.useState(record?.fields?.['제목'] ?? '');
   const [duration, setDuration] = React.useState(record?.fields?.['시간']?.replace(/[^0-9]/g, '') ?? '');
@@ -96,15 +100,22 @@ export default function FreeForm({ activity, recordId, plan, initialDate }: { ac
     const 시간 = durTrim ? `${durTrim}분` : '';
     const 강도 = INTENSITY_LABEL[intensity];
     const titleTrim = title.trim();
+    // outing 멀티데이: 종료일이 시작일보다 뒤면 박 수 계산.
+    const nights =
+      isOuting && endISO && endISO > dateISO
+        ? Math.round((Date.parse(endISO + 'T00:00:00Z') - Date.parse(dateISO + 'T00:00:00Z')) / 86400000)
+        : 0;
+    const periodLabel = nights > 0 ? tr({ en: `${nights} night${nights > 1 ? 's' : ''}`, ko: `${nights}박 ${nights + 1}일` }) : '';
     const meta = isBook
       ? [titleTrim, 시간].filter(Boolean).join(' · ')
       : isOuting
-        ? place
+        ? [periodLabel, place].filter(Boolean).join(' · ')
         : [시간, tr({ en: `Intensity ${강도}`, ko: `강도 ${강도}` })].filter(Boolean).join(' · ');
     const payload = {
       activity,
       template: (isOuting ? 'outing' : 'free') as 'outing' | 'free',
       dateISO,
+      endDateISO: nights > 0 ? endISO : undefined,
       timeLabel,
       meta,
       rating,
@@ -119,6 +130,7 @@ export default function FreeForm({ activity, recordId, plan, initialDate }: { ac
         : isOuting
           ? {
               ...(place ? { 장소: place } : {}),
+              ...(periodLabel ? { 기간: periodLabel } : {}),
             }
           : {
               ...(시간 ? { 시간 } : {}),
@@ -162,6 +174,29 @@ export default function FreeForm({ activity, recordId, plan, initialDate }: { ac
             onChangeTime={setTimeLabel}
             color={c.accent}
           />
+          {/* 여가·나들이 — 여러 날(종료일) 선택. 여행 1박2일 등. */}
+          {isOuting ? (
+            <View style={{ marginTop: 8 }}>
+              <Pressable
+                onPress={() => setEndPicking((p) => !p)}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, paddingHorizontal: 12, borderRadius: 12, borderWidth: 1, borderColor: c.border, backgroundColor: c.surface }}
+              >
+                <Text style={{ fontSize: 14, color: c.text }}>{tr({ en: 'End date (multi-day)', ko: '종료일 (여러 날)' })}</Text>
+                <Text style={{ fontSize: 13, fontWeight: '600', color: endISO && endISO > dateISO ? c.text : c.text3 }}>
+                  {endISO && endISO > dateISO ? endISO : tr({ en: 'Same day', ko: '당일' })}
+                </Text>
+              </Pressable>
+              {endPicking ? (
+                <MiniMonthPicker
+                  value={endISO && endISO > dateISO ? endISO : dateISO}
+                  onChange={(v) => {
+                    setEndISO(v <= dateISO ? '' : v); // 시작일 이하 선택 = 당일(멀티데이 해제)
+                    setEndPicking(false);
+                  }}
+                />
+              ) : null}
+            </View>
+          ) : null}
         </View>
 
         {/* 독서 — 책 제목 */}

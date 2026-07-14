@@ -20,6 +20,16 @@ export function recordsOn(records: StoredRecord[], dateISO: string): StoredRecor
   return records.filter((r) => r.dateISO === dateISO);
 }
 
+// 기록의 종료일 — endDateISO 우선, 레거시(캠핑 fields.마지막일) 폴백, 없으면 시작일(하루).
+export function recordEnd(r: StoredRecord): string {
+  return r.endDateISO ?? r.fields?.마지막일 ?? r.dateISO;
+}
+
+// 해당 날짜를 '포함'하는 기록(멀티데이 걸침): 시작 ≤ d ≤ 종료.
+export function recordsCovering(records: StoredRecord[], dateISO: string): StoredRecord[] {
+  return records.filter((r) => r.dateISO <= dateISO && dateISO <= recordEnd(r));
+}
+
 export function plansOn(plans: StoredPlan[], dateISO: string): StoredPlan[] {
   return plans.filter((p) => p.dateISO === dateISO);
 }

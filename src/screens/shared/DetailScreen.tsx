@@ -13,6 +13,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { photoUri } from '../../lib/photos';
 import { useStore } from '../../store/StoreContext';
 import { StoredRecord } from '../../store/types';
+import { recordEnd } from '../../store/selectors';
 import { useTheme } from '../../theme/ThemeContext';
 import { Palette } from '../../theme/tokens';
 
@@ -38,7 +39,10 @@ function variantFromRecord(r: StoredRecord, c: Palette): Variant {
   // place: fields.장소에서 가져온다(모든 폼이 여기 저장). meta 첫 세그먼트 파싱은
   // endurance에만 맞아 다른 종목에선 작품명/상대명을 장소로 오인했다.
   const place = r.fields?.장소 ?? '';
-  const metaParts = [monthDay(r.dateISO), displayTimeLabel(r.timeLabel)].filter(Boolean);
+  // 멀티데이(캠핑·여행)면 헤더 날짜를 범위로: "6월 30일 – 7월 2일".
+  const end = recordEnd(r);
+  const dateLabel = end > r.dateISO ? `${monthDay(r.dateISO)} – ${monthDay(end)}` : monthDay(r.dateISO);
+  const metaParts = [dateLabel, displayTimeLabel(r.timeLabel)].filter(Boolean);
   const meta = place ? `${metaParts.join(' ')} · ${place}` : metaParts.join(' ');
 
   const companionName = r.companions && r.companions.length ? r.companions.join(', ') : '';
@@ -50,13 +54,14 @@ function variantFromRecord(r: StoredRecord, c: Palette): Variant {
   const fields = r.fields ?? {};
   // 헤더/내부용 키는 상세 수치 표에서 제외(장소=헤더에 표시, 세트=JSON 직렬화, 종목=sport key).
   // 저장 순서가 seed·폼마다 달라, 표준 순서로 정렬해 폼과 동일하게 노출한다.
-  const FIELD_ORDER = ['작품', '공연장', '좌석', '회차', '티켓', '출연진', '거리', '시간', '속도', '고도', '칼로리', '평균심박', '기분'];
+  const FIELD_ORDER = ['기간', '작품', '공연장', '좌석', '회차', '티켓', '출연진', '거리', '시간', '속도', '고도', '칼로리', '평균심박', '기분'];
   const rank = (k: string) => {
     const i = FIELD_ORDER.indexOf(k);
     return i === -1 ? FIELD_ORDER.length : i;
   };
   const detail: DetailRow[] = Object.entries(fields)
-    .filter(([k]) => k !== '장소' && k !== '세트' && k !== '종목')
+    // 장소=헤더, 세트=JSON, 종목=sport key, 마지막일=원시 ISO(기간 라벨로 대체) → 표에서 제외.
+    .filter(([k]) => k !== '장소' && k !== '세트' && k !== '종목' && k !== '마지막일')
     .sort(([a], [b]) => rank(a) - rank(b))
     .map(([label, value]) => ({ label, value }));
 

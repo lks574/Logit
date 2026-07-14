@@ -107,6 +107,7 @@ export default function CampingForm({ activity, recordId, plan, initialDate }: {
       activity,
       template: 'outing' as const,
       dateISO: startISO,
+      endDateISO: endISO > startISO ? endISO : undefined, // 멀티데이면 종료일(1급 필드)
       timeLabel: '',
       meta: [period, camp.trim(), region.trim()].filter(Boolean).join(' · '),
       rating,
