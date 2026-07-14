@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, View } from 'react-native';
+import { Modal, Pressable, TextInput, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Screen, T, Divider } from '../../components/primitives';
 import { Glyph, Path, Icon } from '../../components/Glyph';
@@ -8,7 +8,8 @@ import { ActionSheet } from '../../components/ActionSheet';
 import { useStore, useSyncState } from '../../store/StoreContext';
 import { useAuth } from '../../auth/AuthContext';
 import { exportData, importData } from '../../lib/dataTransfer';
-import { backupNow, fetchBackup } from '../../lib/cloudBackup';
+import { backupNow, fetchBackup, deleteBackup } from '../../lib/cloudBackup';
+import { deletePushToken } from '../../lib/push';
 import { showRewarded } from '../../lib/ads';
 import type { StoreState } from '../../store/types';
 import { useTheme } from '../../theme/ThemeContext';
@@ -21,6 +22,7 @@ type SheetState =
   | { kind: 'confirmImport'; incoming: StoreState; summary: string }
   | { kind: 'confirmReset' }
   | { kind: 'confirmLogout' }
+  | { kind: 'confirmLogin' }
   | { kind: 'cloud' }
   | { kind: 'message'; title: string; message?: string };
 
@@ -30,7 +32,26 @@ export default function MyScreen() {
   const nav = useNavigation<any>();
   const { profile, records, plans, customActivities, onboardingComplete, preferredActivities, replaceAll, markBackedUp } =
     useStore();
-  const { user, logout } = useAuth();
+  const { user, logout, deleteAccount, isPasswordUser, guest, promptLogin } = useAuth();
+  // uid 필요한 기능(백업·피드백): 로그인 상태면 실행, 게스트면 로그인 유도.
+  const requireLogin = (action: () => void) => (user ? action() : setSheet({ kind: 'confirmLogin' }));
+  const [del, setDel] = React.useState<{ open: boolean; pw: string; busy: boolean; err?: string }>({ open: false, pw: '', busy: false });
+
+  // 계정 삭제 — 서버(백업·토큰) 정리는 best-effort, 그다음 재인증+deleteUser. 로컬 기록은 유지.
+  const runDeleteAccount = async () => {
+    if (del.busy) return;
+    setDel((d) => ({ ...d, busy: true, err: undefined }));
+    try {
+      if (user) {
+        await deleteBackup(user.uid).catch(() => {});
+        await deletePushToken(user.uid).catch(() => {});
+      }
+      await deleteAccount(isPasswordUser ? del.pw : undefined);
+      setDel({ open: false, pw: '', busy: false }); // 성공 → 로그아웃 처리(onAuthStateChanged)
+    } catch (e) {
+      setDel((d) => ({ ...d, busy: false, err: errMessage(e) }));
+    }
+  };
   const synced = useSyncState() === 'synced';
   const initial = (profile.name.trim()[0] ?? '?').toUpperCase();
   const [sheet, setSheet] = React.useState<SheetState>({ kind: 'none' });
@@ -175,7 +196,8 @@ export default function MyScreen() {
               ? tr({ en: `Last backup: ${when}`, ko: `마지막 백업: ${when}` })
               : tr({ en: 'No cloud backup yet.', ko: '아직 클라우드 백업이 없어요.' });
         const adNote = tr({ en: 'Watch a short ad to back up to the cloud.', ko: '짧은 광고를 시청하면 클라우드에 백업됩니다.' });
-        const message = cloud.loading || cloud.err ? status : `${status}\n${adNote}`;
+        const photoNote = tr({ en: '※ Photos are not included in the backup.', ko: '※ 사진은 백업에 포함되지 않아요.' });
+        const message = cloud.loading || cloud.err ? status : `${status}\n${adNote}\n${photoNote}`;
         return {
           title: tr({ en: 'Cloud backup', ko: '클라우드 백업' }),
           message,
@@ -199,6 +221,13 @@ export default function MyScreen() {
           message: tr({ en: 'You will be logged out on this device. Your record data stays on the device.', ko: '이 기기에서 로그아웃합니다. 기록 데이터는 기기에 그대로 남아요.' }),
           cancelLabel: tr({ en: 'Cancel', ko: '취소' }),
           actions: [{ label: tr({ en: 'Log out', ko: '로그아웃' }), destructive: true, onPress: () => logout() }],
+        };
+      case 'confirmLogin':
+        return {
+          title: tr({ en: 'Sign in required', ko: '로그인이 필요해요' }),
+          message: tr({ en: 'Sign in to use cloud backup and send feedback.', ko: '클라우드 백업·피드백을 사용하려면 로그인이 필요해요.' }),
+          cancelLabel: tr({ en: 'Cancel', ko: '취소' }),
+          actions: [{ label: tr({ en: 'Sign in', ko: '로그인' }), onPress: () => promptLogin() }],
         };
       case 'message':
         return { title: sheet.title, message: sheet.message, cancelLabel: tr({ en: 'OK', ko: '확인' }), actions: [] };
@@ -256,7 +285,7 @@ export default function MyScreen() {
             <SettingsRow
               icon={<Icon.mail size={18} color={c.text2} strokeWidth={1.8} />}
               label={tr({ en: 'Message the developer', ko: '개발자에게 메세지' })}
-              onPress={() => nav.navigate('Feedback')}
+              onPress={() => requireLogin(() => nav.navigate('Feedback'))}
             />
             <Divider />
             <SettingsRow
@@ -274,16 +303,16 @@ export default function MyScreen() {
             <SettingsRow
               icon={<Glyph size={18} color={c.text2} strokeWidth={1.8}><Path d="M18 10a4 4 0 0 0-.7-7.9A6 6 0 0 0 6 6.5 4.5 4.5 0 0 0 7 15h11a3.5 3.5 0 0 0 0-5z" /></Glyph>}
               label={tr({ en: 'Cloud backup', ko: '클라우드 백업' })}
-              value={synced ? tr({ en: 'Synced', ko: '동기화됨' }) : undefined}
+              value={synced ? tr({ en: 'Backed up', ko: '백업됨' }) : undefined}
               right={
                 synced ? undefined : (
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                     <View style={{ width: 7, height: 7, borderRadius: 3.5, backgroundColor: c.warning }} />
-                    <T style={{ fontSize: 12, fontWeight: '600', color: c.warning }}>{tr({ en: 'Sync needed', ko: '동기화 필요' })}</T>
+                    <T style={{ fontSize: 12, fontWeight: '600', color: c.warning }}>{tr({ en: 'Backup needed', ko: '백업 필요' })}</T>
                   </View>
                 )
               }
-              onPress={openCloud}
+              onPress={() => requireLogin(openCloud)}
             />
             <Divider />
             <SettingsRow
@@ -306,13 +335,36 @@ export default function MyScreen() {
         <View>
           <SectionLabel text={tr({ en: 'Account', ko: '계정' })} />
           <Card>
-            <SettingsRow
-              icon={<Glyph size={18} color={c.text2} strokeWidth={1.8}><Path d="M16 17l5-5-5-5M21 12H9M12 19a7 7 0 1 1 0-14" /></Glyph>}
-              label={tr({ en: 'Log out', ko: '로그아웃' })}
-              value={user?.email ?? undefined}
-              onPress={() => setSheet({ kind: 'confirmLogout' })}
-            />
+            {user ? (
+              <>
+                <SettingsRow
+                  icon={<Glyph size={18} color={c.text2} strokeWidth={1.8}><Path d="M16 17l5-5-5-5M21 12H9M12 19a7 7 0 1 1 0-14" /></Glyph>}
+                  label={tr({ en: 'Log out', ko: '로그아웃' })}
+                  value={user?.email ?? undefined}
+                  onPress={() => setSheet({ kind: 'confirmLogout' })}
+                />
+                <Divider />
+                <SettingsRow
+                  icon={<Glyph size={18} color={c.error} strokeWidth={1.8}><Path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M6 6l1 14a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-14M10 11v6M14 11v6" /></Glyph>}
+                  label={tr({ en: 'Delete account', ko: '계정 삭제' })}
+                  right={<T style={{ fontSize: 13, fontWeight: '600', color: c.error }}>{tr({ en: 'Delete', ko: '삭제' })}</T>}
+                  onPress={() => setDel({ open: true, pw: '', busy: false })}
+                />
+              </>
+            ) : (
+              <SettingsRow
+                icon={<Glyph size={18} color={c.accent} strokeWidth={1.8}><Path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" /></Glyph>}
+                label={tr({ en: 'Sign in / Sign up', ko: '로그인 / 가입' })}
+                value={tr({ en: 'Guest', ko: '게스트' })}
+                onPress={promptLogin}
+              />
+            )}
           </Card>
+          {!user ? (
+            <T style={{ fontSize: 11, color: c.text3, marginHorizontal: 4, marginTop: 7 }}>
+              {tr({ en: 'Sign in to back up and restore across devices.', ko: '로그인하면 클라우드 백업·복원을 쓸 수 있어요.' })}
+            </T>
+          ) : null}
         </View>
 
         {/* 데이터 초기화 */}
@@ -340,6 +392,42 @@ export default function MyScreen() {
         cancelLabel={sheetView.cancelLabel}
         onCancel={() => setSheet({ kind: 'none' })}
       />
+
+      {/* 계정 삭제 — 비번 provider면 재인증 입력. 로컬 기록은 유지된다는 안내 포함. */}
+      <Modal visible={del.open} transparent animationType="fade" onRequestClose={() => !del.busy && setDel({ open: false, pw: '', busy: false })}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', alignItems: 'center', justifyContent: 'center', padding: 28 }}>
+          <View style={{ width: '100%', maxWidth: 340, backgroundColor: c.surface, borderRadius: 18, padding: 20, gap: 12 }}>
+            <T style={{ fontSize: 17, fontWeight: '700', color: c.text }}>{tr({ en: 'Delete account', ko: '계정 삭제' })}</T>
+            <T style={{ fontSize: 13, color: c.text2, lineHeight: 19 }}>
+              {tr({ en: 'Your account and cloud backup are permanently deleted. Records on this device are kept.', ko: '계정과 클라우드 백업이 영구 삭제돼요. 이 기기의 기록은 유지됩니다.' })}
+            </T>
+            {isPasswordUser ? (
+              <TextInput
+                value={del.pw}
+                onChangeText={(t) => setDel((d) => ({ ...d, pw: t }))}
+                placeholder={tr({ en: 'Password', ko: '비밀번호' })}
+                placeholderTextColor={c.text3}
+                secureTextEntry
+                autoCapitalize="none"
+                style={{ borderWidth: 1, borderColor: c.border, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14, fontSize: 15, color: c.text, backgroundColor: c.surfaceAlt }}
+              />
+            ) : null}
+            {del.err ? <T style={{ fontSize: 12, color: c.error }}>{del.err}</T> : null}
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
+              <Pressable disabled={del.busy} onPress={() => setDel({ open: false, pw: '', busy: false })} style={{ flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: c.surfaceAlt, alignItems: 'center' }}>
+                <T style={{ fontSize: 14, fontWeight: '600', color: c.text2 }}>{tr({ en: 'Cancel', ko: '취소' })}</T>
+              </Pressable>
+              <Pressable
+                disabled={del.busy || (isPasswordUser && !del.pw)}
+                onPress={runDeleteAccount}
+                style={{ flex: 1, paddingVertical: 12, borderRadius: 12, backgroundColor: c.error, alignItems: 'center', opacity: del.busy || (isPasswordUser && !del.pw) ? 0.5 : 1 }}
+              >
+                <T style={{ fontSize: 14, fontWeight: '700', color: '#fff' }}>{del.busy ? tr({ en: 'Deleting…', ko: '삭제 중…' }) : tr({ en: 'Delete', ko: '삭제' })}</T>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </Screen>
   );
 }

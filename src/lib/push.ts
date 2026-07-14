@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { doc, deleteDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
 import { ensurePermission } from './notifications';
 
@@ -22,4 +22,9 @@ export async function registerPushToken(uid: string): Promise<void> {
     { token, platform: Platform.OS, updatedAt: serverTimestamp() },
     { merge: true },
   );
+}
+
+// 푸시 토큰 문서 삭제(계정 삭제 시). 없으면 no-op.
+export async function deletePushToken(uid: string): Promise<void> {
+  await deleteDoc(doc(db, 'pushTokens', uid));
 }

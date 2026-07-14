@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, deleteDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { db } from './firebase';
 import { buildEnvelope, normalize } from './dataTransfer';
 import { tr } from '../i18n/i18n';
@@ -38,6 +38,11 @@ export async function backupNow(uid: string, state: StoreState): Promise<void> {
       counts: { records: state.records.length, plans: state.plans.length },
     }),
   );
+}
+
+// 클라우드 백업 문서 삭제(계정 삭제 시). 없으면 no-op.
+export async function deleteBackup(uid: string): Promise<void> {
+  await withTimeout(deleteDoc(backupRef(uid)));
 }
 
 // 마지막 백업 조회. 없으면 null. 형식이 깨졌으면 throw(normalize).

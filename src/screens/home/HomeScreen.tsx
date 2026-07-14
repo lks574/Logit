@@ -72,7 +72,7 @@ export default function HomeScreen() {
           onPress={() => nav.navigate('My')}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel={tr({ en: 'Sync status, go to My', ko: '동기화 상태, 마이로 이동' })}
+          accessibilityLabel={tr({ en: 'Backup status, go to My', ko: '백업 상태, 마이로 이동' })}
           style={{ marginTop: 6 }}
         >
           <SyncStatusBadge state={sync} />

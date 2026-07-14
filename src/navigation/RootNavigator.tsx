@@ -68,7 +68,7 @@ function AppStack() {
 
 export function RootNavigator() {
   const { c, scheme } = useTheme();
-  const { status, user } = useAuth();
+  const { status, user, guest } = useAuth();
   const { ready, onboardingComplete } = useStore();
   const navTheme = {
     ...(scheme === 'dark' ? DarkTheme : DefaultTheme),
@@ -90,8 +90,8 @@ export function RootNavigator() {
 
   const content = () => {
     if (status === 'loading') return splash;
-    if (!user) return <AuthNavigator />;
-    if (!user.emailVerified) return <VerifyEmailScreen />; // authed + 미인증 → 인증 대기 게이트
+    if (!user && !guest) return <AuthNavigator />; // 로그인 안 함 + 게스트 아님 → 시작 화면
+    if (user && !user.emailVerified) return <VerifyEmailScreen />; // authed + 미인증 → 인증 대기 게이트
     if (!ready) return splash; // 스토어 하이드레이션 대기(온보딩 깜빡임 방지)
     if (!onboardingComplete) return <OnboardingScreen />; // 가입 직후 1회
     return <AppStack />;

@@ -8,6 +8,9 @@ import {
   updateProfile,
   signInWithCredential,
   GoogleAuthProvider,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+  deleteUser,
   signOut,
   reload,
 } from 'firebase/auth';
@@ -32,6 +35,11 @@ type AuthContextValue = {
   updateDisplayName: (name: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
+  isPasswordUser: boolean; // 이메일/비번 계정이면 삭제 시 비밀번호 재인증 필요
+  deleteAccount: (password?: string) => Promise<void>;
+  guest: boolean; // 로그인 없이 둘러보기 중(백업 등 uid 필요 기능만 로그인 유도)
+  continueAsGuest: () => Promise<void>;
+  promptLogin: () => Promise<void>; // 게스트 → 로그인 화면으로 (guest 해제)
 };
 
 const AuthContext = React.createContext<AuthContextValue | null>(null);
@@ -39,6 +47,7 @@ const AuthContext = React.createContext<AuthContextValue | null>(null);
 // ponytail: Firebase config가 없을 때 쓰는 로컬 mock 인증. 아무 이메일/비번으로 로그인되고
 // AsyncStorage로 세션만 유지한다(검증·네트워크 없음). firebaseConfig를 채우면 자동으로 실제 인증으로 전환.
 const MOCK_KEY = 'logit-mock-auth';
+const GUEST_KEY = 'logit-guest';
 const credError = () => {
   const e: any = new Error(tr({ en: 'Please enter your email and password.', ko: '이메일과 비밀번호를 입력해주세요.' }));
   e.code = 'auth/invalid-credential';
@@ -48,6 +57,13 @@ const credError = () => {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = React.useState<AppUser | null>(null);
   const [status, setStatus] = React.useState<Status>('loading');
+  const [guest, setGuest] = React.useState(false);
+
+  React.useEffect(() => {
+    AsyncStorage.getItem(GUEST_KEY)
+      .then((v) => setGuest(v === '1'))
+      .catch(() => {});
+  }, []);
 
   React.useEffect(() => {
     if (isFirebaseConfigured) {
@@ -143,6 +159,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
     },
     logout: async () => {
+      await AsyncStorage.removeItem(GUEST_KEY); // 로그아웃 → 게스트도 해제 → 시작 화면
+      setGuest(false);
       if (!isFirebaseConfigured) {
         await AsyncStorage.removeItem(MOCK_KEY);
         setUser(null);
@@ -150,6 +168,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       await signOut(auth);
+    },
+    guest,
+    continueAsGuest: async () => {
+      await AsyncStorage.setItem(GUEST_KEY, '1');
+      setGuest(true);
+    },
+    promptLogin: async () => {
+      await AsyncStorage.removeItem(GUEST_KEY);
+      setGuest(false);
+    },
+    isPasswordUser: isFirebaseConfigured
+      ? (auth.currentUser?.providerData.some((p) => p.providerId === 'password') ?? false)
+      : false,
+    // 계정 삭제 — 재인증(최근 로그인 요구) 후 deleteUser. 서버 백업/토큰 정리는 호출측(MyScreen)에서.
+    deleteAccount: async (password) => {
+      if (!isFirebaseConfigured) {
+        await AsyncStorage.removeItem(MOCK_KEY);
+        setUser(null);
+        setStatus('unauthed');
+        return;
+      }
+      const u = auth.currentUser;
+      if (!u) return;
+      const providerId = u.providerData[0]?.providerId;
+      if (providerId === 'password') {
+        if (!password) throw new Error(tr({ en: 'Enter your password to delete your account.', ko: '계정 삭제를 위해 비밀번호를 입력해주세요.' }));
+        await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email ?? '', password));
+      } else if (providerId === 'google.com') {
+        const { GoogleSignin } = await loadGoogleSignin();
+        GoogleSignin.configure({ webClientId: googleWebClientId, iosClientId: googleIosClientId });
+        await GoogleSignin.hasPlayServices();
+        const res: any = await GoogleSignin.signIn();
+        const idToken = res?.data?.idToken ?? res?.idToken;
+        if (!idToken) throw new Error(tr({ en: 'Google re-auth failed.', ko: 'Google 재인증에 실패했어요.' }));
+        await reauthenticateWithCredential(u, GoogleAuthProvider.credential(idToken));
+      }
+      await deleteUser(u); // onAuthStateChanged가 user=null 처리
     },
   };
 
