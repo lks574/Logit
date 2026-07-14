@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Screen, T, Row } from '../../components/primitives';
 import { Icon } from '../../components/Glyph';
 import { Segmented } from '../../components/controls';
@@ -9,6 +9,7 @@ import { withAlpha } from '../../theme/tokens';
 import { activities, colorsFor, activityLabel } from '../../data/activities';
 import { TemplateType } from '../../theme/tokens';
 import { useStore } from '../../store/StoreContext';
+import { RootStackParamList } from '../../navigation/types';
 import { Msg, tr } from '../../i18n/i18n';
 
 // 템플릿별 섹션 — 목록은 카탈로그(activities)에서 자동 그룹핑한다(누락 방지·자동 반영).
@@ -24,6 +25,8 @@ const SECTIONS: { template: TemplateType; label: Msg; hint?: Msg }[] = [
 export default function ActivitySelectScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
+  const route = useRoute<RouteProp<RootStackParamList, 'ActivitySelect'>>();
+  const dateISO = route.params?.dateISO; // 캘린더 "이 날 기록 추가"에서 전달된 날짜
   const { customActivities, records } = useStore();
 
   // 이름 → 템플릿/아이콘 (빌트인 없으면 커스텀, 그래도 없으면 기본값). 최근 사용에 커스텀도 섞이므로 필요.
@@ -86,8 +89,8 @@ export default function ActivitySelectScreen() {
   // 기록 모드 → RecordForm, 약속 모드 → AddPlan(활동 프리필).
   const go = (name: string, template: TemplateType) =>
     mode === 'plan'
-      ? nav.navigate('AddPlan', { activity: name })
-      : nav.navigate('RecordForm', { activity: name, template });
+      ? nav.navigate('AddPlan', { activity: name, dateISO })
+      : nav.navigate('RecordForm', { activity: name, template, dateISO });
 
   // 최근 사용 pill (좌우 스크롤 행) — 커스텀 활동도 처리, 내용 크기로 배치.
   const Pill = ({ name }: { name: string }) => {

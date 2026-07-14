@@ -50,15 +50,15 @@ function DateBox({ label, iso, active, onPress, c }: { label: string; iso: strin
   );
 }
 
-export default function CampingForm({ activity, recordId, plan }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan }) {
+export default function CampingForm({ activity, recordId, plan, initialDate }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan; initialDate?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const { addRecord, updateRecord, getRecord, records, completePlan } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
-  const [startISO, setStartISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? nowDateISO());
-  const [endISO, setEndISO] = React.useState(record?.fields?.마지막일 ?? record?.dateISO ?? plan?.dateISO ?? nowDateISO());
+  const [startISO, setStartISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? initialDate ?? nowDateISO());
+  const [endISO, setEndISO] = React.useState(record?.fields?.마지막일 ?? record?.dateISO ?? plan?.dateISO ?? initialDate ?? nowDateISO());
   const [region, setRegion] = React.useState(record?.fields?.지역 ?? '');
   const [camp, setCamp] = React.useState(record?.fields?.장소 ?? plan?.place ?? '');
   const [tags, setTags] = React.useState(record?.fields?.분류 ?? '');

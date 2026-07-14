@@ -29,14 +29,14 @@ const MOODS = [
   { emoji: '😄', label: '최고', name: { en: 'Great', ko: '최고' } },
 ];
 
-export default function EnduranceForm({ activity, recordId, plan }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan }) {
+export default function EnduranceForm({ activity, recordId, plan, initialDate }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan; initialDate?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const { addRecord, updateRecord, getRecord, records, completePlan, profile } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
-  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? nowDateISO());
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? initialDate ?? nowDateISO());
   const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? plan?.timeLabel ?? nowTimeLabel());
   const [open, setOpen] = React.useState(editing); // 세부 입력 disclosure (open when editing)
   const [rating, setRating] = React.useState(record?.rating ?? 0);

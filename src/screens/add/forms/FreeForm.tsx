@@ -27,7 +27,7 @@ type Intensity = 'low' | 'mid' | 'high';
 const INTENSITY_LABEL: Record<Intensity, string> = { low: '낮음', mid: '보통', high: '높음' };
 const LABEL_INTENSITY: Record<string, Intensity> = { 낮음: 'low', 보통: 'mid', 높음: 'high' };
 
-export default function FreeForm({ activity, recordId, plan }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan }) {
+export default function FreeForm({ activity, recordId, plan, initialDate }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan; initialDate?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const { addRecord, updateRecord, getRecord, customActivities, completePlan } = useStore();
@@ -45,7 +45,7 @@ export default function FreeForm({ activity, recordId, plan }: { activity: strin
 
   // PREFILL controlled state from the record when editing; start BLANK on create.
   // 날짜·시간: 편집이면 저장값, 신규면 현재 날짜/시각.
-  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? nowDateISO());
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? initialDate ?? nowDateISO());
   const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? plan?.timeLabel ?? nowTimeLabel());
   const [title, setTitle] = React.useState(record?.fields?.['제목'] ?? '');
   const [duration, setDuration] = React.useState(record?.fields?.['시간']?.replace(/[^0-9]/g, '') ?? '');

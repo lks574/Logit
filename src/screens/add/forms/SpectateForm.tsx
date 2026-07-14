@@ -78,7 +78,7 @@ function InputCard({
   );
 }
 
-export default function SpectateForm({ activity, recordId, plan }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan }) {
+export default function SpectateForm({ activity, recordId, plan, initialDate }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan; initialDate?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const { addRecord, updateRecord, getRecord, records, completePlan } = useStore();
@@ -102,7 +102,7 @@ export default function SpectateForm({ activity, recordId, plan }: { activity: s
 
   // Prefill controlled state from the record when editing.
   // 날짜·시간: 편집이면 저장값, 신규면 현재 날짜/시각.
-  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? nowDateISO());
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? initialDate ?? nowDateISO());
   const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? plan?.timeLabel ?? nowTimeLabel());
   const [title, setTitle] = React.useState(record?.fields?.작품 ?? '');
   const [venue, setVenue] = React.useState(record?.fields?.공연장 ?? plan?.place ?? '');

@@ -58,14 +58,14 @@ function parseRows(saved?: string): SetRow[] {
   return [{ set: '1', reps: '', weight: '', warmup: false }];
 }
 
-export default function SetRepForm({ activity, recordId, plan }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan }) {
+export default function SetRepForm({ activity, recordId, plan, initialDate }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan; initialDate?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const { addRecord, updateRecord, getRecord, completePlan } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
-  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? nowDateISO());
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? initialDate ?? nowDateISO());
   const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? plan?.timeLabel ?? nowTimeLabel());
   const [part, setPart] = React.useState(record?.fields?.부위 ?? '');
   const [open, setOpen] = React.useState(editing);

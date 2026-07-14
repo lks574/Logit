@@ -348,25 +348,37 @@ export default function CalendarScreen() {
             </Text>
           )}
 
-          {/* 선택일에 약속 추가 (날짜 프리필) */}
-          <Pressable
-            onPress={() => nav.navigate('AddPlan', { dateISO: selected })}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              borderWidth: 1.5,
-              borderStyle: 'dashed',
-              borderColor: withAlpha(c.accent, 45),
-              borderRadius: 12,
-              paddingVertical: 12,
-              marginTop: 2,
-            }}
-          >
-            <Icon.plus size={16} color={c.accent} strokeWidth={2.4} />
-            <Text style={{ fontSize: 13, fontWeight: '600', color: c.accent }}>{tr({ en: 'Add plan for this day', ko: '이 날 약속 추가' })}</Text>
-          </Pressable>
+          {/* 선택일에 기록/약속 추가 (날짜 프리필) — 좌: 기록, 우: 약속 */}
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 2 }}>
+            {(() => {
+              const addBtn = (label: string, onPress: () => void) => (
+                <Pressable
+                  onPress={onPress}
+                  style={{
+                    flex: 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    borderWidth: 1.5,
+                    borderStyle: 'dashed',
+                    borderColor: withAlpha(c.accent, 45),
+                    borderRadius: 12,
+                    paddingVertical: 12,
+                  }}
+                >
+                  <Icon.plus size={16} color={c.accent} strokeWidth={2.4} />
+                  <Text style={{ fontSize: 13, fontWeight: '600', color: c.accent }}>{label}</Text>
+                </Pressable>
+              );
+              return (
+                <>
+                  {addBtn(tr({ en: 'Add record', ko: '기록 추가' }), () => nav.navigate('ActivitySelect', { dateISO: selected }))}
+                  {addBtn(tr({ en: 'Add plan', ko: '약속 추가' }), () => nav.navigate('AddPlan', { dateISO: selected }))}
+                </>
+              );
+            })()}
+          </View>
         </View>
       </View>
       )}

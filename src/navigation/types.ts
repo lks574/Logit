@@ -2,8 +2,8 @@ import { TemplateType } from '../theme/tokens';
 
 export type RootStackParamList = {
   MainTabs: undefined;
-  ActivitySelect: undefined;
-  RecordForm: { activity: string; template: TemplateType; recordId?: string; planId?: string };
+  ActivitySelect: { dateISO?: string } | undefined;
+  RecordForm: { activity: string; template: TemplateType; recordId?: string; planId?: string; dateISO?: string };
   Detail: { activity: string; recordId?: string };
   CategoryStats: {
     category: 'cardio' | 'strength' | 'match' | 'performance' | 'free';

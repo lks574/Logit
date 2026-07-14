@@ -20,14 +20,14 @@ import { activityLabel } from '../../../data/activities';
 // the swappable "종목별 핵심 기록" fields (schema in src/data/sports.ts), the score
 // card, and the 결과 segment. 개인전(승/패) vs 팀전(승/무/패). Copy: Logit.dc.html 557–617.
 
-export default function MatchForm({ activity, recordId, plan }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan }) {
+export default function MatchForm({ activity, recordId, plan, initialDate }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan; initialDate?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const { addRecord, updateRecord, getRecord, completePlan } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
-  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? nowDateISO());
+  const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? initialDate ?? nowDateISO());
   const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? plan?.timeLabel ?? nowTimeLabel());
 
   // 종목: 편집 시 저장된 fields.종목 우선(칩을 바꿔 저장한 값 보존), 없으면 활동명 기준.

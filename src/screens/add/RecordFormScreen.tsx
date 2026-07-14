@@ -15,21 +15,23 @@ import SpectateForm from './forms/SpectateForm';
 // 저장 시 기록 생성 + 약속 완료 처리(completePlan)한다.
 export default function RecordFormScreen() {
   const { params } = useRoute<RouteProp<RootStackParamList, 'RecordForm'>>();
-  const { activity, template, recordId, planId } = params;
+  const { activity, template, recordId, planId, dateISO } = params;
   const { getPlan } = useStore();
   const plan = planId ? getPlan(planId) : undefined;
+  // dateISO: 캘린더 "이 날 기록 추가"의 프리필 날짜(신규 생성 시 기본 날짜).
+  const p = { recordId, plan, initialDate: dateISO };
   // 캠핑은 free 템플릿을 공유하지만 전용 폼(기간·장소·동행)을 쓴다.
-  if (activity === '캠핑') return <CampingForm activity={activity} recordId={recordId} plan={plan} />;
+  if (activity === '캠핑') return <CampingForm activity={activity} {...p} />;
   switch (template) {
     case 'endurance':
-      return <EnduranceForm activity={activity} recordId={recordId} plan={plan} />;
+      return <EnduranceForm activity={activity} {...p} />;
     case 'setrep':
-      return <SetRepForm activity={activity} recordId={recordId} plan={plan} />;
+      return <SetRepForm activity={activity} {...p} />;
     case 'match':
-      return <MatchForm activity={activity} recordId={recordId} plan={plan} />;
+      return <MatchForm activity={activity} {...p} />;
     case 'spectate':
-      return <SpectateForm activity={activity} recordId={recordId} plan={plan} />;
+      return <SpectateForm activity={activity} {...p} />;
     default:
-      return <FreeForm activity={activity} recordId={recordId} plan={plan} />;
+      return <FreeForm activity={activity} {...p} />;
   }
 }
