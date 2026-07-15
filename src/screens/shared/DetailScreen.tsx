@@ -18,7 +18,7 @@ import { StoredRecord } from '../../store/types';
 import { recordEnd } from '../../store/selectors';
 import { parseExercises } from '../../lib/strength';
 import { useTheme } from '../../theme/ThemeContext';
-import { Palette } from '../../theme/tokens';
+import { Palette, withAlpha } from '../../theme/tokens';
 
 type DetailRow = { label: string; value: string };
 type Companion = { initial: string; name: string };
@@ -62,9 +62,11 @@ function variantFromRecord(r: StoredRecord, c: Palette): Variant {
     const i = FIELD_ORDER.indexOf(k);
     return i === -1 ? FIELD_ORDER.length : i;
   };
+  // match는 스코어/결과/나/상대를 상단 스코어보드로 올리므로 표에서 제외(종목별 슬롯만 표에 남는다).
+  const scoreboardKeys = r.template === 'match' ? ['스코어', '결과', '나', '상대'] : [];
   const detail: DetailRow[] = Object.entries(fields)
     // 장소=헤더, 세트/운동=JSON(별도 섹션), 종목=sport key, 마지막일=원시 ISO(기간 라벨로 대체) → 표에서 제외.
-    .filter(([k]) => k !== '장소' && k !== '세트' && k !== '운동' && k !== '종목' && k !== '마지막일')
+    .filter(([k]) => k !== '장소' && k !== '세트' && k !== '운동' && k !== '종목' && k !== '마지막일' && !scoreboardKeys.includes(k))
     .sort(([a], [b]) => rank(a) - rank(b))
     .map(([label, value]) => ({ label, value }));
 
@@ -237,6 +239,45 @@ export default function DetailScreen() {
             </View>
           ) : null}
         </Row>
+
+        {/* 스코어보드 (match 전용) — 결과 배지 + 스코어를 표에서 끌어올려 크게 */}
+        {record.template === 'match' ? (() => {
+          const f = record.fields ?? {};
+          const [mine, theirs] = (f.스코어 ?? '').split(':');
+          const hasScore = !!f.스코어;
+          const result = f.결과; // 승/무/패
+          const me = f.나?.trim();
+          const opp = f.상대?.trim();
+          if (!hasScore && !result && !me && !opp) return null;
+          const resultColor = result === '승' ? c.success : result === '패' ? c.error : c.warning;
+          const resultText = result ? tr({ en: result === '승' ? 'WIN' : result === '패' ? 'LOSS' : 'DRAW', ko: result }) : '';
+          return (
+            <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, paddingVertical: 18, paddingHorizontal: 16, alignItems: 'center', gap: 12 }}>
+              {result ? (
+                <View style={{ backgroundColor: withAlpha(resultColor, 15), borderRadius: 999, paddingVertical: 5, paddingHorizontal: 14 }}>
+                  <Text style={{ fontSize: 13, fontWeight: '800', color: resultColor, letterSpacing: 0.5 }}>{resultText}</Text>
+                </View>
+              ) : null}
+              {hasScore ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 18, width: '100%' }}>
+                  <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                    <Text style={{ fontSize: 34, fontWeight: '800', color: c.text }}>{(mine ?? '').trim() || '0'}</Text>
+                    {me ? <Text numberOfLines={1} style={{ fontSize: 12, color: c.text2, marginTop: 2 }}>{me}</Text> : null}
+                  </View>
+                  <Text style={{ fontSize: 20, fontWeight: '700', color: c.text3 }}>:</Text>
+                  <View style={{ flex: 1, alignItems: 'flex-start' }}>
+                    <Text style={{ fontSize: 34, fontWeight: '800', color: c.text }}>{(theirs ?? '').trim() || '0'}</Text>
+                    {opp ? <Text numberOfLines={1} style={{ fontSize: 12, color: c.text2, marginTop: 2 }}>{opp}</Text> : null}
+                  </View>
+                </View>
+              ) : me || opp ? (
+                <Text style={{ fontSize: 15, fontWeight: '700', color: c.text }}>
+                  {me || tr({ en: 'Me', ko: '나' })} <Text style={{ color: c.text3 }}>vs</Text> {opp || tr({ en: 'Opponent', ko: '상대' })}
+                </Text>
+              ) : null}
+            </View>
+          );
+        })() : null}
 
         {/* Photos — 실제 사진이 있을 때만 표시. 탭 → 전체화면. */}
         {hasPhotos ? (
