@@ -16,12 +16,11 @@ import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
 import { tr } from '../../../i18n/i18n';
 import { activityLabel } from '../../../data/activities';
+import { Exercise, emptyExercise, emptySet, parseExercises, totalVolume, cleanExercises } from '../../../lib/strength';
 
-// SetRepForm (HTML 3.2, lines 503–556) — 세트·횟수형 (strength template).
-// 운동 부위 chips · per-exercise set table · ＋세트/종목 추가 · 볼륨/시간 summary
+// SetRepForm — 세트·횟수형 (strength template). 다종목 로거.
+// 운동 부위 chips · 종목별(이름+세트 테이블) · 세트/종목 추가·삭제 · 볼륨/시간 summary
 // · 공통 세부 입력 disclosure. Supports create + edit (recordId).
-
-type SetRow = { set: string; reps: string; weight: string; warmup: boolean };
 
 // value는 저장·비교용(번역 금지, fields.부위), label은 표시용 번역.
 const PARTS = [
@@ -41,24 +40,6 @@ const MOODS = [
   { emoji: '😄', label: '최고', name: { en: 'Great', ko: '최고' } },
 ];
 
-// fields.세트(JSON)에서 세트 행 복원. 저장값이 없거나 손상 시 빈 1행으로 시작.
-function parseRows(saved?: string): SetRow[] {
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed) && parsed.length) {
-        return parsed.map((r) => ({
-          set: String(r?.set ?? ''),
-          reps: String(r?.reps ?? ''),
-          weight: String(r?.weight ?? ''),
-          warmup: !!r?.warmup,
-        }));
-      }
-    } catch {}
-  }
-  return [{ set: '1', reps: '', weight: '', warmup: false }];
-}
-
 export default function SetRepForm({ activity, recordId, plan, initialDate }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan; initialDate?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
@@ -77,12 +58,12 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
   const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
   const [mood, setMood] = React.useState<number>(() => MOODS.findIndex((m) => m.label === record?.fields?.기분));
   const [운동시간, set운동시간] = React.useState(record?.fields?.운동시간 ?? '');
-  const [rows, setRows] = React.useState<SetRow[]>(() => parseRows(record?.fields?.세트));
+  const [exercises, setExercises] = React.useState<Exercise[]>(() => parseExercises(record?.fields));
 
   const 운동시간Ref = React.useRef<TextInput>(null);
   const moodColors = [c.error, c.warning, c.success, c.cardio];
 
-  // 최근 같은 활동 기록 프리필 — 지난 세션의 세트 구성을 시작점으로 복사(결과성 값 제외).
+  // 최근 같은 활동 기록 프리필 — 지난 세션의 종목 구성을 시작점으로 복사(결과성 값 제외).
   const lastRecord = React.useMemo(
     () => records.find((r) => r.activity === activity && r.id !== recordId),
     [records, activity, recordId],
@@ -91,29 +72,39 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
     if (!lastRecord) return;
     const f = lastRecord.fields ?? {};
     if (f.부위) setPart(f.부위);
-    if (f.세트) setRows(parseRows(f.세트));
+    if (f.운동 || f.세트) setExercises(parseExercises(f));
     if (f.운동시간) set운동시간(f.운동시간);
     if (f.장소) setPlace(f.장소);
   };
 
-  // 총 볼륨 = Σ(반복 × 중량), 워밍업 제외 — "자동" 뱃지대로 세트 값에서 계산한다.
-  const totalVolume = rows.reduce((sum, r) => {
-    if (r.warmup) return sum;
-    return sum + (parseFloat(r.reps) || 0) * (parseFloat(r.weight) || 0);
-  }, 0);
-  const 총볼륨 = totalVolume > 0 ? `${totalVolume}kg` : '';
+  const 총볼륨num = totalVolume(exercises);
+  const 총볼륨 = 총볼륨num > 0 ? `${총볼륨num}kg` : '';
 
-  const addSet = () =>
-    setRows((r) => [
-      ...r,
-      { set: String(r.filter((x) => x.set !== 'W').length + 1), reps: '', weight: '', warmup: false },
-    ]);
-
-  const toggleWarmup = (i: number) =>
-    setRows((r) => r.map((row, idx) => (idx === i ? { ...row, warmup: !row.warmup } : row)));
-
-  const setCell = (i: number, key: 'reps' | 'weight', val: string) =>
-    setRows((r) => r.map((row, idx) => (idx === i ? { ...row, [key]: val } : row)));
+  // 종목 편집 헬퍼 — exercises[ei].sets[si] 불변 업데이트.
+  const updateExercises = (fn: (list: Exercise[]) => Exercise[]) => setExercises(fn);
+  const setExerciseName = (ei: number, name: string) =>
+    updateExercises((list) => list.map((e, i) => (i === ei ? { ...e, name } : e)));
+  const addExercise = () => updateExercises((list) => [...list, emptyExercise()]);
+  const removeExercise = (ei: number) => updateExercises((list) => list.filter((_, i) => i !== ei));
+  // 세트 추가 시 직전 세트의 반복·중량을 복사(대부분 같은 무게로 반복 — 입력 최소화).
+  const addSet = (ei: number) =>
+    updateExercises((list) =>
+      list.map((e, i) => {
+        if (i !== ei) return e;
+        const prev = e.sets[e.sets.length - 1];
+        return { ...e, sets: [...e.sets, { reps: prev?.reps ?? '', weight: prev?.weight ?? '', warmup: false }] };
+      }),
+    );
+  const removeSet = (ei: number, si: number) =>
+    updateExercises((list) => list.map((e, i) => (i === ei ? { ...e, sets: e.sets.filter((_, j) => j !== si) } : e)));
+  const toggleWarmup = (ei: number, si: number) =>
+    updateExercises((list) =>
+      list.map((e, i) => (i === ei ? { ...e, sets: e.sets.map((s, j) => (j === si ? { ...s, warmup: !s.warmup } : s)) } : e)),
+    );
+  const setCell = (ei: number, si: number, key: 'reps' | 'weight', val: string) =>
+    updateExercises((list) =>
+      list.map((e, i) => (i === ei ? { ...e, sets: e.sets.map((s, j) => (j === si ? { ...s, [key]: val } : s)) } : e)),
+    );
 
   const pickPhoto = async () => {
     const uris = await choosePhoto();
@@ -121,11 +112,11 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
   };
 
   const handleSave = () => {
-    const hasSet = rows.some((r) => r.reps.trim() !== '' || r.weight.trim() !== '');
-    if (part.trim() === '' && 총볼륨.trim() === '' && !hasSet) {
+    const cleaned = cleanExercises(exercises);
+    if (part.trim() === '' && cleaned.length === 0) {
       Alert.alert(
         tr({ en: 'Required', ko: '필수 항목' }),
-        tr({ en: 'Enter a body part or set info.', ko: '운동 부위나 세트 정보를 입력해 주세요.' }),
+        tr({ en: 'Enter a body part or exercise.', ko: '운동 부위나 종목을 입력해 주세요.' }),
       );
       return;
     }
@@ -135,10 +126,10 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
     if (운동시간) fields.운동시간 = 운동시간;
     if (place) fields.장소 = place;
     if (mood >= 0) fields.기분 = MOODS[mood].label;
-    const filledRows = rows.filter((r) => r.reps.trim() !== '' || r.weight.trim() !== '');
-    if (filledRows.length) fields.세트 = JSON.stringify(filledRows);
+    if (cleaned.length) fields.운동 = JSON.stringify(cleaned);
 
-    const meta = [part, 총볼륨 ? tr({ en: `Total volume ${총볼륨}`, ko: `총 볼륨 ${총볼륨}` }) : '']
+    const exerciseCount = cleaned.length ? tr({ en: `${cleaned.length} exercises`, ko: `${cleaned.length}종목` }) : '';
+    const meta = [part, exerciseCount, 총볼륨 ? tr({ en: `vol ${총볼륨}`, ko: `볼륨 ${총볼륨}` }) : '']
       .filter(Boolean)
       .join(' · ');
 
@@ -197,139 +188,137 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
           </View>
         </View>
 
-        {/* 벤치프레스 세트 테이블 */}
-        <View
-          style={{
-            backgroundColor: c.surface,
-            borderWidth: 1,
-            borderColor: c.border,
-            borderRadius: 14,
-            overflow: 'hidden',
-          }}
-        >
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              paddingVertical: 12,
-              paddingHorizontal: 14,
-              borderBottomWidth: 1,
-              borderBottomColor: c.border,
-            }}
-          >
-            <Text style={{ fontSize: 15, fontWeight: '700', color: c.text }}>{tr({ en: 'Bench press', ko: '벤치프레스' })}</Text>
-            <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: `${rows.length} sets`, ko: `${rows.length}세트` })}</Text>
-          </View>
-
-          {/* column header */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, paddingHorizontal: 14 }}>
-            <Text style={{ width: 30, fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Set', ko: '세트' })}</Text>
-            <Text style={{ flex: 1, fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Reps', ko: '반복' })}</Text>
-            <Text style={{ flex: 1, fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Weight', ko: '중량' })}</Text>
-            <Text style={{ width: 44, fontSize: 11, fontWeight: '600', color: c.text3, textAlign: 'right' }}>{tr({ en: 'Warmup', ko: '워밍업' })}</Text>
-          </View>
-
-          {rows.map((row, i) => (
+        {/* 종목별 세트 테이블 (다종목) */}
+        {exercises.map((ex, ei) => {
+          const nonWarmup = ex.sets.filter((s) => !s.warmup).length;
+          return (
             <View
-              key={i}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                paddingVertical: 8,
-                paddingHorizontal: 14,
-                borderTopWidth: 1,
-                borderTopColor: c.border,
-              }}
+              key={ei}
+              style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, overflow: 'hidden' }}
             >
-              <Text style={{ width: 30, fontSize: 13, color: c.text2 }}>{row.set}</Text>
-              <TextInput
-                value={row.reps}
-                onChangeText={(v) => setCell(i, 'reps', v)}
-                placeholder="0"
-                placeholderTextColor={c.text3}
-                keyboardType="numeric"
-                style={{ flex: 1, fontSize: 14, fontWeight: '600', color: c.text, padding: 0 }}
-              />
-              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+              {/* 종목 헤더 — 이름 편집 + 세트 수 + 종목 삭제(2개 이상일 때) */}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 8,
+                  paddingVertical: 10,
+                  paddingHorizontal: 14,
+                  borderBottomWidth: 1,
+                  borderBottomColor: c.border,
+                }}
+              >
                 <TextInput
-                  value={row.weight}
-                  onChangeText={(v) => setCell(i, 'weight', v)}
-                  placeholder="0"
+                  value={ex.name}
+                  onChangeText={(v) => setExerciseName(ei, v)}
+                  placeholder={tr({ en: 'Exercise name (e.g. Bench press)', ko: '종목 이름 (예: 벤치프레스)' })}
                   placeholderTextColor={c.text3}
-                  keyboardType="numeric"
-                  style={{ fontSize: 14, fontWeight: '600', color: c.text, padding: 0 }}
+                  style={{ flex: 1, fontSize: 15, fontWeight: '700', color: c.text, padding: 0 }}
                 />
-                <Text style={{ fontSize: 11, fontWeight: '500', color: c.text3 }}>kg</Text>
+                <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: `${ex.sets.length} sets`, ko: `${ex.sets.length}세트` })}</Text>
+                {exercises.length > 1 ? (
+                  <Pressable
+                    onPress={() => removeExercise(ei)}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel={tr({ en: 'Remove exercise', ko: '종목 삭제' })}
+                  >
+                    <Glyph size={16} color={c.text3} strokeWidth={2}><Path d="M6 6l12 12M18 6l-12 12" /></Glyph>
+                  </Pressable>
+                ) : null}
               </View>
-              <View style={{ width: 44, alignItems: 'flex-end' }}>
-                <Pressable
-                  onPress={() => toggleWarmup(i)}
-                  hitSlop={8}
-                  style={{
-                    width: 34,
-                    height: 20,
-                    borderRadius: 999,
-                    backgroundColor: row.warmup ? c.strength : c.surfaceAlt,
-                    justifyContent: 'center',
-                  }}
-                >
+
+              {/* column header */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, paddingHorizontal: 14 }}>
+                <Text style={{ width: 30, fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Set', ko: '세트' })}</Text>
+                <Text style={{ flex: 1, fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Reps', ko: '반복' })}</Text>
+                <Text style={{ flex: 1, fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Weight', ko: '중량' })}</Text>
+                <Text style={{ width: 40, fontSize: 11, fontWeight: '600', color: c.text3, textAlign: 'center' }}>{tr({ en: 'W-up', ko: '워밍업' })}</Text>
+                <View style={{ width: 26 }} />
+              </View>
+
+              {ex.sets.map((row, si) => {
+                // 세트 번호: 워밍업은 'W', 본세트는 앞선 본세트 수+1.
+                const setNo = row.warmup ? 'W' : String(ex.sets.slice(0, si + 1).filter((s) => !s.warmup).length);
+                return (
                   <View
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: 8,
-                      backgroundColor: '#fff',
-                      marginLeft: row.warmup ? 16 : 2,
-                      shadowColor: '#000',
-                      shadowOpacity: row.warmup ? 0 : 0.2,
-                      shadowRadius: 2,
-                      shadowOffset: { width: 0, height: 1 },
-                      elevation: row.warmup ? 0 : 1,
-                    }}
-                  />
-                </Pressable>
-              </View>
+                    key={si}
+                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 14, borderTopWidth: 1, borderTopColor: c.border }}
+                  >
+                    <Text style={{ width: 30, fontSize: 13, color: c.text2 }}>{setNo}</Text>
+                    <TextInput
+                      value={row.reps}
+                      onChangeText={(v) => setCell(ei, si, 'reps', v)}
+                      placeholder="0"
+                      placeholderTextColor={c.text3}
+                      keyboardType="numeric"
+                      style={{ flex: 1, fontSize: 14, fontWeight: '600', color: c.text, padding: 0 }}
+                    />
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                      <TextInput
+                        value={row.weight}
+                        onChangeText={(v) => setCell(ei, si, 'weight', v)}
+                        placeholder="0"
+                        placeholderTextColor={c.text3}
+                        keyboardType="numeric"
+                        style={{ fontSize: 14, fontWeight: '600', color: c.text, padding: 0 }}
+                      />
+                      <Text style={{ fontSize: 11, fontWeight: '500', color: c.text3 }}>kg</Text>
+                    </View>
+                    <View style={{ width: 40, alignItems: 'center' }}>
+                      <Pressable
+                        onPress={() => toggleWarmup(ei, si)}
+                        hitSlop={8}
+                        accessibilityRole="switch"
+                        accessibilityState={{ checked: row.warmup }}
+                        style={{ width: 34, height: 20, borderRadius: 999, backgroundColor: row.warmup ? c.strength : c.surfaceAlt, justifyContent: 'center' }}
+                      >
+                        <View
+                          style={{
+                            width: 16,
+                            height: 16,
+                            borderRadius: 8,
+                            backgroundColor: '#fff',
+                            marginLeft: row.warmup ? 16 : 2,
+                            shadowColor: '#000',
+                            shadowOpacity: row.warmup ? 0 : 0.2,
+                            shadowRadius: 2,
+                            shadowOffset: { width: 0, height: 1 },
+                            elevation: row.warmup ? 0 : 1,
+                          }}
+                        />
+                      </Pressable>
+                    </View>
+                    <View style={{ width: 26, alignItems: 'flex-end' }}>
+                      {ex.sets.length > 1 ? (
+                        <Pressable
+                          onPress={() => removeSet(ei, si)}
+                          hitSlop={8}
+                          accessibilityRole="button"
+                          accessibilityLabel={tr({ en: 'Remove set', ko: '세트 삭제' })}
+                        >
+                          <Glyph size={15} color={c.text3} strokeWidth={2}><Path d="M5 12h14" /></Glyph>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  </View>
+                );
+              })}
+
+              <Pressable
+                onPress={() => addSet(ei)}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderTopWidth: 1, borderTopColor: c.border }}
+              >
+                <Icon.plus size={15} color={c.strength} strokeWidth={2.4} />
+                <Text style={{ color: c.strength, fontSize: 13, fontWeight: '600' }}>{tr({ en: 'Add set', ko: '세트 추가' })}</Text>
+              </Pressable>
             </View>
-          ))}
-
-          <Pressable
-            onPress={addSet}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 6,
-              paddingVertical: 11,
-              borderTopWidth: 1,
-              borderTopColor: c.border,
-            }}
-          >
-            <Icon.plus size={15} color={c.strength} strokeWidth={2.4} />
-            <Text style={{ color: c.strength, fontSize: 13, fontWeight: '600' }}>{tr({ en: 'Add set', ko: '세트 추가' })}</Text>
-          </Pressable>
-        </View>
-
-        {/* 인클라인 덤벨 (collapsed exercise) */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            backgroundColor: c.surface,
-            borderWidth: 1,
-            borderColor: c.border,
-            borderRadius: 13,
-            paddingVertical: 13,
-            paddingHorizontal: 14,
-          }}
-        >
-          <Text style={{ fontSize: 15, fontWeight: '600', color: c.text }}>{tr({ en: 'Incline dumbbell', ko: '인클라인 덤벨' })}</Text>
-          <Icon.chevronRight size={18} color={c.text3} strokeWidth={2} />
-        </View>
+          );
+        })}
 
         {/* ＋종목 추가 */}
         <Pressable
+          onPress={addExercise}
           style={{
             flexDirection: 'row',
             alignItems: 'center',

@@ -16,6 +16,7 @@ import ShareCard from '../../components/ShareCard';
 import { useStore } from '../../store/StoreContext';
 import { StoredRecord } from '../../store/types';
 import { recordEnd } from '../../store/selectors';
+import { parseExercises } from '../../lib/strength';
 import { useTheme } from '../../theme/ThemeContext';
 import { Palette } from '../../theme/tokens';
 
@@ -62,8 +63,8 @@ function variantFromRecord(r: StoredRecord, c: Palette): Variant {
     return i === -1 ? FIELD_ORDER.length : i;
   };
   const detail: DetailRow[] = Object.entries(fields)
-    // 장소=헤더, 세트=JSON, 종목=sport key, 마지막일=원시 ISO(기간 라벨로 대체) → 표에서 제외.
-    .filter(([k]) => k !== '장소' && k !== '세트' && k !== '종목' && k !== '마지막일')
+    // 장소=헤더, 세트/운동=JSON(별도 섹션), 종목=sport key, 마지막일=원시 ISO(기간 라벨로 대체) → 표에서 제외.
+    .filter(([k]) => k !== '장소' && k !== '세트' && k !== '운동' && k !== '종목' && k !== '마지막일')
     .sort(([a], [b]) => rank(a) - rank(b))
     .map(([label, value]) => ({ label, value }));
 
@@ -273,6 +274,33 @@ export default function DetailScreen() {
             </View>
           </View>
         ) : null}
+
+        {/* 근력 종목·세트 breakdown (setrep 전용) */}
+        {record.template === 'setrep' ? (() => {
+          const exercises = parseExercises(record.fields).filter((ex) => ex.name || ex.sets.length);
+          if (!exercises.length) return null;
+          return (
+            <View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, marginBottom: 6 }}>{tr({ en: 'Exercises', ko: '종목' })}</Text>
+              <View style={{ gap: 8 }}>
+                {exercises.map((ex, ei) => (
+                  <View key={ei} style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 13, padding: 12, gap: 8 }}>
+                    <Text style={{ fontSize: 14, fontWeight: '700', color: c.text }}>{ex.name || tr({ en: `Exercise ${ei + 1}`, ko: `종목 ${ei + 1}` })}</Text>
+                    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                      {ex.sets.map((s, si) => (
+                        <View key={si} style={{ backgroundColor: s.warmup ? c.surfaceAlt : color + '1A', borderRadius: 8, paddingVertical: 5, paddingHorizontal: 9 }}>
+                          <Text style={{ fontSize: 12, color: s.warmup ? c.text3 : c.text2, fontWeight: '600' }}>
+                            {s.warmup ? tr({ en: 'W ', ko: '워밍업 ' }) : ''}{s.reps || '0'}×{s.weight || '0'}kg
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          );
+        })() : null}
 
         {/* Memo block */}
         {v.memo ? (
