@@ -23,6 +23,16 @@ import { Palette, withAlpha } from '../../theme/tokens';
 type DetailRow = { label: string; value: string };
 type Companion = { initial: string; name: string };
 
+// 템플릿 → 통계 카테고리(CategoryStats 라우트용). StatsScreen과 동일 매핑.
+const TEMPLATE_CATEGORY: Record<string, 'cardio' | 'strength' | 'match' | 'performance' | 'outing' | 'free'> = {
+  endurance: 'cardio',
+  setrep: 'strength',
+  match: 'match',
+  spectate: 'performance',
+  outing: 'outing',
+  free: 'free',
+};
+
 type Variant = {
   activity: string; // key into `activities`
   title: string; // display title
@@ -62,11 +72,13 @@ function variantFromRecord(r: StoredRecord, c: Palette): Variant {
     const i = FIELD_ORDER.indexOf(k);
     return i === -1 ? FIELD_ORDER.length : i;
   };
-  // match는 스코어/결과/나/상대를 상단 스코어보드로 올리므로 표에서 제외(종목별 슬롯만 표에 남는다).
-  const scoreboardKeys = r.template === 'match' ? ['스코어', '결과', '나', '상대'] : [];
+  // match는 스코어/결과/나/상대를 상단 스코어보드로, spectate는 작품/출연진/회차를 상단 관람 카드로
+  // 올리므로 표에서 제외(나머지 슬롯만 표에 남는다).
+  const heroKeys =
+    r.template === 'match' ? ['스코어', '결과', '나', '상대'] : r.template === 'spectate' ? ['작품', '출연진', '회차'] : [];
   const detail: DetailRow[] = Object.entries(fields)
     // 장소=헤더, 세트/운동=JSON(별도 섹션), 종목=sport key, 마지막일=원시 ISO(기간 라벨로 대체) → 표에서 제외.
-    .filter(([k]) => k !== '장소' && k !== '세트' && k !== '운동' && k !== '종목' && k !== '마지막일' && !scoreboardKeys.includes(k))
+    .filter(([k]) => k !== '장소' && k !== '세트' && k !== '운동' && k !== '종목' && k !== '마지막일' && !heroKeys.includes(k))
     .sort(([a], [b]) => rank(a) - rank(b))
     .map(([label, value]) => ({ label, value }));
 
@@ -87,7 +99,7 @@ export default function DetailScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, 'Detail'>>();
-  const { getRecord, deleteRecord } = useStore();
+  const { getRecord, deleteRecord, records } = useStore();
 
   const recordId = route.params?.recordId;
   const record = recordId ? getRecord(recordId) : undefined;
@@ -279,6 +291,54 @@ export default function DetailScreen() {
           );
         })() : null}
 
+        {/* 관람 카드 (spectate 전용) — 작품 + N번째 관람 배지 + 출연진 칩 */}
+        {record.template === 'spectate' ? (() => {
+          const f = record.fields ?? {};
+          const title = f.작품?.trim();
+          const cast = (f.출연진 ?? '').split(' · ').map((s) => s.trim()).filter(Boolean);
+          if (!title && !cast.length) return null;
+          // 같은 작품 관람 순번(이 기록 시점까지 누적) — 재관람이면 'N번째 관람' 배지.
+          const baseTitle = (s?: string) => (s ?? '').replace(/\s*\(\d+\)\s*$/, '').trim();
+          const nth = title
+            ? records.filter(
+                (o) =>
+                  o.template === 'spectate' &&
+                  baseTitle(o.fields?.작품) === baseTitle(title) &&
+                  (o.dateISO < record.dateISO || (o.dateISO === record.dateISO && o.id <= record.id)),
+              ).length
+            : 0;
+          const castPalette = [c.perf, c.team, c.cardio, c.strength, c.accent, c.warning];
+          const castColor = (name: string) => {
+            let h = 0;
+            for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+            return castPalette[h % castPalette.length];
+          };
+          return (
+            <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 14, padding: 14, gap: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                {title ? <Text style={{ fontSize: 17, fontWeight: '700', color: c.text }}>{`〈${title}〉`}</Text> : null}
+                {nth >= 2 ? (
+                  <View style={{ backgroundColor: withAlpha(color, 15), borderRadius: 999, paddingVertical: 3, paddingHorizontal: 9 }}>
+                    <Text style={{ fontSize: 11, fontWeight: '700', color }}>{tr({ en: `Viewing #${nth}`, ko: `${nth}번째 관람` })}</Text>
+                  </View>
+                ) : null}
+              </View>
+              {cast.length ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {cast.map((name) => {
+                    const cc = castColor(name);
+                    return (
+                      <View key={name} style={{ backgroundColor: withAlpha(cc, 15), borderRadius: 8, paddingVertical: 5, paddingHorizontal: 9 }}>
+                        <Text style={{ fontSize: 12, fontWeight: '600', color: cc }}>{name}</Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : null}
+            </View>
+          );
+        })() : null}
+
         {/* Photos — 실제 사진이 있을 때만 표시. 탭 → 전체화면. */}
         {hasPhotos ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -350,6 +410,43 @@ export default function DetailScreen() {
             <Text style={{ fontSize: 14, color: c.text, lineHeight: 22 }}>{v.memo}</Text>
           </View>
         ) : null}
+
+        {/* 이 활동 히스토리·통계로 이동 — 상세를 막다른 길이 아닌 허브로 (D) */}
+        {(() => {
+          const count = records.filter((r) => r.activity === record.activity).length;
+          if (count <= 1) return null; // 이 기록 하나뿐이면 링크 의미 없음
+          return (
+            <Pressable
+              onPress={() =>
+                nav.navigate('CategoryStats', {
+                  category: TEMPLATE_CATEGORY[template] ?? 'free',
+                  activity: record.activity,
+                  period: 'all',
+                })
+              }
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 10,
+                backgroundColor: c.surface,
+                borderWidth: 1,
+                borderColor: c.border,
+                borderRadius: 13,
+                paddingVertical: 13,
+                paddingHorizontal: 14,
+              }}
+            >
+              <View style={{ width: 30, height: 30, borderRadius: 9, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
+                <Icon.chart size={16} color={color} strokeWidth={2} />
+              </View>
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: c.text }}>
+                {tr({ en: `View ${activityLabel(v.title)} stats`, ko: `${activityLabel(v.title)} 통계 보기` })}
+              </Text>
+              <Text style={{ fontSize: 13, color: c.text3 }}>{tr({ en: `${count} records`, ko: `기록 ${count}개` })}</Text>
+              <Icon.chevronRight size={16} color={c.text3} strokeWidth={2} />
+            </Pressable>
+          );
+        })()}
       </View>
 
       {/* 전체화면 사진 뷰어 — 아무 곳이나 탭하면 닫힘 */}
