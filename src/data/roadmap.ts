@@ -21,7 +21,6 @@ export const DEV_STATUS: DevStatus = {
   updatedAt: '2026-07-08',
   items: [
     { title: { en: 'Settings & My page revamp', ko: '설정 · 마이 화면 개편' }, progress: 90, eta: { en: 'Jul 2026', ko: '2026년 7월' } },
-    { title: { en: 'Usage analytics', ko: '앱 사용성 분석' }, progress: 20, eta: { en: 'Aug 2026', ko: '2026년 8월' } },
     { title: { en: 'Health app sync', ko: '건강 앱 연동' }, progress: 0, eta: { en: 'Q4 2026', ko: '2026년 4분기' } },
   ],
 };

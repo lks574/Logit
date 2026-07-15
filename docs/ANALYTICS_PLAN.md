@@ -1,23 +1,8 @@
 # 앱 사용성 분석 도입 계획
 
-> 상태: **구현 완료** — 배선 끝, **활성화만 남음**(2026-07-15). 아래 "활성화 절차" 참조.
+> 상태: **제외(2026-07-15)** — PostHog를 배선했다가 도입 안 하기로 하고 revert(커밋 e105291).
+> 아래는 되살릴 경우를 위한 참고용 원안. 실제 코드는 레포에 없음.
 > 목적: 실사용 동작 확인 · 사용자 플로우 · 기능 사용량을 파악해 추후 개편에 참고.
-
-## 활성화 절차 (배선은 끝났고 이것만 하면 켜짐)
-
-1. **PostHog 프로젝트 생성** → Project API Key 발급(us 리전).
-2. **`.env`에 `EXPO_PUBLIC_POSTHOG_KEY=phc_...`** 추가. (키 없으면 계측은 완전 no-op — 지금 상태)
-3. **네이티브 dev 빌드 재생성**: `npm run ios` (posthog-react-native 네이티브 모듈 링크). 웹은 무관(스텁).
-4. 앱에서 **설정 → 개인정보 → "사용 분석 허용" 토글 ON**(기본 opt-out).
-5. PostHog 대시보드에서 이벤트 수신 확인.
-
-### 구현 요약 (코드 위치)
-- `src/lib/analytics.ts`(+`analytics.web.ts` 스텁) — 지연 require(키 있을 때만 posthog 로드), 동의 게이트, djb2 uid 해시.
-- 이벤트: `record_created{template,activity}`·`plan_created{template}`·`plan_completed{template}`·`record_deleted`(StoreContext), `signup`·`login`(AuthContext, Google는 isNewUser 분기), `onboarding_completed`(StoreContext). **activity는 빌트인만 실명, 커스텀은 `'custom'` 마스킹.**
-- 화면뷰: `RootNavigator`의 NavigationContainer `onStateChange`→`trackScreen(route)`. → `stats_viewed`는 별도 이벤트 대신 "Stats" 화면뷰로 흡수(ponytail).
-- 신원: `App.tsx` `AnalyticsIdentitySync`(로그인→identify(hash), 로그아웃→reset).
-- 동의 UI: `SettingsScreen` 개인정보 섹션 토글(`setAnalyticsConsent`, AsyncStorage 영속).
-- ⚠️ 세션 리플레이 **미사용**(셋업 단순화). 필요 시 config plugin + 샘플링.
 
 ## 선정 도구: PostHog (무료)
 

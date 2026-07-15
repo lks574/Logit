@@ -1,4 +1,4 @@
-import { NavigationContainer, DefaultTheme, DarkTheme, useNavigationContainerRef } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import React from 'react';
@@ -8,7 +8,6 @@ import { useAuth } from '../auth/AuthContext';
 import { useStore } from '../store/StoreContext';
 import { BottomTabBar } from './BottomTabBar';
 import { AuthNavigator } from './AuthNavigator';
-import { trackScreen } from '../lib/analytics';
 import OnboardingScreen from '../screens/onboarding/OnboardingScreen';
 import { RootStackParamList, TabParamList } from './types';
 import { linking } from './linking';
@@ -71,16 +70,6 @@ export function RootNavigator() {
   const { c, scheme } = useTheme();
   const { status, user, guest } = useAuth();
   const { ready, onboardingComplete } = useStore();
-  const navRef = useNavigationContainerRef<RootStackParamList>();
-  const lastRoute = React.useRef<string | undefined>(undefined);
-  // 화면 전환 추적 → 계측 플로우 데이터. 동의 전엔 trackScreen이 내부 no-op.
-  const onScreenChange = () => {
-    const name = navRef.getCurrentRoute()?.name;
-    if (name && name !== lastRoute.current) {
-      lastRoute.current = name;
-      trackScreen(name);
-    }
-  };
   const navTheme = {
     ...(scheme === 'dark' ? DarkTheme : DefaultTheme),
     colors: {
@@ -109,8 +98,6 @@ export function RootNavigator() {
   };
 
   return (
-    <NavigationContainer ref={navRef} theme={navTheme} linking={linking} onReady={onScreenChange} onStateChange={onScreenChange}>
-      {content()}
-    </NavigationContainer>
+    <NavigationContainer theme={navTheme} linking={linking}>{content()}</NavigationContainer>
   );
 }

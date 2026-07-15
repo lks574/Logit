@@ -4,12 +4,7 @@ import { seed, emptyState } from './seed';
 import { deletePhoto } from '../lib/photos';
 import { nowDateISO } from '../lib/date';
 import { syncPlanReminder, cancelPlanReminder } from '../lib/notifications';
-import { track } from '../lib/analytics';
-import { activities } from '../data/activities';
 import { CustomActivity, Profile, StoredPlan, StoredRecord, StoreState } from './types';
-
-// 계측: 커스텀 활동명은 사용자 생성 텍스트라 전송 금지 → 빌트인만 실명, 나머지는 'custom' 마스킹.
-const activityLabelForAnalytics = (name: string): string => (activities[name] ? name : 'custom');
 
 // Offline-first store: single source of truth in memory, persisted to
 // AsyncStorage (last-write-wins). New records land as `pending` then flip to
@@ -132,7 +127,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       markBackedUp: () => setState((s) => ({ ...s, backupSignature: syncSignature(s) })),
       completeOnboarding: (selected) => {
         setState((s) => ({ ...s, onboardingComplete: true, preferredActivities: selected }));
-        track('onboarding_completed');
       },
       updateProfile: (patch) => {
         setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
@@ -152,13 +146,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         // sync 필드는 백업 스키마 호환용으로만 남는다(동기화 배지는 백업 서명 기준 useSyncState).
         const rec: StoredRecord = { ...r, id: uid('r'), sync: 'synced' };
         setState((s) => ({ ...s, records: [rec, ...s.records] }));
-        track('record_created', { template: rec.template, activity: activityLabelForAnalytics(rec.activity) });
         return rec;
       },
       addPlan: (p) => {
         const plan: StoredPlan = { ...p, id: uid('p') };
         setState((s) => ({ ...s, plans: [...s.plans, plan] }));
-        track('plan_created', { template: plan.template });
         void syncPlanReminder(plan); // 로컬 알림 예약(1시간 전). best-effort.
         return plan;
       },
@@ -170,9 +162,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         );
       },
       completePlan: (id) => {
-        const tmpl = state.plans.find((p) => p.id === id)?.template;
         setState((s) => ({ ...s, plans: s.plans.map((p) => (p.id === id ? { ...p, done: true } : p)) }));
-        if (tmpl) track('plan_completed', { template: tmpl }); // 약속→기록 루프 건강도
         void cancelPlanReminder(id); // 완료된 약속은 알림 취소
       },
       updateRecord: (id, patch) => {
@@ -197,7 +187,6 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         // 이 레코드가 소유한 사진 파일 정리(고아 파일 방지). best-effort.
         state.records.find((r) => r.id === id)?.photos?.forEach(deletePhoto);
         setState((s) => ({ ...s, records: s.records.filter((r) => r.id !== id) }));
-        track('record_deleted');
       },
       getRecord: (id) => state.records.find((r) => r.id === id),
       getPlan: (id) => state.plans.find((p) => p.id === id),

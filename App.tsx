@@ -9,7 +9,6 @@ import { LanguageProvider, useLang, tr } from './src/i18n/i18n';
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
 import { seed } from './src/store/seed';
 import { registerPushToken } from './src/lib/push';
-import { initAnalytics, identifyUser, resetUser } from './src/lib/analytics';
 import { UpdateGate } from './src/components/UpdateGate';
 
 // 저장 실패(저장 공간 부족 등) 시 전역 배너 — 무음 유실을 사용자에게 알린다.
@@ -88,20 +87,7 @@ function PushRegistrar() {
   return null;
 }
 
-// 계측 신원(PII 금지): 로그인 시 해시된 uid로 identify, 로그아웃 시 reset. 동의 전엔 내부적으로 no-op.
-function AnalyticsIdentitySync() {
-  const { user } = useAuth();
-  React.useEffect(() => {
-    if (user) identifyUser(user.uid);
-    else resetUser();
-  }, [user]);
-  return null;
-}
-
 export default function App() {
-  React.useEffect(() => {
-    void initAnalytics(); // 저장된 동의 상태 복원(기본 opt-out). 키·동의 없으면 완전 no-op.
-  }, []);
   return (
     <SafeAreaProvider>
       <LanguageProvider>
@@ -110,7 +96,6 @@ export default function App() {
             <StoreProvider>
               <AuthProfileSync />
               <PushRegistrar />
-              <AnalyticsIdentitySync />
               <Root />
             </StoreProvider>
           </AuthProvider>
