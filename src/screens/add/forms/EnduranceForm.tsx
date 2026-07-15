@@ -13,6 +13,7 @@ import { resetToHome } from '../../../navigation/nav';
 import { runningCalories } from '../../../lib/calories';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
 import { PrefillBanner } from '../../../components/PrefillBanner';
+import { recentValues } from '../../../lib/history';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
 import { tr } from '../../../i18n/i18n';
@@ -97,6 +98,8 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
     () => records.find((r) => r.activity === activity && r.id !== recordId),
     [records, activity, recordId],
   );
+  // 최근 장소 추천 — 내 과거 기록에서 추출(하드코딩 목업 대체).
+  const recentPlaces = React.useMemo(() => recentValues(records, '장소', { excludeId: recordId }), [records, recordId]);
   const prefillFromLast = () => {
     if (!lastRecord) return;
     const f = lastRecord.fields ?? {};
@@ -388,27 +391,26 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
                   style={{ flex: 1, fontSize: 14, color: c.text, padding: 0 }}
                 />
               </Pressable>
-              <View style={{ flexDirection: 'row', gap: 6, marginTop: 7 }}>
-                {[
-                  { value: '올림픽공원', label: tr({ en: 'Recent · Olympic Park', ko: '최근 · 올림픽공원' }) },
-                  { value: '양재천', label: tr({ en: 'Yangjaecheon', ko: '양재천' }) },
-                ].map((t) => (
-                  <Pressable
-                    key={t.value}
-                    onPress={() => setPlace(t.value)}
-                    style={{
-                      backgroundColor: c.surface,
-                      borderWidth: 1,
-                      borderColor: c.border,
-                      borderRadius: 7,
-                      paddingVertical: 5,
-                      paddingHorizontal: 9,
-                    }}
-                  >
-                    <Text style={{ fontSize: 12, color: c.text2 }}>{t.label}</Text>
-                  </Pressable>
-                ))}
-              </View>
+              {recentPlaces.length ? (
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 7 }}>
+                  {recentPlaces.map((p) => (
+                    <Pressable
+                      key={p}
+                      onPress={() => setPlace(p)}
+                      style={{
+                        backgroundColor: c.surface,
+                        borderWidth: 1,
+                        borderColor: c.border,
+                        borderRadius: 7,
+                        paddingVertical: 5,
+                        paddingHorizontal: 9,
+                      }}
+                    >
+                      <Text style={{ fontSize: 12, color: c.text2 }}>{p}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
             </View>
 
             {/* 동행 */}
