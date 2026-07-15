@@ -6,9 +6,10 @@ import { fetchVersionGate } from '../../lib/remoteConfig';
 import { cmpVersion, STORE_URL } from '../../lib/version';
 import { Screen, T, Divider } from '../../components/primitives';
 import { Glyph, Path, Icon } from '../../components/Glyph';
-import { Segmented } from '../../components/controls';
+import { Segmented, Toggle } from '../../components/controls';
 import { SettingsRow } from '../../components/Field';
 import { LegalModal } from '../../components/LegalModal';
+import { analyticsConsented, setAnalyticsConsent } from '../../lib/analytics';
 import { useTheme } from '../../theme/ThemeContext';
 import { useLang, tr } from '../../i18n/i18n';
 import { radius } from '../../theme/tokens';
@@ -26,6 +27,12 @@ export default function SettingsScreen() {
     fetchVersionGate().then((g) => setLatest(g.latest));
   }, []);
   const updateAvailable = latest != null && cmpVersion(version, latest) < 0;
+  // 사용 분석 동의(기본 opt-out). 로컬 컴포넌트 상태로 즉시 반영 + 영속.
+  const [analyticsOn, setAnalyticsOn] = React.useState(analyticsConsented());
+  const toggleAnalytics = (v: boolean) => {
+    setAnalyticsOn(v);
+    void setAnalyticsConsent(v);
+  };
   const openStore = () => {
     if (STORE_URL) Linking.openURL(STORE_URL).catch(() => {});
   };
@@ -101,6 +108,26 @@ export default function SettingsScreen() {
                 onChange={setLangMode}
               />
             </ControlRow>
+          </Card>
+        </View>
+
+        {/* 데이터 · 개인정보 */}
+        <View>
+          <SectionLabel text={tr({ en: 'Privacy', ko: '개인정보' })} />
+          <Card>
+            <View style={{ padding: 14, gap: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                <Glyph size={18} color={c.text2} strokeWidth={1.8}><Path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6l7-3z" /></Glyph>
+                <T style={{ flex: 1, fontSize: 14, color: c.text }}>{tr({ en: 'Allow usage analytics', ko: '사용 분석 허용' })}</T>
+                <Toggle value={analyticsOn} onChange={toggleAnalytics} label={tr({ en: 'Allow usage analytics', ko: '사용 분석 허용' })} />
+              </View>
+              <T style={{ fontSize: 12, color: c.text3, lineHeight: 18 }}>
+                {tr({
+                  en: 'Anonymous stats to improve the app. No personal info or record contents are sent. Off by default.',
+                  ko: '앱 개선을 위한 익명 통계. 개인정보나 기록 내용은 전송하지 않아요. 기본은 꺼짐이에요.',
+                })}
+              </T>
+            </View>
           </Card>
         </View>
 

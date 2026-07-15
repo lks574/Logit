@@ -13,9 +13,11 @@ import {
   deleteUser,
   signOut,
   reload,
+  getAdditionalUserInfo,
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../lib/firebase';
+import { track } from '../lib/analytics';
 import { googleWebClientId, googleIosClientId, isFirebaseConfigured } from '../lib/firebaseConfig';
 import { tr } from '../i18n/i18n';
 
@@ -105,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return mockSignIn(email);
       }
       await signInWithEmailAndPassword(auth, email.trim(), password);
+      track('login');
     },
     signUp: async (nickname, email, password) => {
       if (!isFirebaseConfigured) {
@@ -114,6 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const cred = await createUserWithEmailAndPassword(auth, email.trim(), password);
       if (nickname.trim()) await updateProfile(cred.user, { displayName: nickname.trim() });
       await sendEmailVerification(cred.user);
+      track('signup');
     },
     resendVerification: async () => {
       if (!isFirebaseConfigured) return;
@@ -156,7 +160,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res: any = await GoogleSignin.signIn();
       const idToken = res?.data?.idToken ?? res?.idToken;
       if (!idToken) throw new Error(tr({ en: 'Couldn’t get an idToken from Google sign-in.', ko: 'Google 로그인에서 idToken을 받지 못했어요.' }));
-      await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
+      const gCred = await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
+      track(getAdditionalUserInfo(gCred)?.isNewUser ? 'signup' : 'login');
     },
     logout: async () => {
       await AsyncStorage.removeItem(GUEST_KEY); // 로그아웃 → 게스트도 해제 → 시작 화면
