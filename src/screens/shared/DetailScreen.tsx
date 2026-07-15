@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Image, Modal, Pressable, Text, View } from 'react-native';
+import { Alert, Image, Modal, Platform, Pressable, Text, View } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Row, Screen } from '../../components/primitives';
 import { ScreenHeader } from '../../components/ScreenHeader';
@@ -11,6 +11,8 @@ import { tr } from '../../i18n/i18n';
 import { monthDay, displayTimeLabel } from '../../lib/date';
 import { RootStackParamList } from '../../navigation/types';
 import { photoUri } from '../../lib/photos';
+import { shareRecordCard } from '../../lib/shareCard';
+import ShareCard from '../../components/ShareCard';
 import { useStore } from '../../store/StoreContext';
 import { StoredRecord } from '../../store/types';
 import { recordEnd } from '../../store/selectors';
@@ -88,6 +90,9 @@ export default function DetailScreen() {
   const record = recordId ? getRecord(recordId) : undefined;
   // 사진 전체화면 뷰어 — 탭한 사진 uri를 담으면 모달이 뜬다.
   const [zoom, setZoom] = React.useState<string | null>(null);
+  // 공유 카드 캡처 대상(오프스크린 렌더). 웹은 view-shot 미지원이라 버튼 자체를 숨긴다.
+  const cardRef = React.useRef<View>(null);
+  const canShare = Platform.OS !== 'web';
 
   // 레코드가 없으면(recordId 미전달·삭제됨·stale·가져오기로 교체됨) 빈 상태를 보여준다.
   if (!record) {
@@ -126,6 +131,16 @@ export default function DetailScreen() {
         style={{ paddingTop: 6 }}
         right={
           <>
+            {canShare ? (
+              <IconButton
+                size={34}
+                bg={c.surface}
+                label={tr({ en: 'Share', ko: '공유' })}
+                onPress={() => shareRecordCard(cardRef).catch(() => {})}
+              >
+                <Icon.share size={17} color={c.text2} strokeWidth={2} />
+              </IconButton>
+            ) : null}
             <IconButton
               size={34}
               bg={c.surface}
@@ -277,6 +292,13 @@ export default function DetailScreen() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* 공유 카드 — 화면 밖 렌더(캡처 전용). opacity 0 금지: Android가 캡처 못 함. */}
+      {canShare ? (
+        <View style={{ position: 'absolute', left: -9999, top: 0 }} pointerEvents="none">
+          <ShareCard ref={cardRef} record={record} />
+        </View>
+      ) : null}
     </Screen>
   );
 }

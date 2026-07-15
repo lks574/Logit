@@ -141,6 +141,11 @@ export const Icon = {
       <Path d="M3 7v6h6M3 13a9 9 0 1 0 2.6-6.4L3 9" />
     </Glyph>
   ),
+  share: (p: IconProps) => (
+    <Glyph {...p}>
+      <Path d="M12 3v13M8 7l4-4 4 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" />
+    </Glyph>
+  ),
   // ---- Activity glyphs (template-colored) ----
   running: (p: IconProps) => (
     <Glyph {...p}>

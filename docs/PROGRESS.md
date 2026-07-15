@@ -58,7 +58,8 @@ npm run tunnel     # 실기기 원격 접속: Cloudflare 터널 + Metro 한 방(
 - **지난 기록 프리필 전 폼 확산**(ROADMAP P1): "최근 {활동} 기록 불러오기" 배너를 `src/components/PrefillBanner.tsx`로 추출, 6개 폼 전체 적용(폼별 복사 필드는 `docs/ROADMAP.md` §P1 표). 결과성 값(스코어·좌석·기간 등)은 복사 제외.
 
 ## 미완 / 알려진 한계 (다음 후보)
-- **다음 작업 우선순위**: `docs/ROADMAP.md` — 리텐션 우선 실행 스펙(P1 프리필 확산 → P2 공유 카드 → P3 HealthKit → P4 계측). 착수 시 이 문서부터.
+- **다음 작업 우선순위**: `docs/ROADMAP.md` — 리텐션 우선 실행 스펙. P1(프리필 확산)·P2(공유 카드) 완료, **다음은 P3 HealthKit**(실기기 필요) 또는 P4 계측. 착수 시 이 문서부터.
+- **공유 카드(P2)**: DetailScreen 헤더 공유 버튼 → `ShareCard`(4:5 라이트 카드) 캡처 → OS 공유 시트. `react-native-view-shot`+`shareCard.ts`(웹 no-op). 실제 캡처·공유는 **네이티브 전용**(iOS 시뮬레이터/실기기 최종 확인 남음).
 - **원격 push 발송**: 클라이언트 토큰 등록까지만. EAS projectId·APNs 키·발송 서버(Cloud Function) 미구성.
 - **유니버설/앱링크 미완**: iOS는 **유료 Apple Developer 계정** 필요(Associated Domains 프로비저닝) — 현재 스킴 딥링크만 동작. Android 앱링크는 `public/.well-known/assetlinks.json`의 SHA-256 미기입(Android 빌드 전).
 - **STORE_URL 플레이스홀더**: `src/lib/version.ts` 스토어 URL이 미등록 앱이라 placeholder(iOS `id0000000000`) — 스토어 등록 후 교체해야 업데이트 버튼 이동.
