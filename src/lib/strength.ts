@@ -52,3 +52,32 @@ export function cleanExercises(exercises: Exercise[]): Exercise[] {
     .map((e) => ({ name: e.name.trim(), sets: e.sets.filter((s) => s.reps.trim() !== '' || s.weight.trim() !== '') }))
     .filter((e) => e.name !== '' || e.sets.length > 0);
 }
+
+// 과거 setrep 기록에서 종목을 최근 사용순으로 추출(이름 중복 제거) — "최근 종목" 칩 제안용.
+// 각 항목은 그 종목의 마지막 세트 구성을 담아 종목 단위 프리필에 쓴다(관리 화면 없는 라이브러리).
+// records는 스토어 순서(최신순) 그대로 넘길 것.
+export function recentExercises(
+  records: { template: string; fields?: Record<string, string> }[],
+  limit = 8,
+): Exercise[] {
+  const out: Exercise[] = [];
+  const seen = new Set<string>();
+  for (const r of records) {
+    if (r.template !== 'setrep' || !r.fields?.운동) continue;
+    let parsed: any;
+    try {
+      parsed = JSON.parse(r.fields.운동);
+    } catch {
+      continue;
+    }
+    if (!Array.isArray(parsed)) continue;
+    for (const e of parsed) {
+      const name = String(e?.name ?? '').trim();
+      if (!name || seen.has(name)) continue;
+      seen.add(name);
+      out.push({ name, sets: Array.isArray(e?.sets) && e.sets.length ? e.sets.map(toSet) : [emptySet()] });
+      if (out.length >= limit) return out;
+    }
+  }
+  return out;
+}

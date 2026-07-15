@@ -16,11 +16,14 @@ import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
 import { tr } from '../../../i18n/i18n';
 import { activityLabel } from '../../../data/activities';
-import { Exercise, emptyExercise, emptySet, parseExercises, totalVolume, cleanExercises } from '../../../lib/strength';
+import { Exercise, emptyExercise, parseExercises, totalVolume, cleanExercises, recentExercises } from '../../../lib/strength';
 
-// SetRepForm — 세트·횟수형 (strength template). 다종목 로거.
-// 운동 부위 chips · 종목별(이름+세트 테이블) · 세트/종목 추가·삭제 · 볼륨/시간 summary
-// · 공통 세부 입력 disclosure. Supports create + edit (recordId).
+// SetRepForm — 세트·횟수형 (strength template). 점진적 공개(progressive disclosure):
+//  1단계(기본 노출): 운동 시간(분) + 부위(다중 선택) — 10초 기록.
+//  2단계: "종목 기록" 섹션 펼쳐 종목 이름만.
+//  3단계: 종목별 세트(횟수·중량) 상세.
+// 종목 이름은 과거 기록에서 추출한 "최근 종목" 칩으로 재입력 없이 추가(마지막 세트 프리필).
+// Supports create + edit (recordId) — 저장된 깊이만큼 자동으로 펼쳐서 연다.
 
 // value는 저장·비교용(번역 금지, fields.부위), label은 표시용 번역.
 const PARTS = [
@@ -49,19 +52,28 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
 
   const [dateISO, setDateISO] = React.useState(record?.dateISO ?? plan?.dateISO ?? initialDate ?? nowDateISO());
   const [timeLabel, setTimeLabel] = React.useState(record?.timeLabel ?? plan?.timeLabel ?? nowTimeLabel());
-  const [part, setPart] = React.useState(record?.fields?.부위 ?? '');
+  // 부위 다중 선택 — 저장은 '가슴·삼두' 형태(레거시 단일값도 그대로 복원됨).
+  const [parts, setParts] = React.useState<string[]>(() =>
+    record?.fields?.부위 ? record.fields.부위.split('·').filter(Boolean) : [],
+  );
   const [open, setOpen] = React.useState(editing);
+  // 종목 기록 섹션 — 신규는 접힘(1단계 시작), 종목이 저장된 기록을 열면 자동으로 펼침.
+  const [exOpen, setExOpen] = React.useState(() => !!(record?.fields?.운동 || record?.fields?.세트));
   const [rating, setRating] = React.useState(record?.rating ?? 0);
   const [photos, setPhotos] = React.useState<string[]>(record?.photos ?? []);
   const [place, setPlace] = React.useState(record?.fields?.장소 ?? plan?.place ?? '');
   const [memo, setMemo] = React.useState(record?.memo ?? plan?.memo ?? '');
   const [companions, setCompanions] = React.useState<string[]>(record?.companions ?? []);
   const [mood, setMood] = React.useState<number>(() => MOODS.findIndex((m) => m.label === record?.fields?.기분));
-  const [운동시간, set운동시간] = React.useState(record?.fields?.운동시간 ?? '');
-  const [exercises, setExercises] = React.useState<Exercise[]>(() => parseExercises(record?.fields));
+  // 운동 시간은 분 단위 숫자만 입력받고 저장 시 '52분'으로 직렬화(레거시 값은 숫자만 추출해 복원).
+  const [분, set분] = React.useState((record?.fields?.운동시간 ?? '').replace(/[^\d]/g, ''));
+  // 종목: 신규는 빈 목록(종목 칩·추가 버튼으로 시작), 편집은 저장값(레거시 세트 포함) 복원.
+  const [exercises, setExercises] = React.useState<Exercise[]>(() => (record ? parseExercises(record.fields) : []));
 
-  const 운동시간Ref = React.useRef<TextInput>(null);
+  const 분Ref = React.useRef<TextInput>(null);
   const moodColors = [c.error, c.warning, c.success, c.cardio];
+
+  const togglePart = (v: string) => setParts((p) => (p.includes(v) ? p.filter((x) => x !== v) : [...p, v]));
 
   // 최근 같은 활동 기록 프리필 — 지난 세션의 종목 구성을 시작점으로 복사(결과성 값 제외).
   const lastRecord = React.useMemo(
@@ -71,11 +83,20 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
   const prefillFromLast = () => {
     if (!lastRecord) return;
     const f = lastRecord.fields ?? {};
-    if (f.부위) setPart(f.부위);
-    if (f.운동 || f.세트) setExercises(parseExercises(f));
-    if (f.운동시간) set운동시간(f.운동시간);
+    if (f.부위) setParts(f.부위.split('·').filter(Boolean));
+    if (f.운동 || f.세트) {
+      setExercises(parseExercises(f));
+      setExOpen(true); // 복사된 깊이만큼 펼쳐서 보여준다
+    }
+    if (f.운동시간) set분(f.운동시간.replace(/[^\d]/g, ''));
     if (f.장소) setPlace(f.장소);
   };
+
+  // "최근 종목" 칩 — 과거 기록에서 추출(관리 화면 없는 라이브러리). 이미 추가한 이름은 제외.
+  const suggestions = React.useMemo(() => recentExercises(records), [records]);
+  const availableSuggestions = suggestions.filter((s) => !exercises.some((e) => e.name.trim() === s.name));
+  const addSuggested = (s: Exercise) =>
+    setExercises((list) => [...list, { name: s.name, sets: s.sets.map((x) => ({ ...x })) }]); // 마지막 세트 구성 프리필
 
   const 총볼륨num = totalVolume(exercises);
   const 총볼륨 = 총볼륨num > 0 ? `${총볼륨num}kg` : '';
@@ -113,25 +134,28 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
 
   const handleSave = () => {
     const cleaned = cleanExercises(exercises);
-    if (part.trim() === '' && cleaned.length === 0) {
+    const partLabel = parts.join('·');
+    const 운동시간 = 분 ? `${분}${tr({ en: ' min', ko: '분' })}` : '';
+    if (!parts.length && !분 && cleaned.length === 0) {
       Alert.alert(
         tr({ en: 'Required', ko: '필수 항목' }),
-        tr({ en: 'Enter a body part or exercise.', ko: '운동 부위나 종목을 입력해 주세요.' }),
+        tr({ en: 'Enter a body part, time, or exercise.', ko: '운동 부위, 시간, 종목 중 하나를 입력해 주세요.' }),
       );
       return;
     }
     const fields: Record<string, string> = {};
-    if (part) fields.부위 = part;
+    if (partLabel) fields.부위 = partLabel;
     if (총볼륨) fields.총볼륨 = 총볼륨;
     if (운동시간) fields.운동시간 = 운동시간;
     if (place) fields.장소 = place;
     if (mood >= 0) fields.기분 = MOODS[mood].label;
     if (cleaned.length) fields.운동 = JSON.stringify(cleaned);
 
+    // meta는 깊이에 적응: 시간만 → '가슴 · 45분', 종목까지 → '가슴 · 2종목 · 볼륨 1464kg'.
     const exerciseCount = cleaned.length ? tr({ en: `${cleaned.length} exercises`, ko: `${cleaned.length}종목` }) : '';
-    const meta = [part, exerciseCount, 총볼륨 ? tr({ en: `vol ${총볼륨}`, ko: `볼륨 ${총볼륨}` }) : '']
-      .filter(Boolean)
-      .join(' · ');
+    const metaParts = [partLabel, exerciseCount, 총볼륨 ? tr({ en: `vol ${총볼륨}`, ko: `볼륨 ${총볼륨}` }) : ''].filter(Boolean);
+    if (!cleaned.length && 운동시간) metaParts.push(운동시간);
+    const meta = metaParts.join(' · ');
 
     const payload = {
       activity,
@@ -172,25 +196,76 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
 
         {!editing && lastRecord ? <PrefillBanner activity={activity} onPress={prefillFromLast} /> : null}
 
-        {/* 운동 부위 */}
+        {/* 1단계 — 운동 시간(분) · 부위. 이것만 채워도 저장된다. */}
         <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 8 }}>{tr({ en: 'Body part', ko: '운동 부위' })}</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 8 }}>{tr({ en: 'Workout time', ko: '운동 시간' })}</Text>
+          <Pressable
+            onPress={() => 분Ref.current?.focus()}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              backgroundColor: c.surfaceAlt,
+              borderRadius: 10,
+              paddingVertical: 11,
+              paddingHorizontal: 12,
+            }}
+          >
+            <TextInput
+              ref={분Ref}
+              value={분}
+              onChangeText={(v) => set분(v.replace(/[^\d]/g, ''))}
+              placeholder="0"
+              placeholderTextColor={c.text3}
+              keyboardType="numeric"
+              style={{ flex: 1, fontSize: 16, fontWeight: '700', color: c.text, padding: 0 }}
+            />
+            <Text style={{ fontSize: 13, fontWeight: '600', color: c.text3 }}>{tr({ en: 'min', ko: '분' })}</Text>
+          </Pressable>
+        </View>
+
+        {/* 운동 부위 — 다중 선택(가슴+삼두 같은 복합 세션) */}
+        <View>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 8 }}>{tr({ en: 'Body parts', ko: '운동 부위' })}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
             {PARTS.map((p) => (
               <Chip
                 key={p.value}
                 label={tr(p.label)}
-                selected={p.value === part}
+                selected={parts.includes(p.value)}
                 color={c.strength}
-                onPress={() => setPart(p.value)}
+                onPress={() => togglePart(p.value)}
               />
             ))}
           </View>
         </View>
 
+        {/* 2·3단계 — 종목 기록(선택): 종목 이름만 적으면 2단계, 세트까지 채우면 3단계 */}
+        <DisclosureButton
+          title={tr({ en: 'Exercises', ko: '종목 기록' })}
+          badge={tr({ en: 'Optional', ko: '선택' })}
+          subtitle={tr({ en: 'Exercise names · Sets · Volume', ko: '종목 이름 · 세트 · 총 볼륨' })}
+          icon={<Icon.dumbbell size={17} color={c.text2} strokeWidth={2.2} />}
+          open={exOpen}
+          onPress={() => setExOpen((o) => !o)}
+        />
+
+        {exOpen ? (
+        <View style={{ gap: 14 }}>
+        {/* 최근 종목 칩 — 과거 기록에서 추출, 탭하면 마지막 세트 구성째로 추가 */}
+        {availableSuggestions.length ? (
+          <View>
+            <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, marginBottom: 7 }}>{tr({ en: 'Recent exercises', ko: '최근 종목' })}</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
+              {availableSuggestions.map((s) => (
+                <Chip key={s.name} label={`+ ${s.name}`} color={c.strength} onPress={() => addSuggested(s)} />
+              ))}
+            </View>
+          </View>
+        ) : null}
+
         {/* 종목별 세트 테이블 (다종목) */}
         {exercises.map((ex, ei) => {
-          const nonWarmup = ex.sets.filter((s) => !s.warmup).length;
           return (
             <View
               key={ei}
@@ -216,16 +291,14 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
                   style={{ flex: 1, fontSize: 15, fontWeight: '700', color: c.text, padding: 0 }}
                 />
                 <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: `${ex.sets.length} sets`, ko: `${ex.sets.length}세트` })}</Text>
-                {exercises.length > 1 ? (
-                  <Pressable
-                    onPress={() => removeExercise(ei)}
-                    hitSlop={8}
-                    accessibilityRole="button"
-                    accessibilityLabel={tr({ en: 'Remove exercise', ko: '종목 삭제' })}
-                  >
-                    <Glyph size={16} color={c.text3} strokeWidth={2}><Path d="M6 6l12 12M18 6l-12 12" /></Glyph>
-                  </Pressable>
-                ) : null}
+                <Pressable
+                  onPress={() => removeExercise(ei)}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={tr({ en: 'Remove exercise', ko: '종목 삭제' })}
+                >
+                  <Glyph size={16} color={c.text3} strokeWidth={2}><Path d="M6 6l12 12M18 6l-12 12" /></Glyph>
+                </Pressable>
               </View>
 
               {/* column header */}
@@ -335,38 +408,24 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
           <Text style={{ fontSize: 14, fontWeight: '600', color: c.text2 }}>{tr({ en: 'Add exercise', ko: '종목 추가' })}</Text>
         </Pressable>
 
-        {/* summary */}
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <View style={{ flex: 1, backgroundColor: c.strengthSoft, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14 }}>
-            <Text style={{ fontSize: 11, color: c.text2 }}>
-              {tr({ en: 'Total volume', ko: '총 볼륨' })} <Text style={{ fontSize: 10, fontWeight: '600', color: c.strength }}>{tr({ en: 'Auto', ko: '자동' })}</Text>
-            </Text>
-            <Text style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 2 }}>
-              {총볼륨 ? (
-                <>
-                  {총볼륨.replace(/kg$/, '')}
-                  <Text style={{ fontSize: 12, color: c.text2 }}>kg</Text>
-                </>
-              ) : (
-                <Text style={{ fontSize: 15, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Auto', ko: '자동' })}</Text>
-              )}
-            </Text>
-          </View>
-          <Pressable
-            onPress={() => 운동시간Ref.current?.focus()}
-            style={{ flex: 1, backgroundColor: c.surfaceAlt, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14 }}
-          >
-            <Text style={{ fontSize: 11, color: c.text2 }}>{tr({ en: 'Workout time', ko: '운동 시간' })}</Text>
-            <TextInput
-              ref={운동시간Ref}
-              value={운동시간}
-              onChangeText={set운동시간}
-              placeholder={tr({ en: 'e.g. 52 min', ko: '예: 52분' })}
-              placeholderTextColor={c.text3}
-              style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 2, padding: 0 }}
-            />
-          </Pressable>
+        {/* 총 볼륨 — 세트 값에서 전 종목 합산(자동) */}
+        <View style={{ backgroundColor: c.strengthSoft, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 14 }}>
+          <Text style={{ fontSize: 11, color: c.text2 }}>
+            {tr({ en: 'Total volume', ko: '총 볼륨' })} <Text style={{ fontSize: 10, fontWeight: '600', color: c.strength }}>{tr({ en: 'Auto', ko: '자동' })}</Text>
+          </Text>
+          <Text style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 2 }}>
+            {총볼륨 ? (
+              <>
+                {총볼륨.replace(/kg$/, '')}
+                <Text style={{ fontSize: 12, color: c.text2 }}>kg</Text>
+              </>
+            ) : (
+              <Text style={{ fontSize: 15, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Auto', ko: '자동' })}</Text>
+            )}
+          </Text>
         </View>
+        </View>
+        ) : null}
 
         {/* 공통 세부 입력 (collapsed default) */}
         <DisclosureButton
