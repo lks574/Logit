@@ -305,7 +305,7 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
               <View style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 7, paddingHorizontal: 14 }}>
                 <Text style={{ width: 30, fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Set', ko: '세트' })}</Text>
                 <Text style={{ flex: 1, fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Reps', ko: '반복' })}</Text>
-                <Text style={{ flex: 1, fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Weight', ko: '중량' })}</Text>
+                <Text style={{ flex: 1, fontSize: 11, fontWeight: '600', color: c.text3 }}>{tr({ en: 'Weight (kg)', ko: '중량(kg)' })}</Text>
                 <Text style={{ width: 40, fontSize: 11, fontWeight: '600', color: c.text3, textAlign: 'center' }}>{tr({ en: 'W-up', ko: '워밍업' })}</Text>
                 <View style={{ width: 26 }} />
               </View>
@@ -316,28 +316,27 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
                 return (
                   <View
                     key={si}
-                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 14, borderTopWidth: 1, borderTopColor: c.border }}
+                    style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, borderTopWidth: 1, borderTopColor: c.border }}
                   >
                     <Text style={{ width: 30, fontSize: 13, color: c.text2 }}>{setNo}</Text>
+                    {/* 입력칸은 열 전체를 터치 영역으로(flex+paddingVertical) — 글자 폭만 눌리던 문제 방지 */}
                     <TextInput
                       value={row.reps}
                       onChangeText={(v) => setCell(ei, si, 'reps', v)}
                       placeholder="0"
                       placeholderTextColor={c.text3}
                       keyboardType="numeric"
-                      style={{ flex: 1, fontSize: 14, fontWeight: '600', color: c.text, padding: 0 }}
+                      style={{ flex: 1, fontSize: 14, fontWeight: '600', color: c.text, paddingVertical: 12, paddingHorizontal: 0 }}
                     />
-                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-                      <TextInput
-                        value={row.weight}
-                        onChangeText={(v) => setCell(ei, si, 'weight', v)}
-                        placeholder="0"
-                        placeholderTextColor={c.text3}
-                        keyboardType="numeric"
-                        style={{ fontSize: 14, fontWeight: '600', color: c.text, padding: 0 }}
-                      />
-                      <Text style={{ fontSize: 11, fontWeight: '500', color: c.text3 }}>kg</Text>
-                    </View>
+                    {/* 단위(kg)는 열 머리글에 표기 — 행에서는 입력칸이 열 전체를 차지해 어디를 눌러도 포커스된다 */}
+                    <TextInput
+                      value={row.weight}
+                      onChangeText={(v) => setCell(ei, si, 'weight', v)}
+                      placeholder="0"
+                      placeholderTextColor={c.text3}
+                      keyboardType="numeric"
+                      style={{ flex: 1, fontSize: 14, fontWeight: '600', color: c.text, paddingVertical: 12, paddingHorizontal: 0 }}
+                    />
                     <View style={{ width: 40, alignItems: 'center' }}>
                       <Pressable
                         onPress={() => toggleWarmup(ei, si)}
