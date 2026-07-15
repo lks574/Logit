@@ -7,6 +7,7 @@ import { Field } from '../../../components/Field';
 import { RatingInput } from '../../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
 import { MiniMonthPicker } from '../../../components/MiniMonthPicker';
+import { PrefillBanner } from '../../../components/PrefillBanner';
 import { nowDateISO } from '../../../components/DateTimeField';
 import { monthDayWeekday } from '../../../lib/date';
 import { activityLabel } from '../../../data/activities';
@@ -74,6 +75,19 @@ export default function CampingForm({ activity, recordId, plan, initialDate }: {
   }, [camp, records, recordId]);
 
   const nights = daysBetween(startISO, endISO);
+
+  // 최근 같은 활동 기록 프리필 — 재방문 대응: 장소·지역·분류만(기간은 매번 다름).
+  const lastRecord = React.useMemo(
+    () => records.find((r) => r.activity === activity && r.id !== recordId),
+    [records, activity, recordId],
+  );
+  const prefillFromLast = () => {
+    if (!lastRecord) return;
+    const f = lastRecord.fields ?? {};
+    if (f.장소) setCamp(f.장소);
+    if (f.지역) setRegion(f.지역);
+    if (f.분류) setTags(f.분류);
+  };
 
   // 떠나는 날을 바꾸면 돌아오는 날도 같은 날짜로 맞춘다(당일치기 기본).
   const onPickStart = (iso: string) => {
@@ -153,6 +167,8 @@ export default function CampingForm({ activity, recordId, plan, initialDate }: {
           {picking === 'start' ? <MiniMonthPicker value={startISO} onChange={onPickStart} /> : null}
           {picking === 'end' ? <MiniMonthPicker value={endISO} onChange={onPickEnd} /> : null}
         </View>
+
+        {!editing && lastRecord ? <PrefillBanner activity={activity} onPress={prefillFromLast} /> : null}
 
         {/* 평점 — (지역이 있던 자리) */}
         <View>

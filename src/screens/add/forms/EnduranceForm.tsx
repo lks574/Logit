@@ -12,6 +12,7 @@ import { useStore } from '../../../store/StoreContext';
 import { resetToHome } from '../../../navigation/nav';
 import { runningCalories } from '../../../lib/calories';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
+import { PrefillBanner } from '../../../components/PrefillBanner';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
 import { tr } from '../../../i18n/i18n';
@@ -174,29 +175,7 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
         <DateTimeField dateISO={dateISO} timeLabel={timeLabel} onChangeDate={setDateISO} onChangeTime={setTimeLabel} color={c.cardio} />
 
         {/* 최근 같은 활동 기록 프리필 — 신규 작성이고 이전 기록이 있을 때만 */}
-        {!editing && lastRecord ? (
-          <Pressable
-            onPress={prefillFromLast}
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 9,
-              width: '100%',
-              backgroundColor: c.accentSoft,
-              borderWidth: 1,
-              borderColor: withAlpha(c.accent, 22),
-              borderRadius: 12,
-              paddingVertical: 11,
-              paddingHorizontal: 13,
-            }}
-          >
-            <Icon.refresh size={17} color={c.accent} />
-            <Text style={{ flex: 1, fontSize: 13, fontWeight: '600', color: c.accent }}>
-              {tr({ en: `Load last ${activityLabel(activity)} record`, ko: `최근 ${activityLabel(activity)} 기록 불러오기` })}
-            </Text>
-            <Icon.chevronRight size={16} color={c.accent} strokeWidth={2} />
-          </Pressable>
-        ) : null}
+        {!editing && lastRecord ? <PrefillBanner activity={activity} onPress={prefillFromLast} /> : null}
 
         {/* 핵심 수치 · 필수 — 거리 / 시간 (3.1) */}
         <View>

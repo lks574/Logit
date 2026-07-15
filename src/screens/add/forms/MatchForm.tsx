@@ -12,6 +12,7 @@ import { SPORTS, ACTIVITY_TO_SPORT, sportFor } from '../../../data/sports';
 import { useStore } from '../../../store/StoreContext';
 import { resetToHome } from '../../../navigation/nav';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
+import { PrefillBanner } from '../../../components/PrefillBanner';
 import { useTheme } from '../../../theme/ThemeContext';
 import { tr } from '../../../i18n/i18n';
 import { activityLabel } from '../../../data/activities';
@@ -23,7 +24,7 @@ import { activityLabel } from '../../../data/activities';
 export default function MatchForm({ activity, recordId, plan, initialDate }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan; initialDate?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord, completePlan } = useStore();
+  const { addRecord, updateRecord, getRecord, records, completePlan } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
@@ -106,6 +107,19 @@ export default function MatchForm({ activity, recordId, plan, initialDate }: { a
     if (uris.length) setPhotos((p) => [...p, ...uris]);
   };
 
+  // 최근 같은 활동 기록 프리필 — 종목·이름만(스코어·결과·슬롯 값은 매 경기 다르므로 제외).
+  const lastRecord = React.useMemo(
+    () => records.find((r) => r.activity === activity && r.id !== recordId),
+    [records, activity, recordId],
+  );
+  const prefillFromLast = () => {
+    if (!lastRecord) return;
+    const f = lastRecord.fields ?? {};
+    if (f.종목) selectSport(f.종목); // 슬롯 스키마 교체 + 값 초기화 포함
+    if (f.나) setMeName(f.나);
+    if (f.상대) setOppName(f.상대);
+  };
+
   const handleSave = () => {
     const hasField = sport.fields.some((f) => (fieldValues[f.key] ?? '').trim() !== '');
     if (meScore.trim() === '' && oppScore.trim() === '' && oppName.trim() === '' && !hasField) {
@@ -172,6 +186,8 @@ export default function MatchForm({ activity, recordId, plan, initialDate }: { a
       <View style={{ padding: 16, gap: 13 }}>
         {/* 날짜 · 시간 */}
         <DateTimeField dateISO={dateISO} timeLabel={timeLabel} onChangeDate={setDateISO} onChangeTime={setTimeLabel} color={c.team} />
+
+        {!editing && lastRecord ? <PrefillBanner activity={activity} onPress={prefillFromLast} /> : null}
 
         {/* 종목 chips — selecting one swaps the key-record slots below */}
         <View>

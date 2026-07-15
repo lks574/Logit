@@ -11,6 +11,7 @@ import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
 import { useStore } from '../../../store/StoreContext';
 import { resetToHome } from '../../../navigation/nav';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
+import { PrefillBanner } from '../../../components/PrefillBanner';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
 import { tr } from '../../../i18n/i18n';
@@ -61,7 +62,7 @@ function parseRows(saved?: string): SetRow[] {
 export default function SetRepForm({ activity, recordId, plan, initialDate }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan; initialDate?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord, completePlan } = useStore();
+  const { addRecord, updateRecord, getRecord, records, completePlan } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
 
@@ -80,6 +81,20 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
 
   const 운동시간Ref = React.useRef<TextInput>(null);
   const moodColors = [c.error, c.warning, c.success, c.cardio];
+
+  // 최근 같은 활동 기록 프리필 — 지난 세션의 세트 구성을 시작점으로 복사(결과성 값 제외).
+  const lastRecord = React.useMemo(
+    () => records.find((r) => r.activity === activity && r.id !== recordId),
+    [records, activity, recordId],
+  );
+  const prefillFromLast = () => {
+    if (!lastRecord) return;
+    const f = lastRecord.fields ?? {};
+    if (f.부위) setPart(f.부위);
+    if (f.세트) setRows(parseRows(f.세트));
+    if (f.운동시간) set운동시간(f.운동시간);
+    if (f.장소) setPlace(f.장소);
+  };
 
   // 총 볼륨 = Σ(반복 × 중량), 워밍업 제외 — "자동" 뱃지대로 세트 값에서 계산한다.
   const totalVolume = rows.reduce((sum, r) => {
@@ -163,6 +178,8 @@ export default function SetRepForm({ activity, recordId, plan, initialDate }: { 
       <View style={{ padding: 16, gap: 14 }}>
         {/* 날짜 · 시간 */}
         <DateTimeField dateISO={dateISO} timeLabel={timeLabel} onChangeDate={setDateISO} onChangeTime={setTimeLabel} color={c.strength} />
+
+        {!editing && lastRecord ? <PrefillBanner activity={activity} onPress={prefillFromLast} /> : null}
 
         {/* 운동 부위 */}
         <View>

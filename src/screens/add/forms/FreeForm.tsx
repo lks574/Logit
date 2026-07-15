@@ -10,6 +10,7 @@ import { RatingInput, CompanionField } from '../../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
 import { MiniMonthPicker } from '../../../components/MiniMonthPicker';
+import { PrefillBanner } from '../../../components/PrefillBanner';
 import { activities, activityLabel } from '../../../data/activities';
 import { resetToHome } from '../../../navigation/nav';
 import { useStore } from '../../../store/StoreContext';
@@ -31,7 +32,7 @@ const LABEL_INTENSITY: Record<string, Intensity> = { 낮음: 'low', 보통: 'mid
 export default function FreeForm({ activity, recordId, plan, initialDate }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan; initialDate?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { addRecord, updateRecord, getRecord, customActivities, completePlan } = useStore();
+  const { addRecord, updateRecord, getRecord, records, customActivities, completePlan } = useStore();
 
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
@@ -66,6 +67,24 @@ export default function FreeForm({ activity, recordId, plan, initialDate }: { ac
   );
 
   const durationRef = React.useRef<TextInput>(null);
+
+  // 최근 같은 활동 기록 프리필 — 변형별 시작점 값만(평점·메모·사진 제외).
+  const lastRecord = React.useMemo(
+    () => records.find((r) => r.activity === activity && r.id !== recordId),
+    [records, activity, recordId],
+  );
+  const prefillFromLast = () => {
+    if (!lastRecord) return;
+    const f = lastRecord.fields ?? {};
+    if (isBook) {
+      if (f.제목) setTitle(f.제목);
+      return;
+    }
+    if (f.장소) setPlace(f.장소);
+    if (isOuting) return;
+    if (f.시간) setDuration(f.시간.replace(/[^0-9]/g, ''));
+    if (f.강도 && LABEL_INTENSITY[f.강도]) setIntensity(LABEL_INTENSITY[f.강도]);
+  };
 
   const pickPhoto = async () => {
     const uris = await choosePhoto();
@@ -198,6 +217,8 @@ export default function FreeForm({ activity, recordId, plan, initialDate }: { ac
             </View>
           ) : null}
         </View>
+
+        {!editing && lastRecord ? <PrefillBanner activity={activity} onPress={prefillFromLast} /> : null}
 
         {/* 독서 — 책 제목 */}
         {isBook ? (

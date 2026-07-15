@@ -8,6 +8,7 @@ import { RatingInput, CompanionField } from '../../../components/Rating';
 import { Stepper, Chip } from '../../../components/controls';
 import { Glyph, Path, Rect, Icon } from '../../../components/Glyph';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
+import { PrefillBanner } from '../../../components/PrefillBanner';
 import { resetToHome } from '../../../navigation/nav';
 import { useStore } from '../../../store/StoreContext';
 import { useTheme } from '../../../theme/ThemeContext';
@@ -129,6 +130,19 @@ export default function SpectateForm({ activity, recordId, plan, initialDate }: 
     if (uris.length) setPhotos((p) => [...p, ...uris]);
   };
 
+  // 최근 같은 활동 기록 프리필 — 재관람 대응: 작품·공연장·출연진만(좌석·회차·티켓은 회차마다 다름).
+  const lastRecord = React.useMemo(
+    () => records.find((r) => r.activity === activity && r.id !== recordId),
+    [records, activity, recordId],
+  );
+  const prefillFromLast = () => {
+    if (!lastRecord) return;
+    const f = lastRecord.fields ?? {};
+    if (f.작품) setTitle(f.작품); // 회차는 아래 effect가 작품명 기준으로 자동 계산
+    if (f.공연장) setVenue(f.공연장);
+    if (f.출연진) setCast(f.출연진.split(' · ').map((s) => s.trim()).filter(Boolean));
+  };
+
   // 신규 기록: 작품명이 과거 관람과 같으면 회차를 자동 계산(같은 작품 N번 → N+1차).
   // 회차 접미사 "(2)"는 무시하고 기본 제목으로 비교. 수정 중엔 건드리지 않는다.
   const baseTitle = (s: string) => s.replace(/\s*\(\d+\)\s*$/, '').trim();
@@ -229,6 +243,8 @@ export default function SpectateForm({ activity, recordId, plan, initialDate }: 
           color={c.perf}
           allowNoTime
         />
+
+        {!editing && lastRecord ? <PrefillBanner activity={activity} onPress={prefillFromLast} /> : null}
 
         {/* 공연장 / 좌석 */}
         <View>

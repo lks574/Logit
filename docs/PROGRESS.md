@@ -1,7 +1,7 @@
 # Logit — 진행 상황 (핸드오프)
 
 > 세션 재개용 인덱스. 상세는 아래 문서/코드/git 히스토리로 위임한다(중복 금지).
-> 마지막 갱신: 2026-07-13
+> 마지막 갱신: 2026-07-14
 
 ## 스냅샷
 - **무엇**: `Downloads/design_handoff_logit_mobile/Logit.dc.html` 디자인을 재현한 개인 기록 앱(운동·공연).
@@ -55,8 +55,10 @@ npm run tunnel     # 실기기 원격 접속: Cloudflare 터널 + Metro 한 방(
 - **러닝 지표**: 평균 페이스 → **평균 속도(km/h)**, **칼로리 자동계산(ACSM, 체중 기반)** — 프로필 `weightKg`.
 - **통계 활동별**: 템플릿 섹션 제거, 최신 기록순 단일 그리드.
 - **±스텝퍼 롱프레스**: 평점·시간 연속 변경(`useHoldRepeat`), 분 1분 단위.
+- **지난 기록 프리필 전 폼 확산**(ROADMAP P1): "최근 {활동} 기록 불러오기" 배너를 `src/components/PrefillBanner.tsx`로 추출, 6개 폼 전체 적용(폼별 복사 필드는 `docs/ROADMAP.md` §P1 표). 결과성 값(스코어·좌석·기간 등)은 복사 제외.
 
 ## 미완 / 알려진 한계 (다음 후보)
+- **다음 작업 우선순위**: `docs/ROADMAP.md` — 리텐션 우선 실행 스펙(P1 프리필 확산 → P2 공유 카드 → P3 HealthKit → P4 계측). 착수 시 이 문서부터.
 - **원격 push 발송**: 클라이언트 토큰 등록까지만. EAS projectId·APNs 키·발송 서버(Cloud Function) 미구성.
 - **유니버설/앱링크 미완**: iOS는 **유료 Apple Developer 계정** 필요(Associated Domains 프로비저닝) — 현재 스킴 딥링크만 동작. Android 앱링크는 `public/.well-known/assetlinks.json`의 SHA-256 미기입(Android 빌드 전).
 - **STORE_URL 플레이스홀더**: `src/lib/version.ts` 스토어 URL이 미등록 앱이라 placeholder(iOS `id0000000000`) — 스토어 등록 후 교체해야 업데이트 버튼 이동.
