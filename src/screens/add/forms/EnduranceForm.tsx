@@ -97,7 +97,7 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
 
   const template = activities[activity]?.template ?? 'endurance';
   const { color, soft } = colorsFor(template, c);
-  const ActIcon = Icon.running;
+  const ActIcon = Icon[activities[activity]?.icon ?? 'running'];
   const moodColors = [c.team, c.warning, c.success, c.star]; // 별로·보통·좋음·최고 (부드러운 톤)
 
   const pickPhoto = async () => {
@@ -282,7 +282,7 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
               {SWIM_STROKES.map((s) => (
                 <Chip
                   key={s}
-                  label={tr({ en: s === '자유형' ? 'Freestyle' : s === '배영' ? 'Backstroke' : s === '평영' ? 'Breaststroke' : 'Butterfly', ko: s })}
+                  label={tr({ en: s === '자유형' ? 'Freestyle' : s === '배영' ? 'Backstroke' : s === '평영' ? 'Breaststroke' : s === '접영' ? 'Butterfly' : 'Medley', ko: s })}
                   selected={s === stroke}
                   color={color}
                   onPress={() => setStroke(s)}

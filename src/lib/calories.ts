@@ -51,6 +51,7 @@ export function swimCalories(p: {
     배영: [5, 9.5],
     평영: [6, 10.3],
     접영: [11, 13.8],
+    혼합: [8, 11], // 개인혼영 — 4영법 평균(접영 포함이라 다소 높게)
   };
   const [mod, vig] = table[stroke ?? '자유형'] ?? table['자유형'];
   return metCalories(vigorous ? vig : mod, weightKg, totalSec);

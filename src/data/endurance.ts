@@ -49,4 +49,4 @@ export function enduranceProfile(activity: string): EnduranceProfile {
   return RUN;
 }
 
-export const SWIM_STROKES = ['자유형', '배영', '평영', '접영'] as const;
+export const SWIM_STROKES = ['자유형', '배영', '평영', '접영', '혼합'] as const;

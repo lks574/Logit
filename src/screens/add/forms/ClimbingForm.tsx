@@ -108,7 +108,7 @@ export default function ClimbingForm({ activity, recordId, plan, initialDate }: 
     <Screen edges={['top', 'bottom']}>
       <FormHeader
         title={activityLabel(activity)}
-        icon={<Icon.dumbbell size={13} color={c.strength} strokeWidth={2.2} />}
+        icon={<Icon.climbing size={13} color={c.strength} strokeWidth={2.2} />}
         color={c.strength}
         soft={c.strengthSoft}
         onCancel={() => nav.goBack()}

@@ -17,10 +17,10 @@ export type Activity = {
 
 export const activities: Record<string, Activity> = {
   런닝: { name: '런닝', label: { en: 'Running', ko: '런닝' }, template: 'endurance', icon: 'running' },
-  자전거: { name: '자전거', label: { en: 'Cycling', ko: '자전거' }, template: 'endurance', icon: 'running' },
-  수영: { name: '수영', label: { en: 'Swimming', ko: '수영' }, template: 'endurance', icon: 'running' }, // ponytail: swim 아이콘 없어 running 재사용
+  자전거: { name: '자전거', label: { en: 'Cycling', ko: '자전거' }, template: 'endurance', icon: 'bike' },
+  수영: { name: '수영', label: { en: 'Swimming', ko: '수영' }, template: 'endurance', icon: 'swim' },
   헬스: { name: '헬스', label: { en: 'Gym', ko: '헬스' }, template: 'setrep', icon: 'dumbbell' },
-  클라이밍: { name: '클라이밍', label: { en: 'Climbing', ko: '클라이밍' }, template: 'setrep', icon: 'dumbbell' },
+  클라이밍: { name: '클라이밍', label: { en: 'Climbing', ko: '클라이밍' }, template: 'setrep', icon: 'climbing' },
   축구: { name: '축구', label: { en: 'Soccer', ko: '축구' }, template: 'match', icon: 'soccer' },
   야구: { name: '야구', label: { en: 'Baseball', ko: '야구' }, template: 'match', icon: 'baseball' },
   배드민턴: { name: '배드민턴', label: { en: 'Badminton', ko: '배드민턴' }, template: 'match', icon: 'badminton' },
@@ -29,7 +29,7 @@ export const activities: Record<string, Activity> = {
   주짓수: { name: '주짓수', label: { en: 'Jiu-jitsu', ko: '주짓수' }, template: 'match', icon: 'jiujitsu' },
   뮤지컬: { name: '뮤지컬', label: { en: 'Musical', ko: '뮤지컬' }, template: 'spectate', icon: 'performance' },
   연극: { name: '연극', label: { en: 'Play', ko: '연극' }, template: 'spectate', icon: 'performance' },
-  콘서트: { name: '콘서트', label: { en: 'Concert', ko: '콘서트' }, template: 'spectate', icon: 'performance' },
+  콘서트: { name: '콘서트', label: { en: 'Concert', ko: '콘서트' }, template: 'spectate', icon: 'music' },
   요가: { name: '요가', label: { en: 'Yoga', ko: '요가' }, template: 'free', icon: 'yoga' },
   독서: { name: '독서', label: { en: 'Reading', ko: '독서' }, template: 'free', icon: 'book' },
   캠핑: { name: '캠핑', label: { en: 'Camping', ko: '캠핑' }, template: 'outing', icon: 'tent' },

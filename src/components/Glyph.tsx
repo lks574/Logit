@@ -158,6 +158,37 @@ export const Icon = {
       <Path d="M6.5 6.5l11 11M4 8l-2 2 4 4M16 4l4 4-2 2M8 16l-4-4M16 8l4 4" />
     </Glyph>
   ),
+  bike: (p: IconProps) => (
+    // 두 바퀴 + 프레임 + 안장·핸들바.
+    <Glyph {...p}>
+      <Circle cx="6" cy="16.5" r="3.3" />
+      <Circle cx="18" cy="16.5" r="3.3" />
+      <Path d="M6 16.5l4.5-7.5H15l3 7.5M8.5 9h3M14 9l1.5-2.5H18" />
+    </Glyph>
+  ),
+  swim: (p: IconProps) => (
+    // 머리 + 자유형 팔 스트로크 + 물결.
+    <Glyph {...p}>
+      <Circle cx="7" cy="7.5" r="1.8" />
+      <Path d="M9 9l3.5 2 4-2.5" />
+      <Path d="M3 16c2-1.6 3.5 1 5.5 0s3.5-1.6 5.5 0 3.5 1 5.5 0" />
+    </Glyph>
+  ),
+  climbing: (p: IconProps) => (
+    // 산 봉우리 + 정상 표식 — 등반/아웃도어.
+    <Glyph {...p}>
+      <Path d="M3 20l6-11 3.5 6 2-3.5L21 20z" />
+      <Path d="M9 9l1.7 3" />
+    </Glyph>
+  ),
+  music: (p: IconProps) => (
+    // 음표(콘서트) — 자루로 이은 두 음표 머리.
+    <Glyph {...p}>
+      <Circle cx="7" cy="18" r="2.4" />
+      <Circle cx="17" cy="16" r="2.4" />
+      <Path d="M9.4 18V6l10-2v12" />
+    </Glyph>
+  ),
   soccer: (p: IconProps) => (
     <Glyph {...p}>
       <Circle cx="12" cy="12" r="9" />
@@ -194,9 +225,10 @@ export const Icon = {
     </Glyph>
   ),
   yoga: (p: IconProps) => (
+    // 결가부좌(명상) 실루엣 — 머리 + 척추 + 무릎에 얹은 팔 + 넓은 삼각 베이스.
     <Glyph {...p}>
-      <Circle cx="12" cy="12" r="9" />
-      <Path d="M12 7v5l3 2" />
+      <Circle cx="12" cy="5" r="2" />
+      <Path d="M12 7.5v4M4.5 18c1.2-3 4-4.5 7.5-4.5s6.3 1.5 7.5 4.5zM8 14.5 12 11.5l4 3" />
     </Glyph>
   ),
   book: (p: IconProps) => (
