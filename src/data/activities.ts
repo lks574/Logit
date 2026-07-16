@@ -27,7 +27,7 @@ export const activities: Record<string, Activity> = {
   테니스: { name: '테니스', label: { en: 'Tennis', ko: '테니스' }, template: 'match', icon: 'tennis' },
   탁구: { name: '탁구', label: { en: 'Table Tennis', ko: '탁구' }, template: 'match', icon: 'pingpong' },
   주짓수: { name: '주짓수', label: { en: 'Jiu-jitsu', ko: '주짓수' }, template: 'match', icon: 'jiujitsu' },
-  뮤지컬: { name: '뮤지컬', label: { en: 'Musical', ko: '뮤지컬' }, template: 'spectate', icon: 'performance' },
+  뮤지컬: { name: '뮤지컬', label: { en: 'Musical', ko: '뮤지컬' }, template: 'spectate', icon: 'musical' },
   연극: { name: '연극', label: { en: 'Play', ko: '연극' }, template: 'spectate', icon: 'performance' },
   콘서트: { name: '콘서트', label: { en: 'Concert', ko: '콘서트' }, template: 'spectate', icon: 'music' },
   요가: { name: '요가', label: { en: 'Yoga', ko: '요가' }, template: 'free', icon: 'yoga' },
