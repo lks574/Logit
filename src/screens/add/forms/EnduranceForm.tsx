@@ -10,10 +10,11 @@ import { Screen } from '../../../components/primitives';
 import { activities, colorsFor } from '../../../data/activities';
 import { useStore } from '../../../store/StoreContext';
 import { resetToHome } from '../../../navigation/nav';
-import { runningCalories } from '../../../lib/calories';
+import { enduranceProfile, SWIM_STROKES } from '../../../data/endurance';
 import { DateTimeField, nowDateISO, nowTimeLabel } from '../../../components/DateTimeField';
 import { PrefillBanner } from '../../../components/PrefillBanner';
 import { recentValues } from '../../../lib/history';
+import { Chip } from '../../../components/controls';
 import { useTheme } from '../../../theme/ThemeContext';
 import { withAlpha } from '../../../theme/tokens';
 import { tr } from '../../../i18n/i18n';
@@ -61,6 +62,9 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
   const [초, set초] = React.useState(t0.ss);
   const [고도, set고도] = React.useState(stripUnit(record?.fields?.고도));
   const [평균심박, set평균심박] = React.useState(stripUnit(record?.fields?.평균심박));
+  // 종목 프로파일 — 자전거/수영/러닝별 단위·표시·칼로리. (store 유저 profile과 이름 구분 위해 prof)
+  const prof = enduranceProfile(activity);
+  const [stroke, setStroke] = React.useState(record?.fields?.영법 ?? SWIM_STROKES[0]);
 
   // 탭하면 포커스되도록 각 입력에 ref
   const 거리Ref = React.useRef<TextInput>(null);
@@ -70,17 +74,25 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
   const placeRef = React.useRef<TextInput>(null);
   const memoRef = React.useRef<TextInput>(null);
 
-  // 평균 속도 = 거리(km) ÷ 시간(h) = km·3600/초. "1시간에 몇 km"를 km/h·소수 1자리로.
-  const km = parseFloat((거리.match(/[\d.]+/) || ['0'])[0]) || 0;
+  // 거리 → km 환산(수영은 m 저장이라 /1000). 시간 → 초.
+  const distNum = parseFloat((거리.match(/[\d.]+/) || ['0'])[0]) || 0;
+  const km = prof.distanceUnit === 'm' ? distNum / 1000 : distNum;
   const totalSec = (parseInt(분 || '0', 10) || 0) * 60 + (parseInt(초 || '0', 10) || 0);
+  // 러닝·자전거: 평균 속도 km/h. 수영: 100m당 페이스(m:ss).
   const autoSpeed = km > 0 && totalSec > 0 ? ((km * 3600) / totalSec).toFixed(1) : '';
+  const swimPace = (() => {
+    if (prof.kind !== 'swim' || km <= 0 || totalSec <= 0) return '';
+    const per100 = Math.round(totalSec / (km * 10)); // 초/100m
+    return `${Math.floor(per100 / 60)}:${String(per100 % 60).padStart(2, '0')}`;
+  })();
 
-  // 칼로리 자동 계산 — 런닝머신과 동일한 ACSM 방식(속도·경사·체중). 체중은 프로필에서.
-  const autoCal = runningCalories({
+  // 칼로리 — 종목별(러닝 ACSM / 자전거·수영 MET). 체중은 유저 profile에서.
+  const autoCal = prof.calories({
     km,
     totalSec,
     elevationM: parseFloat(고도) || undefined,
     weightKg: profile.weightKg,
+    stroke,
   });
 
   const template = activities[activity]?.template ?? 'endurance';
@@ -109,6 +121,7 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
     set초(t.ss);
     set고도(stripUnit(f.고도));
     set평균심박(stripUnit(f.평균심박)); // 칼로리는 거리·시간·체중에서 자동 계산
+    if (f.영법) setStroke(f.영법);
     if (f.장소) setPlace(f.장소);
   };
 
@@ -123,22 +136,25 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
       );
       return;
     }
+    // 거리는 종목 단위를 붙여 정규화 저장(런닝/자전거 km, 수영 m).
+    const distStr = distNum > 0 ? `${distNum}${prof.distanceUnit}` : 거리.trim();
     // Build fields with only non-empty values so blank inputs are omitted.
-    // 고도/칼로리/심박은 숫자 state에 단위를 붙여 저장.
+    // 종목별로 속도(km/h) 또는 페이스(/100m), 고도(러닝·자전거만), 영법(수영만) 저장.
     const fieldEntries: [string, string][] = [
-      ['거리', 거리],
+      ['거리', distStr],
       ['시간', 시간val],
-      ['속도', autoSpeed ? `${autoSpeed}km/h` : ''],
-      ['고도', 고도 ? `${고도}m` : ''],
+      prof.kind === 'swim' ? ['페이스', swimPace ? `${swimPace}/100m` : ''] : ['속도', autoSpeed ? `${autoSpeed}km/h` : ''],
+      ['고도', prof.showElevation && 고도 ? `${고도}m` : ''],
       ['칼로리', autoCal != null ? `${autoCal}kcal` : ''],
       ['평균심박', 평균심박 ? `${평균심박}bpm` : ''],
+      ['영법', prof.showStroke ? stroke : ''],
       ['장소', place],
       ['기분', mood >= 0 ? MOODS[mood].label : ''],
     ];
     const fields = Object.fromEntries(fieldEntries.filter(([, v]) => v !== ''));
 
-    // 거리 stored verbatim (with its unit, e.g. "5.2km"). Join only non-empty parts.
-    const meta = [place, 거리, 시간val].filter(Boolean).join(' · ');
+    // 카드 1줄 요약. Join only non-empty parts.
+    const meta = [place, distStr, 시간val].filter(Boolean).join(' · ');
 
     const payload = {
       activity,
@@ -211,7 +227,7 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
                 ref={거리Ref}
                 value={거리}
                 onChangeText={set거리}
-                placeholder={tr({ en: 'e.g. 5.2km', ko: '예: 5.2km' })}
+                placeholder={prof.distanceUnit === 'm' ? tr({ en: 'e.g. 1500m', ko: '예: 1500m' }) : tr({ en: 'e.g. 5.2km', ko: '예: 5.2km' })}
                 placeholderTextColor={c.text3}
                 style={{ fontSize: 24, fontWeight: '700', color: c.text, marginTop: 4, padding: 0 }}
               />
@@ -256,7 +272,27 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
           </View>
         </View>
 
-        {/* 상세 수치 — 평균 속도(자동)/고도/칼로리/평균 심박 (3.1) */}
+        {/* 영법 (수영 전용) — 칼로리 MET가 영법별로 다름 */}
+        {prof.showStroke ? (
+          <View>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: c.text3, letterSpacing: 0.44, marginBottom: 7 }}>
+              {tr({ en: 'Stroke', ko: '영법' })}
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
+              {SWIM_STROKES.map((s) => (
+                <Chip
+                  key={s}
+                  label={tr({ en: s === '자유형' ? 'Freestyle' : s === '배영' ? 'Backstroke' : s === '평영' ? 'Breaststroke' : 'Butterfly', ko: s })}
+                  selected={s === stroke}
+                  color={color}
+                  onPress={() => setStroke(s)}
+                />
+              ))}
+            </View>
+          </View>
+        ) : null}
+
+        {/* 상세 수치 — 평균 속도/페이스(자동)/고도/칼로리/평균 심박 (3.1) */}
         <View>
           <Text
             style={{
@@ -279,33 +315,39 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
             }}
           >
             <DetailRow>
-              <Text style={{ fontSize: 14, color: c.text }}>{tr({ en: 'Avg speed', ko: '평균 속도' })}</Text>
+              <Text style={{ fontSize: 14, color: c.text }}>
+                {prof.kind === 'swim' ? tr({ en: 'Avg pace', ko: '평균 페이스' }) : tr({ en: 'Avg speed', ko: '평균 속도' })}
+              </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                <Text style={{ fontSize: 15, fontWeight: '600', color: autoSpeed ? c.text : c.text3, textAlign: 'right', minWidth: 52 }}>
-                  {autoSpeed || tr({ en: 'Auto', ko: '자동' })}
+                <Text style={{ fontSize: 15, fontWeight: '600', color: (prof.kind === 'swim' ? swimPace : autoSpeed) ? c.text : c.text3, textAlign: 'right', minWidth: 52 }}>
+                  {(prof.kind === 'swim' ? swimPace : autoSpeed) || tr({ en: 'Auto', ko: '자동' })}
                 </Text>
-                <Text style={{ fontSize: 13, color: c.text3 }}>km/h</Text>
+                <Text style={{ fontSize: 13, color: c.text3 }}>{prof.kind === 'swim' ? '/100m' : 'km/h'}</Text>
                 <View style={{ backgroundColor: soft, borderRadius: 5, paddingVertical: 2, paddingHorizontal: 6 }}>
                   <Text style={{ fontSize: 10, fontWeight: '600', color }}>{tr({ en: 'Auto', ko: '자동' })}</Text>
                 </View>
               </View>
             </DetailRow>
-            <View style={{ height: 1, backgroundColor: c.border }} />
-            <DetailRow onPress={() => 고도Ref.current?.focus()}>
-              <Text style={{ fontSize: 14, color: c.text }}>{tr({ en: 'Elevation gain', ko: '고도 상승' })}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <TextInput
-                  ref={고도Ref}
-                  value={고도}
-                  onChangeText={(v) => set고도(v.replace(/[^\d.]/g, ''))}
-                  keyboardType="numeric"
-                  placeholder="42"
-                  placeholderTextColor={c.text3}
-                  style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 44 }}
-                />
-                <Text style={{ fontSize: 13, color: c.text3 }}>m</Text>
-              </View>
-            </DetailRow>
+            {prof.showElevation ? (
+              <>
+                <View style={{ height: 1, backgroundColor: c.border }} />
+                <DetailRow onPress={() => 고도Ref.current?.focus()}>
+                  <Text style={{ fontSize: 14, color: c.text }}>{tr({ en: 'Elevation gain', ko: '고도 상승' })}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <TextInput
+                      ref={고도Ref}
+                      value={고도}
+                      onChangeText={(v) => set고도(v.replace(/[^\d.]/g, ''))}
+                      keyboardType="numeric"
+                      placeholder="42"
+                      placeholderTextColor={c.text3}
+                      style={{ fontSize: 15, fontWeight: '600', color: c.text, padding: 0, textAlign: 'right', minWidth: 44 }}
+                    />
+                    <Text style={{ fontSize: 13, color: c.text3 }}>m</Text>
+                  </View>
+                </DetailRow>
+              </>
+            ) : null}
             <View style={{ height: 1, backgroundColor: c.border }} />
             <DetailRow onPress={profile.weightKg ? undefined : () => nav.navigate('ProfileEdit')}>
               <Text style={{ fontSize: 14, color: c.text }}>{tr({ en: 'Calories', ko: '칼로리' })}</Text>
