@@ -154,8 +154,9 @@ export const Icon = {
     </Glyph>
   ),
   dumbbell: (p: IconProps) => (
+    // 정면 덤벨 — 손잡이 + 양쪽 원판 2겹.
     <Glyph {...p}>
-      <Path d="M6.5 6.5l11 11M4 8l-2 2 4 4M16 4l4 4-2 2M8 16l-4-4M16 8l4 4" />
+      <Path d="M9 12h6M6 8.5v7M18 8.5v7M4 10.2v3.6M20 10.2v3.6" />
     </Glyph>
   ),
   bike: (p: IconProps) => (
@@ -175,10 +176,10 @@ export const Icon = {
     </Glyph>
   ),
   climbing: (p: IconProps) => (
-    // 산 봉우리 + 정상 표식 — 등반/아웃도어.
+    // 산 봉우리 + 정상 깃발 — 등반/정상 정복.
     <Glyph {...p}>
-      <Path d="M3 20l6-11 3.5 6 2-3.5L21 20z" />
-      <Path d="M9 9l1.7 3" />
+      <Path d="M3 20 9 9l3.2 5.5L14.5 10 21 20z" />
+      <Path d="M9 9V4l3.2 1.2L9 6.4" />
     </Glyph>
   ),
   music: (p: IconProps) => (
@@ -190,9 +191,11 @@ export const Icon = {
     </Glyph>
   ),
   soccer: (p: IconProps) => (
+    // 축구공 — 중앙 오각형 + 5방향 이음새.
     <Glyph {...p}>
       <Circle cx="12" cy="12" r="9" />
-      <Path d="M12 7.5l4 3-1.5 4.5h-5L8 10.5z" />
+      <Path d="M12 7.4l3.8 2.8-1.5 4.6H9.7L8.2 10.2z" />
+      <Path d="M12 3.1v4.3M4.5 8.8l3.7 1.4M19.5 8.8l-3.7 1.4M7.6 19.6l1.7-4.8M16.4 19.6l-1.7-4.8" />
     </Glyph>
   ),
   baseball: (p: IconProps) => (
@@ -202,8 +205,11 @@ export const Icon = {
     </Glyph>
   ),
   badminton: (p: IconProps) => (
+    // 셔틀콕 — 코르크(아래 돔) + 위로 벌어지는 깃.
     <Glyph {...p}>
-      <Path d="M4 12h4l2-5 4 10 2-5h4" />
+      <Path d="M9.5 16.2a2.5 2.5 0 0 0 5 0z" />
+      <Path d="M9.9 16.1 6 7M12 15V6M14.1 16.1 18 7" />
+      <Path d="M6 7q6-2.5 12 0" />
     </Glyph>
   ),
   tennis: (p: IconProps) => (
@@ -213,34 +219,44 @@ export const Icon = {
     </Glyph>
   ),
   pingpong: (p: IconProps) => (
+    // 탁구 라켓(블레이드+손잡이) + 공.
     <Glyph {...p}>
-      <Circle cx="9" cy="9" r="5" />
-      <Path d="M13 13l6 6" />
+      <Circle cx="9.5" cy="9.5" r="5.5" />
+      <Path d="M13.4 13.4 18.5 18.5" />
+      <Circle cx="17.5" cy="6.5" r="1.4" />
     </Glyph>
   ),
   jiujitsu: (p: IconProps) => (
+    // 무술 띠(오비) — 띠 + 가운데 매듭 + 늘어진 자락.
     <Glyph {...p}>
-      <Circle cx="12" cy="6" r="3" />
-      <Path d="M6 21v-1.5a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4V21" />
+      <Path d="M2 10.3h20M2 13.7h20" />
+      <Rect x="9.3" y="9.3" width="5.4" height="5.4" rx="1" />
+      <Path d="M10.6 14.7 9 19.5M13.4 14.7 15 19.5" />
     </Glyph>
   ),
   yoga: (p: IconProps) => (
-    // 결가부좌(명상) 실루엣 — 머리 + 척추 + 무릎에 얹은 팔 + 넓은 삼각 베이스.
+    // 결가부좌(명상) — 머리 + 척추 + 무릎에 얹은 팔 + 넓은 다리 베이스.
     <Glyph {...p}>
-      <Circle cx="12" cy="5" r="2" />
-      <Path d="M12 7.5v4M4.5 18c1.2-3 4-4.5 7.5-4.5s6.3 1.5 7.5 4.5zM8 14.5 12 11.5l4 3" />
+      <Circle cx="12" cy="4.5" r="2" />
+      <Path d="M12 7v4" />
+      <Path d="M5 18c0-3 3.1-5 7-5s7 2 7 5z" />
+      <Path d="M12 11 6.5 15.5M12 11l5.5 4.5" />
     </Glyph>
   ),
   book: (p: IconProps) => (
+    // 펼친 책 — 양쪽 페이지 + 가운데 책등.
     <Glyph {...p}>
-      <Path d="M4 6h16v12H4z" />
-      <Path d="M4 10h16" />
+      <Path d="M12 6.5C10 5 6.5 5 4 5.5v12.5c2.5-.5 6-.5 8 1 2-1.5 5.5-1.5 8-1V5.5c-2.5-.5-6-.5-8 1z" />
+      <Path d="M12 6.5v13" />
     </Glyph>
   ),
   performance: (p: IconProps) => (
+    // 희극·비극 두 가면 — 연극·공연의 상징.
     <Glyph {...p}>
-      <Path d="M5 4h14v6a7 7 0 0 1-14 0z" />
-      <Path d="M9 9h.01M15 9h.01M9 13c1 1.2 5 1.2 6 0" />
+      <Path d="M3 5h7v3.3a3.5 3.5 0 0 1-7 0z" />
+      <Path d="M5 7h.01M8 7h.01M5.4 8.7c.9.7 1.3.7 2.2 0" />
+      <Path d="M14 7.5h7v3.3a3.5 3.5 0 0 1-7 0z" />
+      <Path d="M16 9.5h.01M19 9.5h.01M16.4 11.9c.9-.7 1.3-.7 2.2 0" />
     </Glyph>
   ),
   tent: (p: IconProps) => (
@@ -250,9 +266,10 @@ export const Icon = {
     </Glyph>
   ),
   mappin: (p: IconProps) => (
+    // 종이비행기 — 여행/떠남. (장소 핀과 겹치지 않게)
     <Glyph {...p}>
-      <Path d="M12 22s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12z" />
-      <Circle cx="12" cy="10" r="2.5" />
+      <Path d="M21 3 2.5 9.6l7 3 3 7z" />
+      <Path d="M21 3 9.5 12.6" />
     </Glyph>
   ),
   utensils: (p: IconProps) => (
