@@ -202,11 +202,6 @@ export default function MatchForm({ activity, recordId, plan, initialDate }: { a
                 onPress={() => selectSport(s.key)}
               />
             ))}
-            <Chip
-              label={tr({ en: 'Change', ko: '변경' })}
-              dashed
-              icon={<Icon.chevronDown size={12} color={c.text3} strokeWidth={2.4} />}
-            />
           </View>
         </View>
 
