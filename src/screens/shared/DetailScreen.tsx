@@ -17,6 +17,7 @@ import { useStore } from '../../store/StoreContext';
 import { StoredRecord } from '../../store/types';
 import { recordEnd } from '../../store/selectors';
 import { parseExercises } from '../../lib/strength';
+import { parseRoutes } from '../../lib/climbing';
 import { useTheme } from '../../theme/ThemeContext';
 import { Palette, withAlpha } from '../../theme/tokens';
 
@@ -67,7 +68,7 @@ function variantFromRecord(r: StoredRecord, c: Palette): Variant {
   const fields = r.fields ?? {};
   // 헤더/내부용 키는 상세 수치 표에서 제외(장소=헤더에 표시, 세트=JSON 직렬화, 종목=sport key).
   // 저장 순서가 seed·폼마다 달라, 표준 순서로 정렬해 폼과 동일하게 노출한다.
-  const FIELD_ORDER = ['기간', '작품', '공연장', '좌석', '회차', '티켓', '출연진', '거리', '시간', '속도', '페이스', '영법', '고도', '칼로리', '평균심박', '기분'];
+  const FIELD_ORDER = ['스타일', '기간', '작품', '공연장', '좌석', '회차', '티켓', '출연진', '거리', '시간', '속도', '페이스', '영법', '고도', '칼로리', '평균심박', '기분'];
   const rank = (k: string) => {
     const i = FIELD_ORDER.indexOf(k);
     return i === -1 ? FIELD_ORDER.length : i;
@@ -77,8 +78,8 @@ function variantFromRecord(r: StoredRecord, c: Palette): Variant {
   const heroKeys =
     r.template === 'match' ? ['스코어', '결과', '나', '상대'] : r.template === 'spectate' ? ['작품', '출연진', '회차'] : [];
   const detail: DetailRow[] = Object.entries(fields)
-    // 장소=헤더, 세트/운동=JSON(별도 섹션), 종목=sport key, 마지막일=원시 ISO(기간 라벨로 대체) → 표에서 제외.
-    .filter(([k]) => k !== '장소' && k !== '세트' && k !== '운동' && k !== '종목' && k !== '마지막일' && !heroKeys.includes(k))
+    // 장소=헤더, 세트/운동/루트=JSON(별도 섹션), 종목=sport key, 마지막일=원시 ISO → 표에서 제외.
+    .filter(([k]) => !['장소', '세트', '운동', '루트', '종목', '마지막일'].includes(k) && !heroKeys.includes(k))
     .sort(([a], [b]) => rank(a) - rank(b))
     .map(([label, value]) => ({ label, value }));
 
@@ -376,8 +377,27 @@ export default function DetailScreen() {
           </View>
         ) : null}
 
-        {/* 근력 종목·세트 breakdown (setrep 전용) */}
-        {record.template === 'setrep' ? (() => {
+        {/* 클라이밍 루트 breakdown */}
+        {record.activity === '클라이밍' ? (() => {
+          const routes = parseRoutes(record.fields).filter((r) => r.grade);
+          if (!routes.length) return null;
+          return (
+            <View>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, marginBottom: 6 }}>{tr({ en: 'Routes', ko: '루트' })}</Text>
+              <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: 13, overflow: 'hidden' }}>
+                {routes.map((r, i) => (
+                  <View key={i} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 11, paddingHorizontal: 14, borderTopWidth: i > 0 ? 1 : 0, borderTopColor: c.border }}>
+                    <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', color: c.text }}>{r.grade}</Text>
+                    {r.attempts ? <Text style={{ fontSize: 12, color: c.text3, marginRight: 10 }}>{tr({ en: `${r.attempts} tries`, ko: `${r.attempts}회 시도` })}</Text> : null}
+                    <View style={{ backgroundColor: r.sent ? withAlpha(c.success, 15) : c.surfaceAlt, borderRadius: 999, paddingVertical: 3, paddingHorizontal: 9 }}>
+                      <Text style={{ fontSize: 11, fontWeight: '700', color: r.sent ? c.success : c.text3 }}>{r.sent ? tr({ en: 'Sent', ko: '완등' }) : tr({ en: 'Try', ko: '시도' })}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </View>
+          );
+        })() : record.template === 'setrep' ? (() => {
           const exercises = parseExercises(record.fields).filter((ex) => ex.name || ex.sets.length);
           if (!exercises.length) return null;
           return (

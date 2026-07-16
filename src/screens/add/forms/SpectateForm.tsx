@@ -85,6 +85,10 @@ export default function SpectateForm({ activity, recordId, plan, initialDate }: 
   const { addRecord, updateRecord, getRecord, records, completePlan } = useStore();
   const editing = !!recordId;
   const record = recordId ? getRecord(recordId) : undefined;
+  // 콘서트는 저장 키(작품/출연진)는 그대로 두고 표시 라벨만 공연명·아티스트로.
+  const isConcert = activity === '콘서트';
+  const titleLabel = isConcert ? { en: 'Concert', ko: '공연명' } : { en: 'Title', ko: '작품명' };
+  const castLabel = isConcert ? { en: 'Artists', ko: '아티스트' } : { en: 'Cast', ko: '출연진' };
 
   // 공연장 자동완성: 과거 기록의 공연장 값만(최근순·중복 제거) 모아 추천.
   const [venueFocused, setVenueFocused] = React.useState(false);
@@ -222,12 +226,12 @@ export default function SpectateForm({ activity, recordId, plan, initialDate }: 
         <View>
           <Text style={{ fontSize: 11, fontWeight: '700', color: c.text3, letterSpacing: 0.4, marginBottom: 7 }}>{tr({ en: 'Required', ko: '필수' })}</Text>
           <Pressable onPress={() => titleRef.current?.focus()} style={{ backgroundColor: c.surface, borderWidth: 1.5, borderColor: c.perf, borderRadius: 13, paddingVertical: 13, paddingHorizontal: 14 }}>
-            <Text style={{ fontSize: 12, color: c.text2 }}>{tr({ en: 'Title', ko: '작품명' })}</Text>
+            <Text style={{ fontSize: 12, color: c.text2 }}>{tr(titleLabel)}</Text>
             <TextInput
               ref={titleRef}
               value={title}
               onChangeText={setTitle}
-              placeholder={tr({ en: 'Title', ko: '작품명' })}
+              placeholder={tr(titleLabel)}
               placeholderTextColor={c.text3}
               style={{ fontSize: 19, fontWeight: '700', color: c.text, marginTop: 3, padding: 0 }}
             />
@@ -310,7 +314,7 @@ export default function SpectateForm({ activity, recordId, plan, initialDate }: 
 
         {/* 출연진 chips */}
         <View>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr({ en: 'Cast', ko: '출연진' })}</Text>
+          <Text style={{ fontSize: 13, fontWeight: '600', color: c.text, marginBottom: 7 }}>{tr(castLabel)}</Text>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 7, alignItems: 'center' }}>
             {cast.map((name, i) => {
               const col = castColor(name);

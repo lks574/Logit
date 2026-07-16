@@ -44,6 +44,8 @@ export default function FreeForm({ activity, recordId, plan, initialDate }: { ac
   const templateOf =
     activities[activity]?.template ?? customActivities.find((a) => a.name === activity)?.template;
   const isOuting = !isBook && templateOf === 'outing';
+  // 맛집은 단일 방문 — 여러 날(종료일) 개념이 없어 멀티데이 UI를 숨긴다(여행·나들이만 노출).
+  const allowMultiDay = isOuting && activity !== '맛집';
 
   // PREFILL controlled state from the record when editing; start BLANK on create.
   // 날짜·시간: 편집이면 저장값, 신규면 현재 날짜/시각.
@@ -121,7 +123,7 @@ export default function FreeForm({ activity, recordId, plan, initialDate }: { ac
     const titleTrim = title.trim();
     // outing 멀티데이: 종료일이 시작일보다 뒤면 박 수 계산.
     const nights =
-      isOuting && endISO && endISO > dateISO
+      allowMultiDay && endISO && endISO > dateISO
         ? Math.round((Date.parse(endISO + 'T00:00:00Z') - Date.parse(dateISO + 'T00:00:00Z')) / 86400000)
         : 0;
     const periodLabel = nights > 0 ? tr({ en: `${nights} night${nights > 1 ? 's' : ''}`, ko: `${nights}박 ${nights + 1}일` }) : '';
@@ -193,8 +195,8 @@ export default function FreeForm({ activity, recordId, plan, initialDate }: { ac
             onChangeTime={setTimeLabel}
             color={c.accent}
           />
-          {/* 여가·나들이 — 여러 날(종료일) 선택. 여행 1박2일 등. */}
-          {isOuting ? (
+          {/* 여가·나들이 — 여러 날(종료일) 선택. 여행 1박2일 등. (맛집 제외) */}
+          {allowMultiDay ? (
             <View style={{ marginTop: 8 }}>
               <Pressable
                 onPress={() => setEndPicking((p) => !p)}
