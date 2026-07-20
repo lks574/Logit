@@ -205,8 +205,8 @@ export default function CategoryStatsScreen() {
               </Pressable>
             ))}
             {recent.length > shown ? (
-              <Pressable onPress={() => setShown((n) => n + 6)} style={{ alignItems: 'center', paddingVertical: 8 }}>
-                <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>{tr({ en: `Show ${recent.length - shown} more`, ko: `이전 기록 ${recent.length - shown}건 더 보기` })}</Text>
+              <Pressable onPress={() => setShown((n) => n + 10)} style={{ alignItems: 'center', paddingVertical: 8 }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2 }}>{tr({ en: `Show ${Math.min(10, recent.length - shown)} more`, ko: `이전 기록 ${Math.min(10, recent.length - shown)}건 더 보기` })}</Text>
               </Pressable>
             ) : null}
           </View>
