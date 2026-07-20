@@ -5,8 +5,9 @@ import mobileAds, {
   TestIds,
 } from 'react-native-google-mobile-ads';
 
-// ⚠️ 출시 전 실제 AdMob 보상형 광고단위 ID로 교체할 것. dev/테스트는 Google 테스트 ID.
-const REWARDED_UNIT = __DEV__ ? TestIds.REWARDED : TestIds.REWARDED;
+// dev/테스트는 Google 테스트 ID, Release는 실제 보상형 광고단위(iOS).
+// ponytail: iOS 단일 unit. Android 출시 시 Platform.select로 분기.
+const REWARDED_UNIT = __DEV__ ? TestIds.REWARDED : 'ca-app-pub-8242072118866709/5592939699';
 
 let initialized = false;
 export async function initAds(): Promise<void> {

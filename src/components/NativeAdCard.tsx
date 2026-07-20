@@ -10,8 +10,9 @@ import {
 import { useTheme } from '../theme/ThemeContext';
 import { tr } from '../i18n/i18n';
 
-// ⚠️ 출시 전 실제 네이티브 광고단위 ID로 교체. dev/테스트는 Google 테스트 ID.
-const NATIVE_UNIT = __DEV__ ? TestIds.NATIVE : TestIds.NATIVE;
+// dev/테스트는 Google 테스트 ID, Release는 실제 네이티브 광고단위(iOS).
+// ponytail: iOS 단일 unit. Android 출시 시 Platform.select로 분기.
+const NATIVE_UNIT = __DEV__ ? TestIds.NATIVE : 'ca-app-pub-8242072118866709/4427317823';
 
 // 리스트 하단에 콘텐츠 카드처럼 섞이는 네이티브 광고. 로드 실패/없으면 아무것도 안 그림.
 // AdMob 정책상 "광고(Ad)" 배지 필수.
