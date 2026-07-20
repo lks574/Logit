@@ -29,11 +29,18 @@ function withTimeout<T>(p: Promise<T>, ms = 12000): Promise<T> {
 }
 
 // 현재 상태를 업로드(덮어쓰기).
-export async function backupNow(uid: string, state: StoreState): Promise<void> {
+// owner: 콘솔에서 문서만 봐도 누구 건지 알도록 이메일/닉네임을 같이 남긴다(uid↔유저 교차조회 불필요).
+export async function backupNow(
+  uid: string,
+  state: StoreState,
+  owner?: { email?: string | null; displayName?: string | null },
+): Promise<void> {
   const env = buildEnvelope(state);
   await withTimeout(
     setDoc(backupRef(uid), {
       ...env,
+      email: owner?.email ?? null,
+      displayName: owner?.displayName ?? null,
       updatedAt: serverTimestamp(),
       counts: { records: state.records.length, plans: state.plans.length },
     }),

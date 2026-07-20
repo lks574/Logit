@@ -127,7 +127,7 @@ export default function MyScreen() {
     if (!(await requireAd())) return; // 광고 끝까지 시청해야 백업
     setSheet({ kind: 'message', title: tr({ en: 'Cloud backup', ko: '클라우드 백업' }), message: tr({ en: 'Backing up…', ko: '백업 중…' }) });
     try {
-      await backupNow(user.uid, currentState());
+      await backupNow(user.uid, currentState(), { email: user.email, displayName: user.displayName });
       markBackedUp(); // 현재 데이터 = 클라우드와 동일 → 동기화됨
       setSheet({ kind: 'message', title: tr({ en: 'Backup complete', ko: '백업 완료' }), message: tr({ en: 'Saved to the cloud.', ko: '클라우드에 저장했어요.' }) });
     } catch (e) {
