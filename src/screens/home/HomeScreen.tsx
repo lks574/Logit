@@ -5,6 +5,7 @@ import { Screen } from '../../components/primitives';
 import { Glyph, Path, Icon } from '../../components/Glyph';
 import { ActivityCard } from '../../components/cards';
 import { SyncStatusBadge } from '../../components/badges';
+import { NativeAdCard } from '../../components/NativeAdCard';
 import { useTheme } from '../../theme/ThemeContext';
 import { withAlpha } from '../../theme/tokens';
 import { activities, activityLabel, colorsFor } from '../../data/activities';
@@ -360,6 +361,10 @@ export default function HomeScreen() {
                 />
               );
             })}
+
+            {/* 핵심 콘텐츠를 가리지 않도록 최근 기록 뒤에만 1회 노출한다.
+                첫 사용 경험과 빈 상태는 광고 없이 유지한다. */}
+            {records.length >= 3 ? <NativeAdCard /> : null}
           </>
         ) : (
           <View style={{ alignItems: 'center', paddingVertical: 36, gap: 14 }}>
