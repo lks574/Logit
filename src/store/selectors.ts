@@ -41,6 +41,15 @@ export function upcomingPlans(plans: StoredPlan[], today: string): StoredPlan[] 
     .sort((a, b) => a.dateISO.localeCompare(b.dateISO));
 }
 
+// Overdue: 날짜가 지났는데 아직 기록으로 전환(done)하지 않은 약속. 최근에 지난 것부터.
+// upcomingPlans가 미래만 반환하므로 이 약속들은 홈에서 사라진다 — 약속→기록 루프를
+// 홈 앵커에서 닫기 위해 별도로 노출한다(약속목록 '지난' 세그먼트와 동일 조건).
+export function overduePlans(plans: StoredPlan[], today: string): StoredPlan[] {
+  return plans
+    .filter((p) => !p.done && dayDiff(today, p.dateISO) < 0)
+    .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
+}
+
 // Trailing-7-days window ending `today` (design "6/24 – 6/30"): count + running
 // distance + streak. Records outside the window are excluded so the "이번 주"
 // card stays bounded as new records accumulate.

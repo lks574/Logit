@@ -11,7 +11,7 @@ import { activities, activityLabel, colorsFor } from '../../data/activities';
 import { tr } from '../../i18n/i18n';
 import { longDate, slashDayWeekday, displayTimeLabel } from '../../lib/date';
 import { useStore, useSyncState } from '../../store/StoreContext';
-import { dday, recordsOn, upcomingPlans, weekStats } from '../../store/selectors';
+import { dday, overduePlans, recordsOn, upcomingPlans, weekStats } from '../../store/selectors';
 import { StoredPlan } from '../../store/types';
 import { TemplateType } from '../../theme/tokens';
 
@@ -28,26 +28,38 @@ function weekRangeLabel(dateISO: string): string {
 export default function HomeScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { today, records, plans } = useStore();
+  const { today, records, plans, customActivities, preferredActivities } = useStore();
   const sync = useSyncState();
 
   const upcoming = upcomingPlans(plans, today).slice(0, 2);
+  const overdue = overduePlans(plans, today).slice(0, 3);
   const week = weekStats(records, today);
   const todayRecords = recordsOn(records, today);
 
-  // 빠른 기록: 가장 자주 기록한 활동 상위 4개 → 활동선택을 건너뛰고 폼 직행.
+  // 빠른 기록: 자주 기록한 활동(빈도순) + 온보딩에서 고른 활동(preferredActivities)을 병합.
+  // 기록이 0인 신규 유저도 온보딩 선택이 바로 칩으로 떠서 활동선택을 건너뛰고 폼 직행.
   const topActivities = useMemo(() => {
+    const templateOf = (name: string): TemplateType =>
+      activities[name]?.template ?? customActivities.find((a) => a.name === name)?.template ?? 'free';
     const counts = new Map<string, { count: number; template: TemplateType }>();
     for (const r of records) {
       const e = counts.get(r.activity) ?? { count: 0, template: r.template };
       e.count += 1;
       counts.set(r.activity, e);
     }
-    return [...counts.entries()]
+    const out = [...counts.entries()]
       .sort((a, b) => b[1].count - a[1].count)
-      .slice(0, 4)
       .map(([activity, v]) => ({ activity, template: v.template }));
-  }, [records]);
+    // 온보딩 선택 활동 중 아직 칩에 없는 것을 뒤에 채운다(약속 이행: "홈에 먼저 올려둘게요").
+    const seen = new Set(out.map((a) => a.activity));
+    for (const name of preferredActivities) {
+      if (!seen.has(name)) {
+        seen.add(name);
+        out.push({ activity: name, template: templateOf(name) });
+      }
+    }
+    return out.slice(0, 6);
+  }, [records, customActivities, preferredActivities]);
 
   return (
     <Screen edges={['top']} contentStyle={{ paddingBottom: 24 }}>
@@ -180,6 +192,46 @@ export default function HomeScreen() {
               <Text style={{ fontSize: 12.5, fontWeight: '600', color: c.accent }}>{tr({ en: 'More', ko: '더보기' })}</Text>
             </Pressable>
           </ScrollView>
+        ) : null}
+
+        {/* 지난 약속 → 기록 프롬프트 — 날짜가 지났는데 기록 안 한 약속을 홈에서 회수.
+            upcomingPlans는 미래만 반환해 이 약속들이 홈에서 사라지므로, 약속→기록 루프를
+            홈 앵커에서 닫기 위해 별도 노출한다. */}
+        {overdue.length > 0 ? (
+          <>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: -4 }}>
+              <Text style={{ fontSize: 12, fontWeight: '600', color: c.text2, letterSpacing: 0.24 }}>{tr({ en: 'Did you do these?', ko: '이 약속, 기록했나요?' })}</Text>
+              <Pressable
+                onPress={() => nav.navigate('Plans')}
+                hitSlop={8}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
+              >
+                <Text style={{ fontSize: 12, fontWeight: '600', color: c.text3 }}>{tr({ en: 'See all', ko: '전체 보기' })}</Text>
+                <Icon.chevronRight size={14} color={c.text3} strokeWidth={2.2} />
+              </Pressable>
+            </View>
+
+            <View
+              style={{
+                backgroundColor: withAlpha(c.warning, 8),
+                borderWidth: 1,
+                borderColor: withAlpha(c.warning, 30),
+                borderRadius: 16,
+                padding: 5,
+              }}
+            >
+              {overdue.map((p, i) => (
+                <OverdueRow
+                  key={p.id}
+                  plan={p}
+                  today={today}
+                  c={c}
+                  showDivider={i > 0}
+                  onConvert={() => nav.navigate('RecordForm', { activity: p.activity, template: p.template, planId: p.id })}
+                />
+              ))}
+            </View>
+          </>
         ) : null}
 
         {/* 다가오는 약속 — 예정된 약속이 있을 때만 표시(빈 슬리버 방지) */}
@@ -417,6 +469,56 @@ function PlanRow({
           <Icon.check size={15} color={c.accent} strokeWidth={2.6} />
         </Pressable>
       </View>
+    </>
+  );
+}
+
+function OverdueRow({
+  plan,
+  today,
+  c,
+  showDivider,
+  onConvert,
+}: {
+  plan: StoredPlan;
+  today: string;
+  c: ReturnType<typeof useTheme>['c'];
+  showDivider: boolean;
+  onConvert: () => void;
+}) {
+  const act = activities[plan.activity];
+  const colors = colorsFor(act?.template ?? plan.template, c);
+  const IconComp = act ? Icon[act.icon] : Icon.yoga;
+  const overdueDays = -dday(plan.dateISO, today); // 지난 일수(양수)
+  const meta = `${slashDayWeekday(plan.dateISO)} ${displayTimeLabel(plan.timeLabel)}`.trim();
+
+  return (
+    <>
+      {showDivider && <View style={{ height: 1, backgroundColor: withAlpha(c.warning, 18), marginHorizontal: 9 }} />}
+      {/* 행 전체 탭 → 약속 데이터로 기록 폼 프리필(저장 시 completePlan으로 루프 종결) */}
+      <Pressable
+        onPress={onConvert}
+        accessibilityRole="button"
+        accessibilityLabel={tr({ en: `Log ${activityLabel(plan.activity)} from this plan`, ko: `${activityLabel(plan.activity)} 약속을 기록으로 남기기` })}
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 11, padding: 9, opacity: pressed ? 0.85 : 1 })}
+      >
+        <View style={planIconWrap(c)}>
+          <IconComp size={18} color={colors.color} strokeWidth={2} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: c.text }}>{activityLabel(plan.activity)}</Text>
+          <Text numberOfLines={1} style={{ fontSize: 11.5, color: c.text2, marginTop: 2 }}>
+            {meta}
+          </Text>
+        </View>
+        <View style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: withAlpha(c.warning, 35), borderRadius: 6, paddingVertical: 3, paddingHorizontal: 8 }}>
+          <Text style={{ fontSize: 10, fontWeight: '700', color: c.warning }}>{tr({ en: `${overdueDays}d ago`, ko: `${overdueDays}일 지남` })}</Text>
+        </View>
+        {/* 기록으로 전환 */}
+        <View style={{ width: 30, height: 30, borderRadius: 15, backgroundColor: c.warning, alignItems: 'center', justifyContent: 'center' }}>
+          <Icon.check size={15} color="#fff" strokeWidth={2.6} />
+        </View>
+      </Pressable>
     </>
   );
 }
