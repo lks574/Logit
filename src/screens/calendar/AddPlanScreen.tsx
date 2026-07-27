@@ -15,7 +15,8 @@ import { TemplateType, withAlpha } from '../../theme/tokens';
 import { tr } from '../../i18n/i18n';
 import { activityLabel } from '../../data/activities';
 
-const FAVORITES = ['헬스', '런닝', '축구']; // quick chips; "…" reveals all
+// 빠른 활동 칩이 3개. 아직 아무 데이터도 없는 신규 유저에게만 쓰는 폴백.
+const FALLBACK_FAVORITES = ['헬스', '런닝', '축구']; // "…" reveals all
 
 // "2026-07-02" → "7월 2일 (수)".
 const dateLabel = (iso: string) => {
@@ -52,16 +53,49 @@ export default function AddPlanScreen() {
   const nav = useNavigation<any>();
   const { params } = useRoute<RouteProp<RootStackParamList, 'AddPlan'>>();
   const planId = params?.planId;
-  const { addPlan, updatePlan, deletePlan, getPlan, customActivities, today } = useStore();
+  const { addPlan, updatePlan, deletePlan, getPlan, customActivities, today, plans, records, preferredActivities } =
+    useStore();
   const editing = !!planId;
   const plan = planId ? getPlan(planId) : undefined;
 
   const templateOf = (name: string): TemplateType =>
     activities[name]?.template ?? customActivities.find((a) => a.name === name)?.template ?? 'free';
 
+  // 빠른 활동 칩 — 내 약속 빈도 → 기록 빈도 → 온보딩 선택 → 고정 폴백 순으로 3개를 채운다.
+  // 기록 쪽(HomeScreen 빠른 기록)은 이미 빈도 기반인데 약속만 하드코딩이라 일관성이 깨져 있었다.
+  // 최근순이 아니라 **빈도순**인 이유: 칩 위치가 자주 바뀌면 근육 기억을 방해한다.
+  const favorites = React.useMemo(() => {
+    const known = (n: string) => !!activities[n] || customActivities.some((a) => a.name === n);
+    const out: string[] = [];
+    const seen = new Set<string>();
+    const add = (n: string) => {
+      if (n && known(n) && !seen.has(n)) {
+        seen.add(n);
+        out.push(n);
+      }
+    };
+    const byFreq = (list: { activity: string }[]) => {
+      const m = new Map<string, number>();
+      for (const it of list) m.set(it.activity, (m.get(it.activity) ?? 0) + 1);
+      return [...m.entries()].sort((a, b) => b[1] - a[1]).map(([n]) => n);
+    };
+    byFreq(plans).forEach(add);
+    byFreq(records).forEach(add);
+    preferredActivities.forEach(add);
+    FALLBACK_FAVORITES.forEach(add);
+    return out.slice(0, 3);
+  }, [plans, records, preferredActivities, customActivities]);
+
   // ---- state (prefilled in edit mode) ----
-  const [act, setAct] = React.useState<string>(plan?.activity ?? params?.activity ?? FAVORITES[0]);
+  const [act, setAct] = React.useState<string>(plan?.activity ?? params?.activity ?? favorites[0]);
   const [showAll, setShowAll] = React.useState(false);
+
+  // 선택한 활동이 칩에 없으면(편집·딥링크 진입, "…" 전체목록에서 고른 경우) 맨 앞에 끼워
+  // 항상 현재 선택이 보이게 한다. 예전엔 고정 3개 밖 활동을 고르면 선택 표시가 사라졌다.
+  const favoriteChips = React.useMemo(
+    () => (favorites.includes(act) ? favorites : [act, ...favorites].slice(0, 3)),
+    [favorites, act],
+  );
   const [dateISO, setDateISO] = React.useState<string>(plan?.dateISO ?? params?.dateISO ?? today);
   // 시간 초기값: 편집이면 저장된 시간, 신규면 현재 시각. 시간은 옵셔널(미정 가능).
   const now = React.useMemo(() => new Date(), []);
@@ -195,7 +229,7 @@ export default function AddPlanScreen() {
         <View style={{ gap: 8 }}>
           <SectionLabel>{tr({ en: 'Activity', ko: '활동' })}</SectionLabel>
           <View style={{ flexDirection: 'row', gap: 8 }}>
-            {FAVORITES.map((n) => (
+            {favoriteChips.map((n) => (
               <ActTile key={n} name={n} wide />
             ))}
             <Pressable
