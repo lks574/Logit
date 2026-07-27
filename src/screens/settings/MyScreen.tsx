@@ -10,6 +10,7 @@ import { useStore, useSyncState } from '../../store/StoreContext';
 import { useAuth } from '../../auth/AuthContext';
 import { exportData, importData } from '../../lib/dataTransfer';
 import { backupNow, fetchBackup, deleteBackup } from '../../lib/cloudBackup';
+import { mergeStoreStates, mergeTotal, summaryText } from '../../lib/mergeStore';
 import { deletePushToken } from '../../lib/push';
 import { showRewarded } from '../../lib/ads';
 import type { StoreState } from '../../store/types';
@@ -21,6 +22,8 @@ type SheetState =
   | { kind: 'none' }
   | { kind: 'export' }
   | { kind: 'confirmImport'; incoming: StoreState; summary: string }
+  | { kind: 'confirmMerge'; incoming: StoreState; summary: string }
+  | { kind: 'confirmOverwriteBackup'; incoming: StoreState; lost: string }
   | { kind: 'confirmReset' }
   | { kind: 'confirmLogout' }
   | { kind: 'confirmLogin' }
@@ -128,7 +131,26 @@ export default function MyScreen() {
       .catch((e) => setCloud({ loading: false, err: errMessage(e) }));
   };
 
-  const doBackup = async () => {
+  const mergeLabels = {
+    records: tr({ en: 'records', ko: '기록' }),
+    plans: tr({ en: 'plans', ko: '약속' }),
+    activities: tr({ en: 'activities', ko: '활동' }),
+  };
+
+  // 백업은 덮어쓰기다. 클라우드에만 있는 항목이 있으면 그것이 사라지므로 합치기를 먼저 권한다.
+  const doBackup = () => {
+    if (!user) return;
+    if (cloud.data) {
+      const lost = summaryText(mergeStoreStates(currentState(), cloud.data).summary, mergeLabels);
+      if (lost) {
+        setSheet({ kind: 'confirmOverwriteBackup', incoming: cloud.data, lost });
+        return;
+      }
+    }
+    void runBackup();
+  };
+
+  const runBackup = async () => {
     if (!user) return;
     if (!(await requireAd())) return; // 광고 끝까지 시청해야 백업
     setSheet({ kind: 'message', title: tr({ en: 'Cloud backup', ko: '클라우드 백업' }), message: tr({ en: 'Backing up…', ko: '백업 중…' }) });
@@ -138,6 +160,46 @@ export default function MyScreen() {
       setSheet({ kind: 'message', title: tr({ en: 'Backup complete', ko: '백업 완료' }), message: tr({ en: 'Saved to the cloud.', ko: '클라우드에 저장했어요.' }) });
     } catch (e) {
       setSheet({ kind: 'message', title: tr({ en: 'Backup failed', ko: '백업 실패' }), message: errMessage(e) });
+    }
+  };
+
+  // 합치기 — 로컬 + 클라우드 백업의 합집합. 어느 쪽도 잃지 않고 네트워크 쓰기도 없어 광고를 걸지 않는다.
+  const doMerge = () => {
+    if (!cloud.data) return;
+    const added = summaryText(mergeStoreStates(currentState(), cloud.data).summary, mergeLabels);
+    if (!added) {
+      setSheet({
+        kind: 'message',
+        title: tr({ en: 'Merge', ko: '합치기' }),
+        message: tr({ en: 'The backup has nothing new to add.', ko: '백업에서 새로 가져올 항목이 없어요.' }),
+      });
+      return;
+    }
+    setSheet({
+      kind: 'confirmMerge',
+      incoming: cloud.data,
+      summary: tr({
+        en: `Adds ${added} from the backup. Nothing on this device is removed.`,
+        ko: `백업에서 ${added}를 가져옵니다. 이 기기의 기록은 그대로 유지돼요.`,
+      }),
+    });
+  };
+
+  const confirmMerge = async (incoming: StoreState) => {
+    try {
+      const { next, summary } = mergeStoreStates(currentState(), incoming);
+      await replaceAll(next);
+      const added = summaryText(summary, mergeLabels);
+      setSheet({
+        kind: 'message',
+        title: tr({ en: 'Merged', ko: '합치기 완료' }),
+        message: [
+          tr({ en: `Added ${added} from the backup.`, ko: `백업에서 ${added}를 가져왔어요.` }),
+          tr({ en: 'Back up again to save the merged data to the cloud.', ko: '합친 데이터를 클라우드에도 남기려면 다시 백업해주세요.' }),
+        ].join('\n'),
+      });
+    } catch (e) {
+      setSheet({ kind: 'message', title: tr({ en: 'Merge failed', ko: '합치기 실패' }), message: errMessage(e) });
     }
   };
 
@@ -192,6 +254,26 @@ export default function MyScreen() {
           cancelLabel: tr({ en: 'Cancel', ko: '취소' }),
           actions: [{ label: tr({ en: 'Replace all', ko: '전체 교체' }), destructive: true, onPress: () => confirmImport(sheet.incoming) }],
         };
+      case 'confirmMerge':
+        return {
+          title: tr({ en: 'Merge with backup', ko: '백업과 합치기' }),
+          message: sheet.summary,
+          cancelLabel: tr({ en: 'Cancel', ko: '취소' }),
+          actions: [{ label: tr({ en: 'Merge', ko: '합치기' }), onPress: () => confirmMerge(sheet.incoming) }],
+        };
+      case 'confirmOverwriteBackup':
+        return {
+          title: tr({ en: 'Overwrite the backup?', ko: '백업을 덮어쓸까요?' }),
+          message: tr({
+            en: `The cloud backup has ${sheet.lost} that this device doesn't. Backing up now deletes them. Merging keeps both.`,
+            ko: `클라우드 백업에만 있는 ${sheet.lost}이 있어요. 지금 백업하면 그 항목이 사라집니다. 합치면 양쪽 다 남아요.`,
+          }),
+          cancelLabel: tr({ en: 'Cancel', ko: '취소' }),
+          actions: [
+            { label: tr({ en: 'Merge instead', ko: '합치기' }), onPress: () => confirmMerge(sheet.incoming) },
+            { label: tr({ en: 'Overwrite anyway', ko: '그대로 덮어쓰기' }), destructive: true, onPress: () => void runBackup() },
+          ],
+        };
       case 'cloud': {
         const when = cloud.updatedAt != null ? new Date(cloud.updatedAt).toLocaleString() : null;
         const status = cloud.loading
@@ -210,7 +292,13 @@ export default function MyScreen() {
           cancelLabel: tr({ en: 'Cancel', ko: '취소' }),
           actions: [
             { label: tr({ en: 'Back up now', ko: '지금 백업' }), onPress: doBackup },
-            ...(cloud.data ? [{ label: tr({ en: 'Restore', ko: '복원' }), onPress: doRestore }] : []),
+            // 합치기는 양쪽을 다 살리는 안전한 선택이라 대체(복원)보다 위에 둔다.
+            ...(cloud.data
+              ? [
+                  { label: tr({ en: 'Merge', ko: '합치기' }), onPress: doMerge },
+                  { label: tr({ en: 'Restore (replace)', ko: '복원 (전체 대체)' }), onPress: doRestore },
+                ]
+              : []),
           ],
         };
       }

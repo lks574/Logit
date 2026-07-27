@@ -1,17 +1,16 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { Text, View } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootNavigator } from './src/navigation/RootNavigator';
-import { StoreProvider, syncSignature, useStore } from './src/store/StoreContext';
+import { StoreProvider, useStore } from './src/store/StoreContext';
 import { ThemeProvider, useTheme } from './src/theme/ThemeContext';
 import { LanguageProvider, useLang, tr } from './src/i18n/i18n';
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
 import { seed } from './src/store/seed';
 import { registerPushToken } from './src/lib/push';
 import { UpdateGate } from './src/components/UpdateGate';
-import { fetchBackup } from './src/lib/cloudBackup';
+import { CloudSyncGate } from './src/components/CloudSyncGate';
 
 // 저장 실패(저장 공간 부족 등) 시 전역 배너 — 무음 유실을 사용자에게 알린다.
 function PersistErrorBanner() {
@@ -89,59 +88,6 @@ function PushRegistrar() {
   return null;
 }
 
-// 새 기기/브라우저에서 로그인했을 때 로컬 콘텐츠가 비어 있으면 해당 계정의 마지막
-// Firestore 백업을 한 번 자동 복원한다. 이미 로컬 콘텐츠가 있으면 덮어쓰지 않으며,
-// 이후의 명시적 백업/복원은 마이 화면에서 사용자가 직접 선택한다.
-function CloudBackupAutoRestore() {
-  const { user } = useAuth();
-  const { ready, records, plans, customActivities, replaceAll } = useStore();
-  const contentCounts = React.useRef({ records: records.length, plans: plans.length, activities: customActivities.length });
-  contentCounts.current = { records: records.length, plans: plans.length, activities: customActivities.length };
-
-  React.useEffect(() => {
-    if (!ready || !user) return;
-
-    let cancelled = false;
-    const key = `logit.auto-restore.v1.${user.uid}`;
-    const isEmpty = () => {
-      const counts = contentCounts.current;
-      return counts.records === 0 && counts.plans === 0 && counts.activities === 0;
-    };
-
-    void (async () => {
-      try {
-        if (await AsyncStorage.getItem(key)) return;
-
-        // 다른 계정이나 게스트가 만든 로컬 데이터는 자동으로 덮어쓰지 않는다.
-        if (!isEmpty()) {
-          await AsyncStorage.setItem(key, '1');
-          return;
-        }
-
-        const backup = await fetchBackup(user.uid);
-        if (cancelled) return;
-        if (backup?.data && isEmpty()) {
-          const restored = {
-            ...backup.data,
-            backupSignature: syncSignature(backup.data),
-          };
-          await replaceAll(restored);
-        }
-        if (!cancelled) await AsyncStorage.setItem(key, '1');
-      } catch (e) {
-        // 네트워크 오류는 마커를 남기지 않아 다음 실행에서 다시 시도한다.
-        console.warn('[cloud-backup] 자동 복원 실패', e);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [ready, user?.uid]);
-
-  return null;
-}
-
 export default function App() {
   return (
     <SafeAreaProvider>
@@ -151,7 +97,7 @@ export default function App() {
             <StoreProvider>
               <AuthProfileSync />
               <PushRegistrar />
-              <CloudBackupAutoRestore />
+              <CloudSyncGate />
               <Root />
             </StoreProvider>
           </AuthProvider>
