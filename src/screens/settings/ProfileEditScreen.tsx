@@ -3,6 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { Screen } from '../../components/primitives';
 import { Icon } from '../../components/Glyph';
+import { Tag } from '../../components/badges';
 import { useStore } from '../../store/StoreContext';
 import { useAuth } from '../../auth/AuthContext';
 import { useTheme } from '../../theme/ThemeContext';
@@ -14,14 +15,17 @@ export default function ProfileEditScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const { profile, updateProfile } = useStore();
-  const { updateDisplayName } = useAuth();
+  const { updateDisplayName, user } = useAuth();
 
   const [name, setName] = React.useState(profile.name);
   const [weight, setWeight] = React.useState(profile.weightKg != null ? String(profile.weightKg) : '');
   const [saving, setSaving] = React.useState(false);
+  const isGuest = !user; // 게스트는 계정이 없어 이메일이 빈 값이다.
   const email = profile.email;
 
-  const initial = (name.trim()[0] ?? '?').toUpperCase();
+  // 이름 입력이 비어 있는 게스트는 이니셜을 '게'로 — 마이 화면 프로필 카드와 같은 규칙.
+  const guestLabel = tr({ en: 'Guest', ko: '게스트' });
+  const initial = ((name.trim() || (isGuest ? guestLabel : ''))[0] ?? '?').toUpperCase();
 
   const onSave = async () => {
     const trimmed = name.trim();
@@ -155,6 +159,7 @@ export default function ProfileEditScreen() {
           >
             <Text style={{ fontSize: 28, fontWeight: '700', color: '#fff' }}>{initial}</Text>
           </View>
+          {isGuest ? <Tag label={guestLabel} color={c.text2} outline /> : null}
         </View>
 
         {editableCard(tr({ en: 'Name', ko: '이름' }), name, setName, tr({ en: 'Name', ko: '이름' }))}
@@ -165,7 +170,10 @@ export default function ProfileEditScreen() {
           tr({ en: 'e.g. 70', ko: '예: 70' }),
           { keyboardType: 'numeric', unit: 'kg' },
         )}
-        {readonlyCard(tr({ en: 'Email', ko: '이메일' }), email)}
+        {readonlyCard(
+          tr({ en: 'Email', ko: '이메일' }),
+          email || (isGuest ? tr({ en: 'Not signed in', ko: '로그인하지 않음' }) : ''),
+        )}
       </View>
     </Screen>
   );

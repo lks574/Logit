@@ -4,6 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Screen, T, Divider } from '../../components/primitives';
 import { Glyph, Path, Icon } from '../../components/Glyph';
 import { SettingsRow } from '../../components/Field';
+import { Tag } from '../../components/badges';
 import { ActionSheet } from '../../components/ActionSheet';
 import { useStore, useSyncState } from '../../store/StoreContext';
 import { useAuth } from '../../auth/AuthContext';
@@ -32,9 +33,10 @@ export default function MyScreen() {
   const nav = useNavigation<any>();
   const { profile, records, plans, customActivities, onboardingComplete, preferredActivities, replaceAll, markBackedUp } =
     useStore();
-  const { user, logout, deleteAccount, isPasswordUser, guest, promptLogin } = useAuth();
+  const { user, logout, deleteAccount, isPasswordUser, promptLogin } = useAuth();
   // uid 필요한 기능(백업·피드백): 로그인 상태면 실행, 게스트면 로그인 유도.
   const requireLogin = (action: () => void) => (user ? action() : setSheet({ kind: 'confirmLogin' }));
+  const isGuest = !user; // 게스트는 계정이 없어 프로필 이름·이메일이 빈 값이다.
   const [del, setDel] = React.useState<{ open: boolean; pw: string; busy: boolean; err?: string }>({ open: false, pw: '', busy: false });
 
   // 계정 삭제 — 서버(백업·토큰) 정리는 best-effort, 그다음 재인증+deleteUser. 로컬 기록은 유지.
@@ -53,7 +55,11 @@ export default function MyScreen() {
     }
   };
   const synced = useSyncState() === 'synced';
-  const initial = (profile.name.trim()[0] ?? '?').toUpperCase();
+  // 이름이 비어 있으면 게스트는 '게스트'로, 로그인 사용자는 '이름 없음'으로 대체한다(아바타 이니셜도 여기서 파생).
+  const displayName =
+    profile.name.trim() ||
+    (isGuest ? tr({ en: 'Guest', ko: '게스트' }) : tr({ en: 'No name', ko: '이름 없음' }));
+  const initial = (displayName[0] ?? '?').toUpperCase();
   const [sheet, setSheet] = React.useState<SheetState>({ kind: 'none' });
 
   const errMessage = (e: unknown) =>
@@ -263,17 +269,33 @@ export default function MyScreen() {
       </View>
 
       <View style={{ paddingHorizontal: 16, gap: 16 }}>
-        {/* Profile card → 로컬 프로필 편집 */}
+        {/* Profile card → 로그인 사용자는 로컬 프로필 편집, 게스트는 로그인 유도.
+            (게스트의 프로필 편집은 유산소 기록 폼의 체중 안내로도 진입할 수 있다.) */}
         <Pressable
-          onPress={() => nav.navigate('ProfileEdit')}
+          onPress={() => (isGuest ? promptLogin() : nav.navigate('ProfileEdit'))}
+          accessibilityRole="button"
+          accessibilityLabel={isGuest ? tr({ en: 'Sign in', ko: '로그인하기' }) : tr({ en: 'Edit profile', ko: '프로필 편집' })}
           style={{ flexDirection: 'row', alignItems: 'center', gap: 13, backgroundColor: c.surface, borderWidth: 1, borderColor: c.border, borderRadius: radius.card, padding: 14 }}
         >
           <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: c.accent, alignItems: 'center', justifyContent: 'center' }}>
             <T style={{ fontSize: 17, fontWeight: '700', color: '#fff' }}>{initial}</T>
           </View>
           <View style={{ flex: 1 }}>
-            <T style={{ fontSize: 15, fontWeight: '600', color: c.text }}>{profile.name}</T>
-            <T style={{ fontSize: 12, color: c.text2, marginTop: 1 }}>{profile.email}</T>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <T style={{ fontSize: 15, fontWeight: '600', color: c.text }} numberOfLines={1}>
+                {displayName}
+              </T>
+              {/* 이름을 지정한 게스트는 이름만으로 계정 여부를 알 수 없어 태그로 명시한다. */}
+              {isGuest && profile.name.trim() ? <Tag label={tr({ en: 'Guest', ko: '게스트' })} color={c.text2} outline /> : null}
+            </View>
+            {/* 게스트는 이메일 대신 로그인 CTA — 카드를 누르면 로그인 화면으로 간다. */}
+            {isGuest ? (
+              <T style={{ fontSize: 12, fontWeight: '600', color: c.accent, marginTop: 2 }}>
+                {tr({ en: 'Sign in', ko: '로그인하기' })}
+              </T>
+            ) : (
+              <T style={{ fontSize: 12, color: c.text2, marginTop: 1 }}>{profile.email}</T>
+            )}
           </View>
           <Icon.chevronRight size={18} color={c.text3} strokeWidth={2} />
         </Pressable>
