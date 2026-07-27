@@ -25,7 +25,7 @@ const META: Record<StatsCategory, { label: Msg; sub: Msg }> = {
   strength: { label: { en: 'Strength', ko: '근력' }, sub: { en: 'Weights · Bodyweight', ko: '웨이트 · 맨몸' } },
   match: { label: { en: 'Match', ko: '대전' }, sub: { en: 'Soccer · Baseball · Racket', ko: '축구 · 야구 · 라켓' } },
   performance: { label: { en: 'Shows', ko: '공연' }, sub: { en: 'Musical · Play · Concert', ko: '뮤지컬 · 연극 · 콘서트' } },
-  outing: { label: { en: 'Leisure', ko: '여가' }, sub: { en: 'Camping · Travel · Dining', ko: '캠핑 · 여행 · 맛집' } },
+  outing: { label: { en: 'Leisure', ko: '여가' }, sub: { en: 'Camping · Travel · Day out · Walk', ko: '캠핑 · 여행 · 나들이 · 산책' } },
   free: { label: { en: 'Free', ko: '자유' }, sub: { en: 'Yoga · Reading · Notes', ko: '요가 · 독서 · 메모' } },
 };
 

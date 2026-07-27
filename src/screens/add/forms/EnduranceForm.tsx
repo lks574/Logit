@@ -4,9 +4,8 @@ import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
 import { CompanionField, RatingInput } from '../../../components/Rating';
 import { DisclosureButton } from '../../../components/Field';
-import { FormHeader } from '../../../components/FormHeader';
+import { FormShell } from '../../../components/FormShell';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
-import { Screen } from '../../../components/primitives';
 import { activities, colorsFor } from '../../../data/activities';
 import { useStore } from '../../../store/StoreContext';
 import { resetToHome } from '../../../navigation/nav';
@@ -179,19 +178,18 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
   };
 
   return (
-    <Screen edges={['top', 'bottom']}>
-      <FormHeader
-        title={activityLabel(activity)}
-        icon={<ActIcon size={13} color={color} strokeWidth={2.2} />}
-        color={color}
-        soft={soft}
-        onCancel={() => nav.goBack()}
-        onSave={handleSave}
-      />
+    <FormShell
+      title={activityLabel(activity)}
+      icon={<ActIcon size={13} color={color} strokeWidth={2.2} />}
+      color={color}
+      soft={soft}
+      onCancel={() => nav.goBack()}
+      onSave={handleSave}
+    >
 
       <View style={{ padding: 16, paddingTop: 14, gap: 14 }}>
-        {/* 날짜 · 시간 */}
-        <DateTimeField dateISO={dateISO} timeLabel={timeLabel} onChangeDate={setDateISO} onChangeTime={setTimeLabel} color={c.cardio} />
+        {/* 날짜 · 시간 (시간은 선택 — 지우면 "시간 미정") */}
+        <DateTimeField dateISO={dateISO} timeLabel={timeLabel} onChangeDate={setDateISO} onChangeTime={setTimeLabel} color={c.cardio} allowNoTime />
 
         {/* 최근 같은 활동 기록 프리필 — 신규 작성이고 이전 기록이 있을 때만 */}
         {!editing && lastRecord ? <PrefillBanner activity={activity} onPress={prefillFromLast} /> : null}
@@ -584,7 +582,7 @@ export default function EnduranceForm({ activity, recordId, plan, initialDate }:
           </View>
         )}
       </View>
-    </Screen>
+    </FormShell>
   );
 }
 

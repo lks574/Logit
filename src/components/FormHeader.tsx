@@ -13,6 +13,7 @@ export function FormHeader({
   soft,
   onCancel,
   onSave,
+  hideSave,
 }: {
   title: string;
   icon: React.ReactNode;
@@ -20,6 +21,7 @@ export function FormHeader({
   soft: string; // template soft for icon bg
   onCancel?: () => void;
   onSave?: () => void;
+  hideSave?: boolean; // FormShell이 저장을 하단 고정 바로 옮겨 쓸 때 true
 }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
@@ -36,21 +38,35 @@ export function FormHeader({
         borderBottomColor: c.border,
       }}
     >
-      <Pressable onPress={onCancel ?? (() => nav.goBack())} hitSlop={8}>
-        <Text style={{ color: c.text2, fontSize: 15 }}>{tr({ en: 'Cancel', ko: '취소' })}</Text>
-      </Pressable>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
+      {/* 좌/우를 flex:1로 두고 가운데를 auto로 — 저장을 숨겨도(FormShell) 제목이 중앙에 남는다. */}
+      <View style={{ flex: 1, alignItems: 'flex-start' }}>
+        <Pressable
+          onPress={onCancel ?? (() => nav.goBack())}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={tr({ en: 'Cancel', ko: '취소' })}
+        >
+          <Text style={{ color: c.text2, fontSize: 15 }}>{tr({ en: 'Cancel', ko: '취소' })}</Text>
+        </Pressable>
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, flexShrink: 1, paddingHorizontal: 8 }}>
         <View style={{ width: 22, height: 22, borderRadius: 6, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
           {icon}
         </View>
-        <Text style={{ fontSize: 16, fontWeight: '700', color: c.text }}>{title}</Text>
+        <Text numberOfLines={1} style={{ fontSize: 16, fontWeight: '700', color: c.text }}>{title}</Text>
       </View>
-      <Pressable
-        onPress={onSave ?? (() => nav.navigate('MainTabs'))}
-        style={{ backgroundColor: color, paddingVertical: 7, paddingHorizontal: 14, borderRadius: 9 }}
-      >
-        <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{tr({ en: 'Save', ko: '저장' })}</Text>
-      </Pressable>
+      <View style={{ flex: 1, alignItems: 'flex-end' }}>
+        {hideSave ? null : (
+          <Pressable
+            onPress={onSave ?? (() => nav.navigate('MainTabs'))}
+            accessibilityRole="button"
+            accessibilityLabel={tr({ en: 'Save', ko: '저장' })}
+            style={{ backgroundColor: color, paddingVertical: 7, paddingHorizontal: 14, borderRadius: 9 }}
+          >
+            <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600' }}>{tr({ en: 'Save', ko: '저장' })}</Text>
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 }

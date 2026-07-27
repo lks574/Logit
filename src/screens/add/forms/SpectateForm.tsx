@@ -2,8 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import { choosePhoto, photoUri } from '../../../lib/photos';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
-import { Screen } from '../../../components/primitives';
-import { FormHeader } from '../../../components/FormHeader';
+import { FormShell } from '../../../components/FormShell';
 import { RatingInput, CompanionField } from '../../../components/Rating';
 import { Stepper, Chip } from '../../../components/controls';
 import { Glyph, Path, Rect, Icon } from '../../../components/Glyph';
@@ -212,14 +211,13 @@ export default function SpectateForm({ activity, recordId, plan, initialDate }: 
   const memoRef = React.useRef<TextInput>(null);
 
   return (
-    <Screen edges={['top', 'bottom']}>
-      <FormHeader
-        title={activityLabel(activity)}
-        icon={<Icon.performance size={13} color={c.perf} strokeWidth={2.2} />}
-        color={c.perf}
-        soft={c.perfSoft}
-        onSave={handleSave}
-      />
+    <FormShell
+      title={activityLabel(activity)}
+      icon={<Icon.performance size={13} color={c.perf} strokeWidth={2.2} />}
+      color={c.perf}
+      soft={c.perfSoft}
+      onSave={handleSave}
+    >
 
       <View style={{ padding: 16, gap: 13 }}>
         {/* 작품명 — required */}
@@ -453,6 +451,6 @@ export default function SpectateForm({ activity, recordId, plan, initialDate }: 
           </View>
         </View>
       </View>
-    </Screen>
+    </FormShell>
   );
 }

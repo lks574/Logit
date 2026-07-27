@@ -1,8 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { Alert, Pressable, Text, View } from 'react-native';
-import { Screen } from '../../../components/primitives';
-import { FormHeader } from '../../../components/FormHeader';
+import { FormShell } from '../../../components/FormShell';
 import { Field } from '../../../components/Field';
 import { RatingInput } from '../../../components/Rating';
 import { Glyph, Icon, Path, Rect } from '../../../components/Glyph';
@@ -141,14 +140,13 @@ export default function CampingForm({ activity, recordId, plan, initialDate }: {
 
 
   return (
-    <Screen edges={['top', 'bottom']}>
-      <FormHeader
-        title={activityLabel(activity)}
-        icon={<Icon.tent size={13} color={c.outing} strokeWidth={2.2} />}
-        color={c.outing}
-        soft={c.outingSoft}
-        onSave={handleSave}
-      />
+    <FormShell
+      title={activityLabel(activity)}
+      icon={<Icon.tent size={13} color={c.outing} strokeWidth={2.2} />}
+      color={c.outing}
+      soft={c.outingSoft}
+      onSave={handleSave}
+    >
 
       <View style={{ padding: 16, gap: 14 }}>
         {/* 필수 — 기간(시작일 ~ 마지막일) */}
@@ -219,6 +217,6 @@ export default function CampingForm({ activity, recordId, plan, initialDate }: {
           <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: 'Saved instantly, even offline', ko: '오프라인에서도 즉시 저장됩니다' })}</Text>
         </View>
       </View>
-    </Screen>
+    </FormShell>
   );
 }

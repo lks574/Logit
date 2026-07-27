@@ -289,6 +289,21 @@ export const Icon = {
       <Path d="M16 3c-1.2 0-2 2-2 5s.8 4 2 4v9" />
     </Glyph>
   ),
+  tree: (p: IconProps) => (
+    // 나무 — 나들이(공원·근교). 잎 뭉치 3덩어리로 이룬 수관 + 기둥.
+    // 원+막대는 막대사탕처럼 보여서 활엽수 실루엣(Lucide tree-deciduous)으로 그렸다.
+    <Glyph {...p}>
+      <Path d="M8 19a4 4 0 0 1-2.24-7.32A3.5 3.5 0 0 1 9 6.03V6a3 3 0 1 1 6 0v0.04a3.5 3.5 0 0 1 3.24 5.65A4 4 0 0 1 16 19Z" />
+      <Path d="M12 19v3" />
+    </Glyph>
+  ),
+  footprints: (p: IconProps) => (
+    // 발자국 둘 — 산책·걷기. 좌우로 어긋나게 배치(캡슐 = 발바닥).
+    <Glyph {...p}>
+      <Rect x="5.6" y="3.2" width="5.4" height="8.2" rx="2.7" />
+      <Rect x="13" y="12.6" width="5.4" height="8.2" rx="2.7" />
+    </Glyph>
+  ),
 };
 
 export type IconName = keyof typeof Icon;

@@ -2,8 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import { choosePhoto, photoUri } from '../../../lib/photos';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
-import { Screen } from '../../../components/primitives';
-import { FormHeader } from '../../../components/FormHeader';
+import { FormShell } from '../../../components/FormShell';
 import { DisclosureButton } from '../../../components/Field';
 import { Segmented, Chip } from '../../../components/controls';
 import { RatingInput, CompanionField } from '../../../components/Rating';
@@ -173,19 +172,18 @@ export default function MatchForm({ activity, recordId, plan, initialDate }: { a
   };
 
   return (
-    <Screen edges={['top', 'bottom']}>
-      <FormHeader
-        title={activityLabel(activity)}
-        icon={iconFor(sportKey)}
-        color={c.team}
-        soft={c.teamSoft}
-        onCancel={() => nav.goBack()}
-        onSave={handleSave}
-      />
+    <FormShell
+      title={activityLabel(activity)}
+      icon={iconFor(sportKey)}
+      color={c.team}
+      soft={c.teamSoft}
+      onCancel={() => nav.goBack()}
+      onSave={handleSave}
+    >
 
       <View style={{ padding: 16, gap: 13 }}>
-        {/* 날짜 · 시간 */}
-        <DateTimeField dateISO={dateISO} timeLabel={timeLabel} onChangeDate={setDateISO} onChangeTime={setTimeLabel} color={c.team} />
+        {/* 날짜 · 시간 (시간은 선택 — 지우면 "시간 미정") */}
+        <DateTimeField dateISO={dateISO} timeLabel={timeLabel} onChangeDate={setDateISO} onChangeTime={setTimeLabel} color={c.team} allowNoTime />
 
         {!editing && lastRecord ? <PrefillBanner activity={activity} onPress={prefillFromLast} /> : null}
 
@@ -431,6 +429,6 @@ export default function MatchForm({ activity, recordId, plan, initialDate }: { a
           </Text>
         </View>
       </View>
-    </Screen>
+    </FormShell>
   );
 }

@@ -1,8 +1,7 @@
 import { useNavigation } from '@react-navigation/native';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
-import { Screen } from '../../../components/primitives';
-import { FormHeader } from '../../../components/FormHeader';
+import { FormShell } from '../../../components/FormShell';
 import { DisclosureButton, Field } from '../../../components/Field';
 import { Chip } from '../../../components/controls';
 import { CompanionField, RatingInput } from '../../../components/Rating';
@@ -105,18 +104,18 @@ export default function ClimbingForm({ activity, recordId, plan, initialDate }: 
   const styleLabelEn: Record<string, string> = { 볼더링: 'Bouldering', 리드: 'Lead', 톱로프: 'Top rope' };
 
   return (
-    <Screen edges={['top', 'bottom']}>
-      <FormHeader
-        title={activityLabel(activity)}
-        icon={<Icon.climbing size={13} color={c.strength} strokeWidth={2.2} />}
-        color={c.strength}
-        soft={c.strengthSoft}
-        onCancel={() => nav.goBack()}
-        onSave={handleSave}
-      />
+    <FormShell
+      title={activityLabel(activity)}
+      icon={<Icon.climbing size={13} color={c.strength} strokeWidth={2.2} />}
+      color={c.strength}
+      soft={c.strengthSoft}
+      onCancel={() => nav.goBack()}
+      onSave={handleSave}
+    >
 
       <View style={{ padding: 16, gap: 14 }}>
-        <DateTimeField dateISO={dateISO} timeLabel={timeLabel} onChangeDate={setDateISO} onChangeTime={setTimeLabel} color={c.strength} />
+        {/* 날짜 · 시간 (시간은 선택 — 지우면 "시간 미정") */}
+        <DateTimeField dateISO={dateISO} timeLabel={timeLabel} onChangeDate={setDateISO} onChangeTime={setTimeLabel} color={c.strength} allowNoTime />
 
         {!editing && lastRecord ? <PrefillBanner activity={activity} onPress={prefillFromLast} /> : null}
 
@@ -249,6 +248,6 @@ export default function ClimbingForm({ activity, recordId, plan, initialDate }: 
           </View>
         ) : null}
       </View>
-    </Screen>
+    </FormShell>
   );
 }

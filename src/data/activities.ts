@@ -34,6 +34,8 @@ export const activities: Record<string, Activity> = {
   독서: { name: '독서', label: { en: 'Reading', ko: '독서' }, template: 'free', icon: 'book' },
   캠핑: { name: '캠핑', label: { en: 'Camping', ko: '캠핑' }, template: 'outing', icon: 'tent' },
   여행: { name: '여행', label: { en: 'Travel', ko: '여행' }, template: 'outing', icon: 'mappin' },
+  나들이: { name: '나들이', label: { en: 'Day out', ko: '나들이' }, template: 'outing', icon: 'tree' },
+  산책: { name: '산책', label: { en: 'Walk', ko: '산책' }, template: 'outing', icon: 'footprints' },
   맛집: { name: '맛집', label: { en: 'Dining', ko: '맛집' }, template: 'outing', icon: 'utensils' },
 };
 

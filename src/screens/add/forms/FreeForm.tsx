@@ -2,8 +2,7 @@ import { useNavigation } from '@react-navigation/native';
 import { choosePhoto, photoUri } from '../../../lib/photos';
 import React from 'react';
 import { Alert, Image, Pressable, Text, TextInput, View } from 'react-native';
-import { Screen } from '../../../components/primitives';
-import { FormHeader } from '../../../components/FormHeader';
+import { FormShell } from '../../../components/FormShell';
 import { DisclosureButton, Field } from '../../../components/Field';
 import { Segmented } from '../../../components/controls';
 import { RatingInput, CompanionField } from '../../../components/Rating';
@@ -29,6 +28,9 @@ type Intensity = 'low' | 'mid' | 'high';
 const INTENSITY_LABEL: Record<Intensity, string> = { low: '낮음', mid: '보통', high: '높음' };
 const LABEL_INTENSITY: Record<string, Intensity> = { 낮음: 'low', 보통: 'mid', 높음: 'high' };
 
+// outing 중 당일로 끝나는 활동 — 종료일(멀티데이) UI를 숨긴다.
+const SINGLE_DAY_OUTINGS = ['맛집', '나들이', '산책'];
+
 export default function FreeForm({ activity, recordId, plan, initialDate }: { activity: string; recordId?: string; plan?: import('../../../store/types').StoredPlan; initialDate?: string }) {
   const { c } = useTheme();
   const nav = useNavigation<any>();
@@ -44,8 +46,9 @@ export default function FreeForm({ activity, recordId, plan, initialDate }: { ac
   const templateOf =
     activities[activity]?.template ?? customActivities.find((a) => a.name === activity)?.template;
   const isOuting = !isBook && templateOf === 'outing';
-  // 맛집은 단일 방문 — 여러 날(종료일) 개념이 없어 멀티데이 UI를 숨긴다(여행·나들이만 노출).
-  const allowMultiDay = isOuting && activity !== '맛집';
+  // 맛집·나들이·산책은 당일 단위 — 여러 날(종료일) 개념이 없어 멀티데이 UI를 숨긴다.
+  // (여행 등 여러 날에 걸치는 활동 + 커스텀 outing 활동에만 노출. 캠핑은 전용 폼.)
+  const allowMultiDay = isOuting && !SINGLE_DAY_OUTINGS.includes(activity);
 
   // PREFILL controlled state from the record when editing; start BLANK on create.
   // 날짜·시간: 편집이면 저장값, 신규면 현재 날짜/시각.
@@ -170,23 +173,22 @@ export default function FreeForm({ activity, recordId, plan, initialDate }: { ac
   };
 
   return (
-    <Screen edges={['top', 'bottom']}>
-      <FormHeader
-        title={activityLabel(activity)}
-        icon={(() => {
-          const Ico = activities[activity] ? Icon[activities[activity].icon] : Icon.yoga;
-          return <Ico size={13} color={c.accent} strokeWidth={2.2} />;
-        })()}
-        color={c.accent}
-        soft={c.accentSoft}
-        onSave={handleSave}
-      />
+    <FormShell
+      title={activityLabel(activity)}
+      icon={(() => {
+        const Ico = activities[activity] ? Icon[activities[activity].icon] : Icon.yoga;
+        return <Ico size={13} color={c.accent} strokeWidth={2.2} />;
+      })()}
+      color={c.accent}
+      soft={c.accentSoft}
+      onSave={handleSave}
+    >
 
       <View style={{ padding: 16, gap: 14 }}>
-        {/* 필수 — 날짜 · 시간 (편집 가능) */}
+        {/* 날짜(필수) · 시간(선택 — 지우면 "시간 미정") */}
         <View>
           <Text style={{ fontSize: 11, fontWeight: '700', color: c.text3, letterSpacing: 0.4, marginBottom: 7 }}>
-            {tr({ en: 'Required', ko: '필수' })}
+            {tr({ en: 'Date · time', ko: '날짜 · 시간' })}
           </Text>
           <DateTimeField
             dateISO={dateISO}
@@ -194,6 +196,7 @@ export default function FreeForm({ activity, recordId, plan, initialDate }: { ac
             onChangeDate={setDateISO}
             onChangeTime={setTimeLabel}
             color={c.accent}
+            allowNoTime
           />
           {/* 여가·나들이 — 여러 날(종료일) 선택. 여행 1박2일 등. (맛집 제외) */}
           {allowMultiDay ? (
@@ -365,6 +368,6 @@ export default function FreeForm({ activity, recordId, plan, initialDate }: { ac
           <Text style={{ fontSize: 12, color: c.text3 }}>{tr({ en: 'Saved instantly, even offline', ko: '오프라인에서도 즉시 저장됩니다' })}</Text>
         </View>
       </View>
-    </Screen>
+    </FormShell>
   );
 }
