@@ -25,6 +25,7 @@ import SettingsScreen from '../screens/settings/SettingsScreen';
 import FeedbackScreen from '../screens/settings/FeedbackScreen';
 import RoadmapScreen from '../screens/settings/RoadmapScreen';
 import ProfileEditScreen from '../screens/settings/ProfileEditScreen';
+import ArchiveScreen from '../screens/archive/ArchiveScreen';
 import DetailScreen from '../screens/shared/DetailScreen';
 import CategoryStatsScreen from '../screens/stats/CategoryStatsScreen';
 import VerifyEmailScreen from '../screens/auth/VerifyEmailScreen';
@@ -56,6 +57,7 @@ function AppStack() {
         <Stack.Screen name="AddActivity" component={AddActivityScreen} />
         <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
       </Stack.Group>
+      <Stack.Screen name="Archive" component={ArchiveScreen} />
       <Stack.Screen name="Detail" component={DetailScreen} />
       <Stack.Screen name="CategoryStats" component={CategoryStatsScreen} />
       <Stack.Screen name="Plans" component={PlansScreen} />

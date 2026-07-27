@@ -332,8 +332,12 @@ export default function HomeScreen() {
               </Text>
               {records.length > 4 ? (
                 <Pressable
-                  onPress={() => nav.navigate('Calendar')}
+                  // 예전엔 Calendar로 보냈는데 캘린더는 '선택한 하루'만 보여줘서 "전체 보기"가
+                  // 약속을 지키지 못했다 → 월별 전체 기록 아카이브로 연결.
+                  onPress={() => nav.navigate('Archive')}
                   hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel={tr({ en: 'See all records', ko: '전체 기록 보기' })}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
                 >
                   <Text style={{ fontSize: 12, fontWeight: '600', color: c.accent }}>{tr({ en: 'See all', ko: '전체 보기' })}</Text>
