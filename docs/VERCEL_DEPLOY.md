@@ -36,7 +36,20 @@ npx vercel@latest --prod
 
 현재 프로덕션 주소: <https://logit-opal.vercel.app>
 
-Git 저장소를 Vercel 프로젝트에 연결하면 이후 push마다 Preview Deployment가, production branch push마다 Production Deployment가 생성된다.
+## Git 연동
+
+Vercel 프로젝트 `logit`은 GitHub `lks574/Logit`에 연결돼 있고 production branch는 `main`이다. `main` push는 Production Deployment를, 그 외 브랜치 push는 Preview Deployment를 만든다. 연결은 `npx vercel@latest git connect`로 설정했다.
+
+`vercel.json`을 바꿀 때는 반드시 커밋해야 한다. CLI(`vercel --prod`)로만 반영하고 커밋하지 않으면, 다음 git push 배포가 저장소의 옛 `vercel.json`으로 되돌린다.
+
+## 캐시 헤더
+
+`vercel.json`의 `headers`가 응답 캐시를 지정한다.
+
+- `/_expo/static/**`, `/assets/**` — 콘텐츠 해시 파일이므로 `max-age=31536000, immutable`. 재방문 시 2.5MB 번들을 다시 받지 않는다.
+- `/favicon.ico` — 해시가 없어 `max-age=86400`.
+- `index.html` — Vercel 기본값(`max-age=0, must-revalidate`)을 유지해야 한다. 새 배포의 번들 해시를 즉시 가리키기 위함이다.
+- `/.well-known/apple-app-site-association` — Universal Links 검증에 필요한 `application/json`으로 강제한다(확장자가 없어 기본값은 `application/octet-stream`).
 
 ## Firebase 설정
 
