@@ -14,9 +14,13 @@ npm install
 npm start          # Metro (Expo Go / dev client 선택)
 npm run ios        # 네이티브 dev 빌드(expo run:ios) → 독립 Logit.app, Expo Go 오버레이 없음
 npm run web        # 브라우저 프리뷰(react-native-web) — 빠른 UI 확인용
+npm run build:web  # Vercel용 프로덕션 정적 빌드(dist/)
+npm run serve:web  # dist/ 프로덕션 빌드 로컬 확인
 npm run tunnel     # 실기기 원격 접속: Cloudflare 터널 + Metro 한 방(ngrok 차단망 우회). cloudflared 필요
 ```
 - **웹 프리뷰**가 UI/인터랙션 확인에 가장 빠름(대부분 검증을 여기서 수행).
+- **Vercel 웹 호스팅**: <https://logit-opal.vercel.app>. `vercel.json`으로 Expo SPA 빌드·rewrite 구성. 배포 절차와 Firebase 도메인 설정은 `docs/VERCEL_DEPLOY.md` 참조.
+- **웹 Google 로그인**: Firebase Web Auth popup(`googleAuth.web.ts`)과 브라우저용 Firebase 초기화(`firebase.web.ts`)로 지원. 네이티브는 기존 Google Sign-In 흐름 유지. 새 기기/브라우저에서 로그인하고 로컬 콘텐츠가 비어 있으면 계정의 Firestore 백업을 1회 자동 복원하며, 기존 로컬 데이터는 덮어쓰지 않음.
 - **iOS 시뮬레이터 자동 조작**: `idb`(~/Library/Python/3.9/bin/idb) + companion 사용. 임시 드라이버는 세션마다 재작성했음(`/tmp/simdrive.py` — tap/tapxy/shot/labels). 스크린샷은 idb가 불안정해 `xcrun simctl io booted screenshot`로 대체.
 - 네이티브 `ios/`·`android/`는 .gitignore(CNG로 재생성). Expo Go의 플로팅 dev-menu 기어가 우상단 버튼과 겹칠 수 있음 → dev 빌드엔 없음.
 - **실기기/원격 테스트**: `docs/DEVICE_TESTING.md` 참조(Expo Go 불가·dev 빌드·서명·터널·Release).

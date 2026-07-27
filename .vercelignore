@@ -1,0 +1,34 @@
+# Dependencies and generated output are recreated by Vercel.
+node_modules/
+dist/
+.expo/
+.git/
+.vercel/
+
+# Native projects and credentials are not part of the web build.
+ios/
+android/
+GoogleService-Info.plist
+google-services.json
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+*.cer
+.env
+.env.*
+
+# Local project tooling and documentation are not needed during the build.
+.claude/
+.obsidian/
+docs/
+scripts/
+firebase.json
+firestore.rules
+AGENTS.md
+CLAUDE.md
+README.md
+LICENSE

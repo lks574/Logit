@@ -134,3 +134,4 @@ Thumbs.db
 
 # Firebase 배포 캐시
 .firebase/
+.vercel

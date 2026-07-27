@@ -7,7 +7,7 @@ import { RootStackParamList } from './types';
 //
 // 예: logit://record/<recordId> · logit://plan/<planId> · logit://stats
 export const linking: LinkingOptions<RootStackParamList> = {
-  prefixes: ['logit://', 'https://logit-rn-54efa.web.app'],
+  prefixes: ['logit://', 'https://logit-rn-54efa.web.app', 'https://logit-opal.vercel.app'],
   config: {
     screens: {
       MainTabs: {

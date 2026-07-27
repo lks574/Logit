@@ -6,8 +6,6 @@ import {
   sendEmailVerification,
   sendPasswordResetEmail,
   updateProfile,
-  signInWithCredential,
-  GoogleAuthProvider,
   EmailAuthProvider,
   reauthenticateWithCredential,
   deleteUser,
@@ -16,8 +14,9 @@ import {
 } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth } from '../lib/firebase';
-import { googleWebClientId, googleIosClientId, isFirebaseConfigured } from '../lib/firebaseConfig';
+import { isFirebaseConfigured } from '../lib/firebaseConfig';
 import { tr } from '../i18n/i18n';
+import { reauthenticateGoogleAccount, signInWithGoogleAccount } from './googleAuth';
 
 type Status = 'loading' | 'authed' | 'unauthed';
 
@@ -150,13 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
     signInWithGoogle: async () => {
       if (!isFirebaseConfigured) return mockSignIn('google.user@logit.dev', tr({ en: 'Google User', ko: 'Google 사용자' }));
-      const { GoogleSignin } = await loadGoogleSignin();
-      GoogleSignin.configure({ webClientId: googleWebClientId, iosClientId: googleIosClientId });
-      await GoogleSignin.hasPlayServices();
-      const res: any = await GoogleSignin.signIn();
-      const idToken = res?.data?.idToken ?? res?.idToken;
-      if (!idToken) throw new Error(tr({ en: 'Couldn’t get an idToken from Google sign-in.', ko: 'Google 로그인에서 idToken을 받지 못했어요.' }));
-      await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
+      await signInWithGoogleAccount();
     },
     logout: async () => {
       await AsyncStorage.removeItem(GUEST_KEY); // 로그아웃 → 게스트도 해제 → 시작 화면
@@ -196,13 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!password) throw new Error(tr({ en: 'Enter your password to delete your account.', ko: '계정 삭제를 위해 비밀번호를 입력해주세요.' }));
         await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email ?? '', password));
       } else if (providerId === 'google.com') {
-        const { GoogleSignin } = await loadGoogleSignin();
-        GoogleSignin.configure({ webClientId: googleWebClientId, iosClientId: googleIosClientId });
-        await GoogleSignin.hasPlayServices();
-        const res: any = await GoogleSignin.signIn();
-        const idToken = res?.data?.idToken ?? res?.idToken;
-        if (!idToken) throw new Error(tr({ en: 'Google re-auth failed.', ko: 'Google 재인증에 실패했어요.' }));
-        await reauthenticateWithCredential(u, GoogleAuthProvider.credential(idToken));
+        await reauthenticateGoogleAccount(u);
       }
       await deleteUser(u); // onAuthStateChanged가 user=null 처리
     },
@@ -215,13 +202,4 @@ export function useAuth(): AuthContextValue {
   const ctx = React.useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within AuthProvider');
   return ctx;
-}
-
-// 네이티브 모듈 지연 로드 — 미설치/미빌드 환경에서 앱이 죽지 않도록.
-async function loadGoogleSignin() {
-  try {
-    return await import('@react-native-google-signin/google-signin');
-  } catch {
-    throw new Error(tr({ en: 'Google sign-in module is missing. Please rebuild the dev build.', ko: 'Google 로그인 모듈이 없어요. dev 빌드를 재생성해주세요.' }));
-  }
 }
