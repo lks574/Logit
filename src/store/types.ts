@@ -30,6 +30,10 @@ export type StoredPlan = {
   memo?: string;
   reminder?: boolean;
   done?: boolean;
+  // 기록으로 전환하며 완료된 약속이 낳은 기록의 id. 완료 약속을 "죽은 항목"이 아니라
+  // 그 기록으로 가는 입구로 쓴다. 기록 쪽에 역참조를 두지 않는 이유는 기록이 백업의
+  // 대부분을 차지하는 큰 엔티티라, 링크를 완료 시 한 번 갱신되는 약속에 두는 게 싸다.
+  recordId?: string;
 };
 
 // User-defined activity (builtin catalog lives in data/activities.ts).

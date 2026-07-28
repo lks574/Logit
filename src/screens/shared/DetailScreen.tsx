@@ -8,14 +8,14 @@ import { Stars } from '../../components/Rating';
 import { Glyph, Icon, Path } from '../../components/Glyph';
 import { activities, activityLabel, colorsFor } from '../../data/activities';
 import { tr } from '../../i18n/i18n';
-import { monthDay, displayTimeLabel } from '../../lib/date';
+import { monthDay, displayTimeLabel, slashDayWeekday } from '../../lib/date';
 import { RootStackParamList } from '../../navigation/types';
 import { photoUri } from '../../lib/photos';
 import { shareRecordCard } from '../../lib/shareCard';
 import ShareCard from '../../components/ShareCard';
 import { useStore } from '../../store/StoreContext';
 import { StoredRecord } from '../../store/types';
-import { recordEnd } from '../../store/selectors';
+import { planForRecord, recordEnd } from '../../store/selectors';
 import { parseExercises } from '../../lib/strength';
 import { parseRoutes } from '../../lib/climbing';
 import { useTheme } from '../../theme/ThemeContext';
@@ -100,7 +100,7 @@ export default function DetailScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
   const route = useRoute<RouteProp<RootStackParamList, 'Detail'>>();
-  const { getRecord, deleteRecord, records } = useStore();
+  const { getRecord, deleteRecord, records, plans } = useStore();
 
   const recordId = route.params?.recordId;
   const record = recordId ? getRecord(recordId) : undefined;
@@ -139,6 +139,7 @@ export default function DetailScreen() {
 
   const photos = record.photos;
   const hasPhotos = !!(photos && photos.length);
+  const originPlan = planForRecord(plans, record.id);
 
   return (
     <Screen edges={['top']} contentStyle={{ paddingBottom: 28 }}>
@@ -213,6 +214,38 @@ export default function DetailScreen() {
             <Text style={{ fontSize: 13, color: c.text2, marginTop: 2 }}>{v.meta}</Text>
           </View>
         </Row>
+
+        {/* 약속에서 시작한 기록 — 약속(plan.recordId)이 가리키는 기록이면 그 약속을 보여준다.
+            탭하면 약속 상세로 이동해 계획했던 장소·메모를 확인할 수 있다. */}
+        {originPlan ? (
+          <Pressable
+            onPress={() => nav.navigate('AddPlan', { planId: originPlan.id })}
+            accessibilityRole="button"
+            accessibilityLabel={tr({ en: 'Open the original plan', ko: '원래 약속 보기' })}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              alignSelf: 'flex-start',
+              backgroundColor: c.surface,
+              borderWidth: 1,
+              borderColor: c.border,
+              borderRadius: 999,
+              paddingVertical: 6,
+              paddingHorizontal: 11,
+              opacity: pressed ? 0.85 : 1,
+            })}
+          >
+            <Icon.check size={13} color={c.success} strokeWidth={2.6} />
+            <Text style={{ fontSize: 12, color: c.text2 }}>
+              {tr({
+                en: `From a plan · ${slashDayWeekday(originPlan.dateISO)}`,
+                ko: `약속에서 시작 · ${slashDayWeekday(originPlan.dateISO)}`,
+              })}
+            </Text>
+            <Icon.chevronRight size={13} color={c.text3} strokeWidth={2.2} />
+          </Pressable>
+        ) : null}
 
         {/* Rating + companion */}
         <Row gap={8} center style={{ flexWrap: 'wrap' }}>

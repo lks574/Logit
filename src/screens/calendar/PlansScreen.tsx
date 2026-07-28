@@ -22,10 +22,20 @@ type Seg = 'past' | 'upcoming';
 export default function PlansScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { today, plans, deletePlan } = useStore();
+  const { today, plans, deletePlan, deletePlans, getRecord } = useStore();
   const [seg, setSeg] = React.useState<Seg>('upcoming');
   const [pendingDelete, setPendingDelete] = React.useState<StoredPlan | null>(null);
+  const [confirmClear, setConfirmClear] = React.useState(false);
   const toast = useToast();
+
+  // 완료 약속은 그 약속이 낳은 기록으로 가는 입구다. 링크가 없는 레거시 완료 약속은 편집 화면으로.
+  const openPlan = (p: StoredPlan) => {
+    if (p.done && p.recordId && getRecord(p.recordId)) {
+      nav.navigate('Detail', { recordId: p.recordId });
+      return;
+    }
+    nav.navigate('AddPlan', { planId: p.id });
+  };
 
   // 약속 → 기록 전환: 기록 추가 화면을 약속 데이터로 프리필해 띄운다(저장 시 기록 생성 + 약속 완료).
   const convertToRecord = (p: StoredPlan) => nav.navigate('RecordForm', { activity: p.activity, template: p.template, planId: p.id });
@@ -78,7 +88,13 @@ export default function PlansScreen() {
         }}
       >
         <Pressable
-          onPress={() => nav.navigate('AddPlan', { planId: p.id })}
+          onPress={() => openPlan(p)}
+          accessibilityRole="button"
+          accessibilityLabel={
+            p.done
+              ? tr({ en: `Open the record from ${activityLabel(p.activity)}`, ko: `${activityLabel(p.activity)} 약속의 기록 열기` })
+              : tr({ en: `Edit ${activityLabel(p.activity)} plan`, ko: `${activityLabel(p.activity)} 약속 수정` })
+          }
           style={({ pressed }) => ({ flex: 1, minWidth: 0, flexDirection: 'row', alignItems: 'center', gap: 11, opacity: pressed ? 0.9 : 1 })}
         >
           <View style={{ width: 38, height: 38, borderRadius: 10, backgroundColor: soft, alignItems: 'center', justifyContent: 'center' }}>
@@ -92,7 +108,11 @@ export default function PlansScreen() {
             <Text numberOfLines={1} style={{ fontSize: 11.5, color: c.text2, marginTop: 2 }}>{meta}</Text>
           </View>
           {p.done ? (
-            <Tag label={tr({ en: 'Done', ko: '완료' })} color={c.success} soft={withAlpha(c.success, 14)} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+              <Tag label={tr({ en: 'Done', ko: '완료' })} color={c.success} soft={withAlpha(c.success, 14)} />
+              {/* 기록이 연결된 완료 약속만 이동 가능함을 표시 */}
+              {p.recordId && getRecord(p.recordId) ? <Icon.chevronRight size={14} color={c.text3} strokeWidth={2.2} /> : null}
+            </View>
           ) : d < 0 ? (
             <Tag label={tr({ en: 'Past', ko: '지남' })} color={c.text3} soft={c.surfaceAlt} />
           ) : (
@@ -191,7 +211,21 @@ export default function PlansScreen() {
             <Group label={tr({ en: 'Later', ko: '이후' })} items={laterPlans} color={c.text2} />
           </>
         ) : (
-          <Group label={tr({ en: 'Completed plans', ko: '완료한 약속' })} items={past} color={c.text2} />
+          <>
+            <Group label={tr({ en: 'Completed plans', ko: '완료한 약속' })} items={past} color={c.text2} />
+            {/* 완료 약속은 계속 쌓이므로 한 번에 정리할 수단을 준다(기록은 지워지지 않는다). */}
+            {past.length ? (
+              <Pressable
+                onPress={() => setConfirmClear(true)}
+                accessibilityRole="button"
+                style={({ pressed }) => ({ alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 12, opacity: pressed ? 0.7 : 1 })}
+              >
+                <Text style={{ fontSize: 12, fontWeight: '600', color: c.text3 }}>
+                  {tr({ en: `Clear ${past.length} completed plans`, ko: `완료한 약속 ${past.length}건 정리` })}
+                </Text>
+              </Pressable>
+            ) : null}
+          </>
         )}
 
         {empty ? (
@@ -221,6 +255,29 @@ export default function PlansScreen() {
           <Text style={{ fontSize: 13, fontWeight: '600', color: c.accent }}>{tr({ en: 'Add plan', ko: '약속 추가' })}</Text>
         </Pressable>
       </View>
+
+      <ActionSheet
+        visible={confirmClear}
+        title={tr({ en: 'Clear completed plans', ko: '완료한 약속 정리' })}
+        message={tr({
+          en: `Removes ${past.length} completed plans. The records they created are kept.`,
+          ko: `완료한 약속 ${past.length}건을 지웁니다. 그 약속으로 남긴 기록은 그대로 유지돼요.`,
+        })}
+        cancelLabel={tr({ en: 'Cancel', ko: '취소' })}
+        onCancel={() => setConfirmClear(false)}
+        actions={[
+          {
+            label: tr({ en: 'Clear', ko: '정리' }),
+            destructive: true,
+            onPress: () => {
+              const count = past.length;
+              deletePlans(past.map((p) => p.id));
+              setConfirmClear(false);
+              toast.show(tr({ en: `Cleared ${count} completed plans`, ko: `완료한 약속 ${count}건을 정리했어요` }));
+            },
+          },
+        ]}
+      />
 
       <ActionSheet
         visible={!!pendingDelete}

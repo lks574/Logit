@@ -95,8 +95,9 @@ export default function ClimbingForm({ activity, recordId, plan, initialDate }: 
       updateRecord(recordId!, payload);
       nav.goBack();
     } else {
-      addRecord(payload);
-      if (plan) completePlan(plan.id);
+      const created = addRecord(payload);
+      // 약속 → 기록 전환: 약속을 완료 처리하면서 방금 만든 기록을 연결한다(완료 약속 → 기록 이동).
+      if (plan) completePlan(plan.id, created.id);
       resetToHome(nav);
     }
   };

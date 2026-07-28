@@ -198,7 +198,8 @@ function validPlan(p: any): boolean {
     (p.place === undefined || isStr(p.place)) &&
     (p.memo === undefined || isStr(p.memo)) &&
     (p.reminder === undefined || typeof p.reminder === 'boolean') &&
-    (p.done === undefined || typeof p.done === 'boolean')
+    (p.done === undefined || typeof p.done === 'boolean') &&
+    (p.recordId === undefined || isStr(p.recordId))
   );
 }
 

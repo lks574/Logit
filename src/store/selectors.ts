@@ -50,6 +50,12 @@ export function overduePlans(plans: StoredPlan[], today: string): StoredPlan[] {
     .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
 }
 
+// 이 기록이 어떤 약속에서 시작됐는지 — 링크는 약속(plan.recordId)에만 두므로 역방향은 조회한다.
+// 약속 배열은 기록보다 훨씬 작아 선형 탐색으로 충분하다.
+export function planForRecord(plans: StoredPlan[], recordId: string): StoredPlan | undefined {
+  return plans.find((p) => p.recordId === recordId);
+}
+
 // Trailing-7-days window ending `today` (design "6/24 – 6/30"): count + running
 // distance + streak. Records outside the window are excluded so the "이번 주"
 // card stays bounded as new records accumulate.

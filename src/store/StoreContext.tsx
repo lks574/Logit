@@ -60,10 +60,11 @@ type StoreValue = {
   addRecord: (r: Omit<StoredRecord, 'id' | 'sync'>) => StoredRecord;
   addPlan: (p: Omit<StoredPlan, 'id'>) => StoredPlan;
   addActivity: (a: CustomActivity) => void;
-  completePlan: (id: string) => void;
+  completePlan: (id: string, recordId?: string) => void;
   updateRecord: (id: string, patch: Partial<Omit<StoredRecord, 'id'>>) => void;
   updatePlan: (id: string, patch: Partial<Omit<StoredPlan, 'id'>>) => void;
   deletePlan: (id: string) => void;
+  deletePlans: (ids: string[]) => void;
   deleteRecord: (id: string) => void;
   getRecord: (id: string) => StoredRecord | undefined;
   getPlan: (id: string) => StoredPlan | undefined;
@@ -161,8 +162,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             : { ...s, customActivities: [...s.customActivities, a] }
         );
       },
-      completePlan: (id) => {
-        setState((s) => ({ ...s, plans: s.plans.map((p) => (p.id === id ? { ...p, done: true } : p)) }));
+      // recordId를 함께 남겨 완료 약속에서 그 기록으로 갈 수 있게 한다(레거시 완료 약속은 없을 수 있음).
+      completePlan: (id, recordId) => {
+        setState((s) => ({ ...s, plans: s.plans.map((p) => (p.id === id ? { ...p, done: true, recordId } : p)) }));
         void cancelPlanReminder(id); // 완료된 약속은 알림 취소
       },
       updateRecord: (id, patch) => {
@@ -182,6 +184,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       deletePlan: (id) => {
         setState((s) => ({ ...s, plans: s.plans.filter((p) => p.id !== id) }));
         void cancelPlanReminder(id);
+      },
+      // 완료 약속 일괄 정리 — 한 번의 setState로 처리해 목록이 하나씩 사라지는 깜빡임을 막는다.
+      deletePlans: (ids) => {
+        const set = new Set(ids);
+        setState((s) => ({ ...s, plans: s.plans.filter((p) => !set.has(p.id)) }));
+        ids.forEach((id) => void cancelPlanReminder(id));
       },
       deleteRecord: (id) => {
         // 이 레코드가 소유한 사진 파일 정리(고아 파일 방지). best-effort.
