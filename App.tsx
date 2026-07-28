@@ -11,6 +11,7 @@ import { seed } from './src/store/seed';
 import { registerPushToken } from './src/lib/push';
 import { UpdateGate } from './src/components/UpdateGate';
 import { CloudSyncGate } from './src/components/CloudSyncGate';
+import { ToastProvider } from './src/components/Toast';
 
 // 저장 실패(저장 공간 부족 등) 시 전역 배너 — 무음 유실을 사용자에게 알린다.
 function PersistErrorBanner() {
@@ -95,10 +96,12 @@ export default function App() {
         <ThemeProvider>
           <AuthProvider>
             <StoreProvider>
-              <AuthProfileSync />
-              <PushRegistrar />
-              <CloudSyncGate />
-              <Root />
+              <ToastProvider>
+                <AuthProfileSync />
+                <PushRegistrar />
+                <CloudSyncGate />
+                <Root />
+              </ToastProvider>
             </StoreProvider>
           </AuthProvider>
         </ThemeProvider>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Alert, Pressable, Text, TextInput, View } from 'react-native';
+import { Pressable, Text, TextInput, View } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { Screen } from '../../components/primitives';
 import { ScreenHeader } from '../../components/ScreenHeader';
@@ -7,6 +7,8 @@ import { IconButton } from '../../components/Button';
 import { Toggle, Segmented, Wheel } from '../../components/controls';
 import { Icon, Glyph, Path, Circle, Rect } from '../../components/Glyph';
 import { MiniMonthPicker } from '../../components/MiniMonthPicker';
+import { ActionSheet } from '../../components/ActionSheet';
+import { useToast } from '../../components/Toast';
 import { useTheme } from '../../theme/ThemeContext';
 import { useStore } from '../../store/StoreContext';
 import { activities, colorsFor, iconFor } from '../../data/activities';
@@ -14,6 +16,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { TemplateType, withAlpha } from '../../theme/tokens';
 import { tr } from '../../i18n/i18n';
 import { activityLabel } from '../../data/activities';
+import { slashDayWeekday } from '../../lib/date';
 
 // 빠른 활동 칩이 3개. 아직 아무 데이터도 없는 신규 유저에게만 쓰는 폴백.
 const FALLBACK_FAVORITES = ['헬스', '런닝', '축구']; // "…" reveals all
@@ -57,6 +60,8 @@ export default function AddPlanScreen() {
     useStore();
   const editing = !!planId;
   const plan = planId ? getPlan(planId) : undefined;
+  const toast = useToast();
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
 
   const templateOf = (name: string): TemplateType =>
     activities[name]?.template ?? customActivities.find((a) => a.name === name)?.template ?? 'free';
@@ -121,6 +126,7 @@ export default function AddPlanScreen() {
     ...customActivities.map((a) => a.name).filter((n) => !activities[n]),
   ];
 
+  // 저장/삭제는 화면을 떠나므로 결과를 toast로 알린다(무음 저장 방지).
   const onSave = () => {
     const payload = {
       activity: act,
@@ -133,24 +139,30 @@ export default function AddPlanScreen() {
     };
     if (editing && planId) updatePlan(planId, payload);
     else addPlan(payload);
+    const when = dateISO === today ? tr({ en: 'today', ko: '오늘' }) : slashDayWeekday(dateISO);
+    toast.show(
+      editing
+        ? tr({ en: 'Plan updated', ko: '약속을 수정했어요' })
+        : tr({ en: `Plan added · ${when}`, ko: `약속을 추가했어요 · ${when}` }),
+    );
     nav.goBack();
   };
+
+  // 삭제 확인은 ActionSheet — Alert가 react-native-web에서 no-op이라 웹에서 삭제가 되지 않았다.
   const onDelete = () => {
     if (!planId) {
       nav.goBack();
       return;
     }
-    Alert.alert(tr({ en: 'Delete plan', ko: '약속 삭제' }), tr({ en: 'Delete this plan?', ko: '이 약속을 삭제할까요?' }), [
-      { text: tr({ en: 'Cancel', ko: '취소' }), style: 'cancel' },
-      {
-        text: tr({ en: 'Delete', ko: '삭제' }),
-        style: 'destructive',
-        onPress: () => {
-          deletePlan(planId);
-          nav.goBack();
-        },
-      },
-    ]);
+    setConfirmDelete(true);
+  };
+
+  const runDelete = () => {
+    if (!planId) return;
+    deletePlan(planId);
+    setConfirmDelete(false);
+    toast.show(tr({ en: 'Plan deleted', ko: '약속을 삭제했어요' }));
+    nav.goBack();
   };
 
   const SectionLabel = ({ children }: { children: React.ReactNode }) => (
@@ -381,6 +393,15 @@ export default function AddPlanScreen() {
           </Pressable>
         ) : null}
       </View>
+
+      <ActionSheet
+        visible={confirmDelete}
+        title={tr({ en: 'Delete plan', ko: '약속 삭제' })}
+        message={tr({ en: 'Delete this plan?', ko: '이 약속을 삭제할까요?' })}
+        cancelLabel={tr({ en: 'Cancel', ko: '취소' })}
+        onCancel={() => setConfirmDelete(false)}
+        actions={[{ label: tr({ en: 'Delete', ko: '삭제' }), destructive: true, onPress: runDelete }]}
+      />
     </Screen>
   );
 }

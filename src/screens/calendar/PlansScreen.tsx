@@ -8,7 +8,9 @@ import { DdayBadge, Tag } from '../../components/badges';
 import { useTheme } from '../../theme/ThemeContext';
 import { withAlpha } from '../../theme/tokens';
 import { useStore } from '../../store/StoreContext';
-import { dday, upcomingPlans } from '../../store/selectors';
+import { ActionSheet } from '../../components/ActionSheet';
+import { useToast } from '../../components/Toast';
+import { dday, overduePlans, upcomingPlans } from '../../store/selectors';
 import { activities, colorsFor, iconFor, activityLabel } from '../../data/activities';
 import { StoredPlan } from '../../store/types';
 import { tr } from '../../i18n/i18n';
@@ -20,16 +22,19 @@ type Seg = 'past' | 'upcoming';
 export default function PlansScreen() {
   const { c } = useTheme();
   const nav = useNavigation<any>();
-  const { today, plans } = useStore();
+  const { today, plans, deletePlan } = useStore();
   const [seg, setSeg] = React.useState<Seg>('upcoming');
+  const [pendingDelete, setPendingDelete] = React.useState<StoredPlan | null>(null);
+  const toast = useToast();
 
   // 약속 → 기록 전환: 기록 추가 화면을 약속 데이터로 프리필해 띄운다(저장 시 기록 생성 + 약속 완료).
   const convertToRecord = (p: StoredPlan) => nav.navigate('RecordForm', { activity: p.activity, template: p.template, planId: p.id });
 
   const up = upcomingPlans(plans, today); // undone, future, asc
-  const past = plans
-    .filter((p) => p.done || dday(p.dateISO, today) < 0)
-    .sort((a, b) => b.dateISO.localeCompare(a.dateISO));
+  // 날짜가 지났는데 아직 안 한 약속은 '지난'이 아니라 '예정'에 둔다 — 여전히 처리해야 할 일이고,
+  // 완료 목록에 섞이면 묻힌다(홈의 '이 약속, 기록했나요?'와 같은 기준).
+  const overdue = overduePlans(plans, today);
+  const past = plans.filter((p) => p.done).sort((a, b) => b.dateISO.localeCompare(a.dateISO));
 
   const todayPlans = up.filter((p) => dday(p.dateISO, today) === 0);
   const weekPlans = up.filter((p) => { const d = dday(p.dateISO, today); return d >= 1 && d <= 7; });
@@ -106,6 +111,16 @@ export default function PlansScreen() {
             <Icon.check size={16} color={c.accent} strokeWidth={2.6} />
           </Pressable>
         ) : null}
+        {/* 삭제 — 편집 화면까지 들어가지 않고 목록에서 바로 정리할 수 있게. */}
+        <Pressable
+          onPress={() => setPendingDelete(p)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={tr({ en: `Delete ${activityLabel(p.activity)} plan`, ko: `${activityLabel(p.activity)} 약속 삭제` })}
+          style={{ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Icon.trash size={16} color={c.text3} strokeWidth={1.9} />
+        </Pressable>
       </View>
     );
   };
@@ -121,7 +136,14 @@ export default function PlansScreen() {
     ) : null;
 
   const upcomingCount = up.length;
-  const empty = seg === 'upcoming' ? upcomingCount === 0 : past.length === 0;
+  const empty = seg === 'upcoming' ? upcomingCount === 0 && overdue.length === 0 : past.length === 0;
+
+  const upcomingSubtitle = [
+    tr({ en: `${upcomingCount} upcoming`, ko: `앞으로 예정된 ${upcomingCount}건` }),
+    overdue.length ? tr({ en: `${overdue.length} not done`, ko: `아직 안 한 ${overdue.length}건` }) : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <Screen edges={['top']} contentStyle={{ paddingBottom: 24 }}>
@@ -135,8 +157,8 @@ export default function PlansScreen() {
             <Text style={{ fontSize: 22, fontWeight: '700', letterSpacing: -0.44, color: c.text }}>{tr({ en: 'Upcoming plans', ko: '다가오는 약속' })}</Text>
             <Text style={{ fontSize: 12.5, color: c.text2, marginTop: 2 }}>
               {seg === 'upcoming'
-                ? tr({ en: `${upcomingCount} upcoming`, ko: `앞으로 예정된 ${upcomingCount}건` })
-                : tr({ en: `${past.length} past`, ko: `지난 ${past.length}건` })}
+                ? upcomingSubtitle
+                : tr({ en: `${past.length} done`, ko: `완료한 ${past.length}건` })}
             </Text>
           </View>
         </View>
@@ -151,7 +173,7 @@ export default function PlansScreen() {
                 style={{ paddingVertical: 5, paddingHorizontal: 11, borderRadius: 999, backgroundColor: active ? c.accent : 'transparent' }}
               >
                 <Text style={{ fontSize: 11, fontWeight: '600', color: active ? '#fff' : c.text2 }}>
-                  {k === 'past' ? tr({ en: 'Past', ko: '지난' }) : tr({ en: 'Upcoming', ko: '예정' })}
+                  {k === 'past' ? tr({ en: 'Done', ko: '완료' }) : tr({ en: 'Upcoming', ko: '예정' })}
                 </Text>
               </Pressable>
             );
@@ -162,17 +184,19 @@ export default function PlansScreen() {
       <View style={{ paddingHorizontal: 18, paddingTop: 6, gap: 16 }}>
         {seg === 'upcoming' ? (
           <>
+            {/* 지났지만 아직 안 한 약속을 맨 위에 — 가장 먼저 처리해야 할 항목이다. */}
+            <Group label={tr({ en: 'Not done yet', ko: '아직 안 함' })} items={overdue} color={c.warning} />
             <Group label={tr({ en: 'Today', ko: '오늘' })} items={todayPlans} color={c.accent} />
             <Group label={tr({ en: 'This week', ko: '이번 주' })} items={weekPlans} color={c.text2} />
             <Group label={tr({ en: 'Later', ko: '이후' })} items={laterPlans} color={c.text2} />
           </>
         ) : (
-          <Group label={tr({ en: 'Past plans', ko: '지난 약속' })} items={past} color={c.text2} />
+          <Group label={tr({ en: 'Completed plans', ko: '완료한 약속' })} items={past} color={c.text2} />
         )}
 
         {empty ? (
           <Text style={{ fontSize: 13, color: c.text3, textAlign: 'center', paddingVertical: 20 }}>
-            {seg === 'upcoming' ? tr({ en: 'No upcoming plans.', ko: '예정된 약속이 없어요.' }) : tr({ en: 'No past plans.', ko: '지난 약속이 없어요.' })}
+            {seg === 'upcoming' ? tr({ en: 'No upcoming plans.', ko: '예정된 약속이 없어요.' }) : tr({ en: 'No completed plans.', ko: '완료한 약속이 없어요.' })}
           </Text>
         ) : null}
 
@@ -197,6 +221,30 @@ export default function PlansScreen() {
           <Text style={{ fontSize: 13, fontWeight: '600', color: c.accent }}>{tr({ en: 'Add plan', ko: '약속 추가' })}</Text>
         </Pressable>
       </View>
+
+      <ActionSheet
+        visible={!!pendingDelete}
+        title={tr({ en: 'Delete plan', ko: '약속 삭제' })}
+        message={
+          pendingDelete
+            ? `${activityLabel(pendingDelete.activity)} · ${dateLabel(pendingDelete.dateISO)}\n${tr({ en: 'Delete this plan?', ko: '이 약속을 삭제할까요?' })}`
+            : undefined
+        }
+        cancelLabel={tr({ en: 'Cancel', ko: '취소' })}
+        onCancel={() => setPendingDelete(null)}
+        actions={[
+          {
+            label: tr({ en: 'Delete', ko: '삭제' }),
+            destructive: true,
+            onPress: () => {
+              if (!pendingDelete) return;
+              deletePlan(pendingDelete.id);
+              setPendingDelete(null);
+              toast.show(tr({ en: 'Plan deleted', ko: '약속을 삭제했어요' }));
+            },
+          },
+        ]}
+      />
     </Screen>
   );
 }
