@@ -30,16 +30,37 @@ export default function OnboardingScreen() {
   const [selected, setSelected] = React.useState<string[]>([]);
   const [extras, setExtras] = React.useState<string[]>([]);
   const [pagerH, setPagerH] = React.useState(0);
+  // 페이지 폭은 실제 레이아웃에서 받는다 — 창 너비는 스크롤바·safe-area 때문에 어긋날 수 있고,
+  // 그만큼 scrollTo 좌표가 밀린다.
+  const [pagerW, setPagerW] = React.useState(width);
   const scrollRef = React.useRef<ScrollView>(null);
+  // 프로그램적 스크롤 중에는 onScroll 동기화를 막는다(중간 오프셋이 도트를 되돌리는 깜빡임 방지).
+  const scrolling = React.useRef(false);
 
-  const goTo = (i: number) => scrollRef.current?.scrollTo({ x: i * width, animated: true });
-  const finish = () => completeOnboarding(selected);
+  // step을 여기서 바로 올린다. onMomentumScrollEnd에만 의존하면 그 이벤트를 쏘지 않는
+  // react-native-web에서 step이 0에 멈춰, '다음'이 계속 2페이지로만 스크롤하고
+  // 마지막 단계(=완료)에 도달하지 못한다.
+  const goTo = (i: number) => {
+    setStep(i);
+    scrolling.current = true;
+    scrollRef.current?.scrollTo({ x: i * pagerW, animated: true });
+    setTimeout(() => {
+      scrolling.current = false;
+    }, 400);
+  };
+  const finish = () => completeOnboarding(selected); // onboardingComplete → RootNavigator가 홈(AppStack)으로 교체
   const next = () => (step < TOTAL - 1 ? goTo(step + 1) : finish());
 
-  // 스와이프 종료 시 현재 페이지 → step 동기화(도트·건너뛰기·CTA 라벨).
-  const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    const i = Math.round(e.nativeEvent.contentOffset.x / width);
+  // 손으로 스와이프했을 때 현재 페이지 → step 동기화(도트·건너뛰기·CTA 라벨).
+  const syncStep = (x: number) => {
+    if (scrolling.current || pagerW <= 0) return;
+    const i = Math.min(TOTAL - 1, Math.max(0, Math.round(x / pagerW)));
     if (i !== step) setStep(i);
+  };
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => syncStep(e.nativeEvent.contentOffset.x);
+  const onScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrolling.current = false;
+    syncStep(e.nativeEvent.contentOffset.x);
   };
 
   const toggle = (name: string) =>
@@ -74,19 +95,25 @@ export default function OnboardingScreen() {
         pagingEnabled
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={onScrollEnd}
-        onLayout={(e) => setPagerH(e.nativeEvent.layout.height)}
+        onScrollEndDrag={onScrollEnd}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        onLayout={(e) => {
+          setPagerH(e.nativeEvent.layout.height);
+          setPagerW(e.nativeEvent.layout.width);
+        }}
         style={{ flex: 1 }}
       >
-        <View style={{ width, height: pagerH }}>
+        <View style={{ width: pagerW, height: pagerH }}>
           <Welcome c={c} name={profile.name} />
         </View>
-        <View style={{ width, height: pagerH }}>
+        <View style={{ width: pagerW, height: pagerH }}>
           <RecordMethods c={c} />
         </View>
-        <View style={{ width, height: pagerH }}>
+        <View style={{ width: pagerW, height: pagerH }}>
           <CalendarPreview c={c} />
         </View>
-        <View style={{ width, height: pagerH }}>
+        <View style={{ width: pagerW, height: pagerH }}>
           <FirstActivity
             c={c}
             choices={[...ACTIVITY_CHOICES, ...extras]}
@@ -112,7 +139,7 @@ export default function OnboardingScreen() {
             />
           ))}
         </View>
-        <PrimaryButton label={step === TOTAL - 1 ? tr({ en: 'Start Logit', ko: 'Logit 시작하기' }) : tr({ en: 'Next', ko: '다음' })} onPress={next} />
+        <PrimaryButton label={step === TOTAL - 1 ? tr({ en: 'Get started', ko: '시작하기' }) : tr({ en: 'Next', ko: '다음' })} onPress={next} />
       </View>
     </Screen>
   );
